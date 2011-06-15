@@ -1,0 +1,74 @@
+luvcview (1:0.2.6-4) unstable; urgency=low
+
+  * Improve luvcview.1 (closes: bug#570495).
+
+ -- Aurelien Jarno <aurel32@debian.org>  Fri, 19 Feb 2010 20:02:18 +0100
+
+luvcview (1:0.2.6-3) unstable; urgency=low
+
+  * Use libv4l2 for format conversion (closes: bug#569100).
+
+ -- Aurelien Jarno <aurel32@debian.org>  Fri, 12 Feb 2010 21:49:51 +0100
+
+luvcview (1:0.2.6-2) unstable; urgency=low
+
+  * Use <linux/videodev2.h> instead of <linux/videodev.h> (closes: 
+    bug#569100).
+  * Bump Standards-Version to 3.8.4 (no changes)
+
+ -- Aurelien Jarno <aurel32@debian.org>  Wed, 10 Feb 2010 11:05:14 +0100
+
+luvcview (1:0.2.6-1) unstable; urgency=low
+
+  * New upstream version. 
+  * Bump Standards-Version to 3.8.3:
+    - Add README.source.
+  * Fix a copy'n'paste error in manpage (closes: bug#507595).
+
+ -- Aurelien Jarno <aurel32@debian.org>  Thu, 27 Aug 2009 12:18:57 +0200
+
+luvcview (1:0.2.4-2) unstable; urgency=low
+
+  * Use quilt for patch management. 
+  * Add patch from Nobuhiro Iwamatsu to support UYVY format
+    (closes: bug#481757).
+
+ -- Aurelien Jarno <aurel32@debian.org>  Wed, 21 May 2008 17:36:17 +0200
+
+luvcview (1:0.2.4-1) unstable; urgency=low
+
+  * New upstream version (closes: bug#480629).
+  * Reintroduce the menu item.
+  * Update debian/copyright. 
+
+ -- Aurelien Jarno <aurel32@debian.org>  Sun, 11 May 2008 09:35:34 +0200
+
+luvcview (20070512-5) unstable; urgency=low
+
+  * Remove the menu item (closes: bug#475632). 
+
+ -- Aurelien Jarno <aurel32@debian.org>  Sat, 12 Apr 2008 09:33:58 +0200
+
+luvcview (20070512-4) unstable; urgency=low
+
+  * Make the video format mandatory (closes: bug#473273). 
+
+ -- Aurelien Jarno <aurel32@debian.org>  Mon, 31 Mar 2008 09:46:18 +0200
+
+luvcview (20070512-3) unstable; urgency=low
+
+  * Build with -g  (closes: bug#437544). 
+
+ -- Aurelien Jarno <aurel32@debian.org>  Mon, 13 Aug 2007 11:08:00 +0200
+
+luvcview (20070512-2) unstable; urgency=low
+
+  * Update the menufile following the new Debian menu subpolicy. 
+
+ -- Aurelien Jarno <aurel32@debian.org>  Mon, 30 Jul 2007 19:20:18 +0200
+
+luvcview (20070512-1) unstable; urgency=low
+
+  * Initial Release (closes: #429735).
+
+ -- Aurelien Jarno <aurel32@debian.org>  Wed, 20 Jun 2007 12:27:44 +0200
