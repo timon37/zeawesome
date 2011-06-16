@@ -1,12 +1,20 @@
 
 #include "muhaha.h"
 
+
+
 tM gM =
 {
 	.Y_Level = 128,
 	.DeSat = 0,
-	.X = 100,
-	.Y = 100,
+	.X = 320,
+	.Y = 240,
+	.Ax = 30,
+	.Ay = 30,
+	.Aa = 0,
+//	.Aa = M_PI/4,
+	.Axy = -4,
+	.Ar = 100,
 };
 
 /*
@@ -30,14 +38,50 @@ typedef struct {//YUV 4:2:2
 }__attribute__((packed)) tPix;
 
 
+double get_det(gsl_matrix* A) {
+	int sign = 0;
+	double det = 0.0;
+	int row_sq = A->size1;
+	gsl_permutation * p = gsl_permutation_calloc(row_sq);
+	gsl_matrix * tmp_ptr = gsl_matrix_calloc(row_sq, row_sq);
+	int* signum = &sign;
+	gsl_matrix_memcpy(tmp_ptr, A);
+	gsl_linalg_LU_decomp(tmp_ptr, p, signum);
+	det = gsl_linalg_LU_det(tmp_ptr, *signum);
+	gsl_permutation_free(p);
+	gsl_matrix_free(tmp_ptr);
+	return det;
+}
+
+void	xset	(float x)
+{
+	if (x < 20)
+		x = 20;
+	else if (x > videoIn->width-20)
+		x = videoIn->width-20;
+	gM.X = x;
+}
+void	yset	(float y)
+{
+	if (y < 20)
+		y = 20;
+	else if (y > videoIn->height-20)
+		y = videoIn->height-20;
+	gM.Y = y;
+}
+void	xyset	(float x, float y)
+{
+	xset(x);
+	yset(y);
+}
+
+#if 0
 
 #define  TPL_WIDTH       12      /* template width       */
 #define  TPL_HEIGHT      12      /* template height      */
 #define  WINDOW_WIDTH    24      /* search window width  */
 #define  WINDOW_HEIGHT   24      /* search window height */
 #define  THRESHOLD       0.3
-
-#if 0
 
 IplImage *frame, *tpl, *tm;
 
@@ -130,9 +174,11 @@ void	muhaha_Init	()
 
 #define ddist(x0,y0,x1,y1) sqrt(ddist2(x0,y0,x1,y1))
 
-#define dopix(_x,_y) ((tPix*)videoIn->framebuffer + ((_x) + (_y)*videoIn->width))
-#define dnpix(_x,_y) ((tPix*)gM.pDst + ((_x) + (_y)*videoIn->width))
+#define dopix(_x,_y) ((tPix*)videoIn->framebuffer + ((si)(_x) + (si)(_y)*videoIn->width))
+#define dnpix(_x,_y) ((tPix*)gM.pDst + ((si)(_x) + (si)(_y)*videoIn->width))
 #define dpix(_x,_y) dopix(_x,_y)
+
+#define dpixout(_x,_y) ((_x) < 0 || (_y) < 0 || (_x) >= videoIn->width || (_y) >= videoIn->height)
 
 si ay = 0, au = 0, av = 0, n = 0;
 
@@ -141,13 +187,13 @@ void	crap_ff	(si x, si y)
 	if (x < 0 || y < 0 || x >= videoIn->width || y >= videoIn->height)
 		return;
 	
-	if (	dnpix(x,y)->Y == 0xFF
+	if (	1//dnpix(x,y)->Y == 0xFF
 		&& dnpix(x,y)->U == 0
 		&& dnpix(x,y)->V == 0
 	)
 		return;
 	
-	if (ddist2(x,y,gM.X,gM.Y) >= 600)
+	if (ddist2(x,y,gM.X,gM.Y) >= 1000)
 		return;
 	
 	if (	dopix(x,y)->Y <= ay + 16
@@ -155,7 +201,7 @@ void	crap_ff	(si x, si y)
 		//	&& abs(dopix(x,y)->U - au) <= 12
 		//	&& abs(dopix(x,y)->V - av) <= 12
 	) {
-		dnpix(x,y)->Y = 0xFF;
+	//	dnpix(x,y)->Y = 0xFF;
 		dnpix(x,y)->U = 0x0;
 		dnpix(x,y)->V = 0x0;
 		crap_ff (x-1, y);
@@ -168,7 +214,7 @@ void	crap_ff	(si x, si y)
 void	muhaha	()
 {
 	tPix* pin = videoIn->framebuffer, *pin1;
-	int x, y;
+	si x, y;
 /*	for (y = 0; y < videoIn->height; ++y) {
 		for (x = 0; x < videoIn->width; ++x) {
 		//	pin->Y = 0;
@@ -258,6 +304,135 @@ void	muhaha	()
 			}
 		}
 	}/**/
+	#if 1
+	for (y = 0; y < videoIn->height; ++y) {
+		for (x = 0; x < videoIn->width-1; ++x) {
+			if (	1//dnpix(x,y)->Y == 0xFF
+				&& dnpix(x,y)->U == 0
+				&& dnpix(x,y)->V == 0
+			) {
+				float t, dx, dy, xx, yy;
+				dx = gM.X - x;
+				dy = gM.Y - y;
+				t = atan2(dy,dx) - gM.Aa;
+				
+				xx = (gM.Ax * cos(t) * cos(gM.Aa) - gM.Ay * sin(t) * sin(gM.Aa));
+				yy = (gM.Ax * cos(t) * sin(gM.Aa) + gM.Ay * sin(t) * cos(gM.Aa));
+				
+				if (dx*dx+dy*dy > xx*xx+yy*yy) {
+				//	printf ("f1\n");
+				//	dnpix(x,y)->U = 0xF;
+				//	dnpix(x,y)->V = 0xF;
+				}//else
+				{
+					#if 1
+					{	float nx = x, ny = y, d = sqrt(dx*dx+dy*dy);
+					//	printf ("d %f\n", d);
+					/*	if (t >= -M_PI_4 && t < M_PI_4) {
+							nx = x-1;
+							ny = y;
+						}else if (t >= M_PI_4 && t < 3*M_PI_4) {
+							nx = x;
+							ny = y-1;
+						}else if (t >= -3*M_PI_4 && t < -M_PI_4) {
+							nx = x;
+							ny = y+1;
+						}else {
+							nx = x+1;
+							ny = y;
+						}/**/
+						while (1) {
+							float tx = x + d*cos(t);
+							float ty = y + d*sin(t);
+						//	printf ("tx %f ty %f\n", tx, ty);
+							if (	1//dnpix(nx,ny)->Y == 0xFF
+								&& dnpix(tx,ty)->U == 0
+								&& dnpix(tx,ty)->V == 0
+							//	0
+							//	|| (dnpix(tx,ny)->U != 0 && dnpix(tx,ty)->U != 0xF)
+							//	|| (dnpix(tx,ny)->V != 0 && dnpix(tx,ty)->V != 0xF)
+							) {
+							//	printf ("ehhh\n");
+								nx = tx+cos(t);
+								ny = ty+sin(t);
+							}
+							d += 1;
+							if (d >= 100) {
+								break;
+							}
+						}
+					//	dnpix(nx,ny)->U = 0xF;
+					//	dnpix(nx,ny)->V = 0xF;
+						if (	0//dnpix(nx,ny)->Y == 0xFF
+							|| (dnpix(nx,ny)->U != 0 && dnpix(nx,ny)->U != 0xF)
+							|| (dnpix(nx,ny)->V != 0 && dnpix(nx,ny)->V != 0xF)
+						) {
+							if (dpixout(nx,ny))
+								continue;
+						//	printf ("f2\n");
+						//	printf ("nx %f ny %f\n", nx, ny);
+							dnpix(nx,ny)->U = 0xF;
+							dnpix(nx,ny)->V = 0xF;
+						//	printf ("Ax %f Ay %f\n", cos(t), sin(t));
+						}
+					}
+					#endif
+				}
+			}
+		}
+	}/**/
+	for (y = 0; y < videoIn->height; ++y) {
+		for (x = 0; x < videoIn->width-1; ++x) {
+			if (	1//dnpix(x,y)->Y == 0xFF
+				&& dnpix(x,y)->U == 0xF
+				&& dnpix(x,y)->V == 0xF
+			) {
+				float t, dx, dy, xx, yy;
+				dx = gM.X - x;
+				dy = gM.Y - y;
+				t = atan2(dy,dx) - gM.Aa;
+				
+				xx = (gM.Ax * cos(t) * cos(gM.Aa) - gM.Ay * sin(t) * sin(gM.Aa));
+				yy = (gM.Ax * cos(t) * sin(gM.Aa) + gM.Ay * sin(t) * cos(gM.Aa));
+				
+				float diff = sqrt(dx*dx+dy*dy) - sqrt(xx*xx+yy*yy);
+				if (fabs(diff) >= 0.5f) {
+				//	printf ("f1\n");
+					gM.Ax += 0.01f*diff*fabs(cos(t));
+					gM.Ay += 0.01f*diff*fabs(sin(t));
+					
+					xset (gM.X - 0.03f*diff*cos(t));
+					yset (gM.Y - 0.03f*diff*sin(t));
+				}
+			}
+		}
+	}/**/
+	#endif
+	
+	if (gM.Ax > 100)
+		gM.Ax = 100;
+	if (gM.Ay > 100)
+		gM.Ay = 100;
+	if (gM.Ax < 10)
+		gM.Ax = 10;
+	if (gM.Ay < 10)
+		gM.Ay = 10;
+	
+	float t;
+	for (t = 0; t < 2*M_PI; t += M_PI/180) {
+	//	gM.Ax*x*x + gM.Ay*y*y + gM.Axy*x*y = gM.Ar
+		x = (gM.Ax * cos(t) * cos(gM.Aa) - gM.Ay * sin(t) * sin(gM.Aa));
+		y = (gM.Ax * cos(t) * sin(gM.Aa) + gM.Ay * sin(t) * cos(gM.Aa));
+	//	printf ("x %4d  y %4d\n", x, y);
+	//	y = gM.Y;
+		if (gM.X+x < 0 || gM.Y+y < 0 || gM.X+x >= videoIn->width || gM.Y+y >= videoIn->height)
+			continue;
+		dnpix(gM.X+x,gM.Y+y)->Y = 0xFF;
+		dnpix(gM.X+x,gM.Y+y)->U = 0xF;
+		dnpix(gM.X+x,gM.Y+y)->V = 0x0;
+		
+	}
+	
 //	if (videoIn->formatIn != V4L2_PIX_FMT_YUYV)
 //		printf ("videoIn->formatIn %d\n", videoIn->formatIn);
 	
@@ -298,6 +473,7 @@ int muhaha_eventThread(void *data)
 				boucle = 0;
 				break;
 			case SDL_MOUSEBUTTONDOWN:
+				printf ("mouse down\n");
 				SDL_GetMouseState(&x, &y);
 				gM.X = x; 
 				gM.Y = y;

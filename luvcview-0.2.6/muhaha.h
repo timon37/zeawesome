@@ -29,6 +29,12 @@
 #include "utils.h"
 #include "color.h"
 
+#include <math.h>
+
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_linalg.h>
+
 typedef unsigned char u08;
 typedef unsigned short u16;
 
@@ -44,7 +50,9 @@ typedef struct {
 	int Y_Level;
 	
 	u08 DeSat;
-	si X, Y;
+	
+	float X, Y;
+	float Ax, Ay, Aa, Axy, Ar;
 	
 	u08* pDst;
 }tM;
