@@ -439,13 +439,13 @@ int main(int argc, char *argv[])
 	if ( readconfigfile )
 		load_controls(videoIn->fd);
 	
-	pscreen = SDL_SetVideoMode(videoIn->width, videoIn->height + 32, 0, SDL_VIDEO_Flags);
+	gM.pScreen = pscreen = SDL_SetVideoMode(videoIn->width+320, videoIn->height + 32, 0, SDL_VIDEO_Flags);
 	
-	overlay = SDL_CreateYUVOverlay(videoIn->width, videoIn->height + 32, sdl_format, pscreen);
+	gM.pOverlay = overlay = SDL_CreateYUVOverlay(videoIn->width, videoIn->height + 32, sdl_format, pscreen);
 	p = (unsigned char *) overlay->pixels[0];
 	drect.x = 0;
 	drect.y = 0;
-	drect.w = pscreen->w;
+	drect.w = videoIn->width;
 	drect.h = pscreen->h;
 	if (enableRawStreamCapture) {
 		videoIn->captureFile = fopen("stream.raw", "wb");
@@ -461,9 +461,13 @@ int main(int argc, char *argv[])
 	SDL_WM_SetCaption(title_act[A_VIDEO].title, NULL);
 	lasttime = SDL_GetTicks();
 	creatButt(videoIn->width, 32);
+	
 	SDL_LockYUVOverlay(overlay);
+	
 	memcpy(p + (videoIn->width * (videoIn->height) * 2), YUYVbutt, videoIn->width * 64);
+	
 	SDL_UnlockYUVOverlay(overlay);
+	
 	/* initialize thread data */
 	ptdata.ptscreen = &pscreen;
 	ptdata.ptvideoIn = videoIn;
@@ -529,6 +533,10 @@ int main(int argc, char *argv[])
 		SDL_WM_SetCaption(videoIn->status, NULL);
 		SDL_UnlockMutex(affmutex);
 	//	SDL_Delay(10);
+	//	SDL_LockSurface (gM.pScreen);
+	//	memset (gM.pScreen->pixels, 0xff, 32* 1024);
+	//	SDL_UnlockSurface (gM.pScreen);
+		SDL_Flip (gM.pScreen);
 	}
 	SDL_WaitThread(mythread, &status);
 	SDL_DestroyMutex(affmutex);

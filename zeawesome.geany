@@ -17,7 +17,20 @@ long_line_column=72
 
 [files]
 current_page=2
-FILE_NAME_0=1081;Make;0;16;1;1;0;/root/Projects/gazetracking/zeawesome/luvcview-0.2.6/Makefile;0
-FILE_NAME_1=0;C;0;0;1;1;0;/root/Projects/gazetracking/zeawesome/luvcview-0.2.6/luvcview.c;0
-FILE_NAME_2=1090;C;0;16;1;1;0;/root/Projects/gazetracking/zeawesome/luvcview-0.2.6/muhaha.c;0
-FILE_NAME_3=919;C;0;16;1;1;0;/root/Projects/gazetracking/zeawesome/luvcview-0.2.6/muhaha.h;0
+FILE_NAME_0=367;Make;0;16;1;1;0;/root/Projects/gazetracking/zeawesome/luvcview-0.2.6/Makefile;0
+FILE_NAME_1=15948;C;0;0;1;1;0;/root/Projects/gazetracking/zeawesome/luvcview-0.2.6/luvcview.c;0
+FILE_NAME_2=46279;C;0;16;1;1;0;/root/Projects/gazetracking/zeawesome/luvcview-0.2.6/muhaha.c;0
+FILE_NAME_3=711;C;0;16;1;1;0;/root/Projects/gazetracking/zeawesome/luvcview-0.2.6/muhaha.h;0
+FILE_NAME_4=2785;C;0;16;1;1;0;/root/Projects/gazetracking/zeawesome/luvcview-0.2.6/color.c;0
+FILE_NAME_5=2899;C;0;16;1;1;0;/root/Projects/gazetracking/zeawesome/luvcview-0.2.6/color.h;0
+FILE_NAME_6=47;Make;0;16;1;1;0;/root/Projects/gazetracking/cvEyeTracker-1.2.5/Makefile;0
+FILE_NAME_7=1314;C;0;16;1;1;0;/root/Projects/gazetracking/cvEyeTracker-1.2.5/cvEyeTracker.c;0
+FILE_NAME_8=9288;C++;0;16;1;1;0;/root/Projects/gazetracking/cvEyeTracker-1.2.5/ransac_ellipse.cpp;0
+FILE_NAME_9=1362;C;0;16;1;1;0;/root/Projects/gazetracking/cvEyeTracker-1.2.5/ransac_ellipse.h;0
+FILE_NAME_10=923;C;0;16;1;1;0;/root/Projects/gazetracking/cvEyeTracker-1.2.5/svd.c;0
+FILE_NAME_11=922;C;0;16;1;1;0;/root/Projects/gazetracking/cvEyeTracker-1.2.5/svd.h;0
+FILE_NAME_12=1155;C;0;16;1;1;0;/root/Projects/gazetracking/cvEyeTracker-1.2.5/timing.c;0
+FILE_NAME_13=0;C;0;16;1;1;0;/root/Projects/gazetracking/cvEyeTracker-1.2.5/timing.h;0
+FILE_NAME_14=1297;C;0;16;1;1;0;/root/Projects/gazetracking/cvEyeTracker-1.2.5/remove_corneal_reflection.c;0
+FILE_NAME_15=1365;C;0;16;1;1;0;/root/Projects/gazetracking/cvEyeTracker-1.2.5/remove_corneal_reflection.h;0
+FILE_NAME_16=1044;C;0;16;1;1;0;/usr/include/SDL/SDL_keysym.h;0

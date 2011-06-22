@@ -31,12 +31,10 @@
 
 #include <math.h>
 
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_linalg.h>
 
 typedef unsigned char u08;
 typedef unsigned short u16;
+typedef unsigned int u32;
 
 
 typedef unsigned long u00;
@@ -47,14 +45,84 @@ typedef s00 si;
 
 
 typedef struct {
+	float x, y;
+}tV2f;
+
+typedef struct {
+	double x, y;
+}tV2d;
+
+typedef struct {
+	float a, b, c, d;
+}tM2f;
+
+typedef struct {
+	float x00, x01, x02;
+	float x10, x11, x12;
+	float x20, x21, x22;
+}tM3f;
+
+#define CALIBRATIONPOINTS    9
+typedef struct {
+	//tV2f  calipoints[CALIBRATIONPOINTS];       //conversion from eye to scene calibration points
+	tV2f  scenecalipoints[CALIBRATIONPOINTS];  //captured (with mouse) calibration points
+	//tV2f  pucalipoints[CALIBRATIONPOINTS];     //captured eye points while looking at the calibration points in the scene
+	//tV2f  crcalipoints[CALIBRATIONPOINTS];     //captured corneal reflection points while looking at the calibration points in the scene
+	tV2f  vectors[CALIBRATIONPOINTS];          //differences between the corneal reflection and pupil center
+	
+	double map_matrix[3][3];
+	
+	float aa, bb, cc, dd, ee;                       //pupil X coefficients
+	float ff, gg, hh, ii, jj;			//pupil Y coefficients
+	
+	float centx, centy;                             // translation to center pupil data after biquadratics
+	int inx, iny;                                   // translation to center pupil data before biquadratics
+	float cmx[4], cmy[4];                           // corner correctioncoefficients
+}tHomo;
+
+
+typedef struct {
+	tV2f P; tV2f V; // Position, Velocity
+	float Ax, Ay, Aa;
+	
+	si Exp_R;
+	
+	float Fit_Scale, Fit_Trans;
+	float S2Fit_Scale, S2Fit_Trans;
+	
+	si Proc_N;	//
+	u08* paProc;
+	
+	SDL_Surface *pLines;
+	
+	tHomo Homo;
+}tEye;
+
+
+typedef struct {
+	tEye DotC, DotL, DotR;
+	tM3f M, MI;
+}tHead;
+
+typedef struct {
 	int Y_Level;
 	
 	u08 DeSat;
 	
-	float X, Y;
-	float Ax, Ay, Aa, Axy, Ar;
+	tHead Head, HeadC;
+//		tEye DotC, DotL, DotR;
+//	}Cent;
+//	tM3f HeadC, Head, HeadT;
+	
+	tEye Left, Right;
+	tV2f L_Vec, R_Vec;
+	
+	tV2f Gaze;
 	
 	u08* pDst;
+	
+	SDL_Surface* pScreen;
+	SDL_Overlay* pOverlay;
 }tM;
 
 extern tM gM;

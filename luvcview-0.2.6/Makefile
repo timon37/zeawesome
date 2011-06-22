@@ -9,7 +9,7 @@ CPP=g++
 INSTALL=install
 APP_BINARY=luvcview
 BIN=/usr/local/bin
-MATH_LIB = -lm -lgsl
+MATH_LIB = -lm 
 SDLLIBS = $(shell sdl-config --libs) 
 SDLFLAGS = $(shell sdl-config --cflags)
 V4L2LIBS = $(shell pkg-config --libs libv4l2)
@@ -36,6 +36,8 @@ all:	luvcview
 clean:
 	@echo "Cleaning up directory."
 	rm -f *.a *.o $(APP_BINARY) core *~ log errlog *.avi
+
+$(OBJECTS):	muhaha.h
 
 # Applications:
 luvcview:	$(OBJECTS)
