@@ -38,15 +38,12 @@ tM gM =
 			
 			.Exp_R = 15,
 			
+			.Fit = eEye_Fit_S3Fit_Point,
 			.Fit_Scale = 0.2f,
 			.Fit_Trans = 0.2f,
 			.S2Fit_Scale = 0.8f,
 			.S2Fit_Trans = 0.7f,
 			
-			.Proc_N = 128,
-			.paProc = 0,
-		//	.Axy = -4,
-		//	.Ar = 100,
 		},
 		.DotL = {
 			.P = {280, 100},
@@ -57,15 +54,12 @@ tM gM =
 			
 			.Exp_R = 15,
 			
+			.Fit = eEye_Fit_S3Fit_Point,
 			.Fit_Scale = 0.2f,
 			.Fit_Trans = 0.2f,
 			.S2Fit_Scale = 0.8f,
 			.S2Fit_Trans = 0.7f,
 			
-			.Proc_N = 128,
-			.paProc = 0,
-		//	.Axy = -4,
-		//	.Ar = 100,
 		},
 		.DotR = {
 			.P = {360, 100},
@@ -76,15 +70,12 @@ tM gM =
 			
 			.Exp_R = 15,
 			
+			.Fit = eEye_Fit_S3Fit_Point,
 			.Fit_Scale = 0.2f,
 			.Fit_Trans = 0.2f,
 			.S2Fit_Scale = 0.8f,
 			.S2Fit_Trans = 0.7f,
 			
-			.Proc_N = 128,
-			.paProc = 0,
-		//	.Axy = -4,
-		//	.Ar = 100,
 		},
 	},
 	.Left = {
@@ -96,15 +87,13 @@ tM gM =
 		
 		.Exp_R = 20,
 		
+		.Fit = eEye_Fit_S3Fit_Eye,
 		.Fit_Scale = 0.1f,
 		.Fit_Trans = 0.1f,
 		.S2Fit_Scale = 0.8f,
 		.S2Fit_Trans = 0.7f,
 		
-		.Proc_N = 128,
-		.paProc = 0,
-	//	.Axy = -4,
-	//	.Ar = 100,
+		.LinView = {640, 0},
 	},
 	.Right = {
 		.P = {360, 240},
@@ -115,15 +104,13 @@ tM gM =
 		
 		.Exp_R = 20,
 		
+		.Fit = eEye_Fit_S3Fit_Eye,
 		.Fit_Scale = 0.1f,
 		.Fit_Trans = 0.1f,
 		.S2Fit_Scale = 0.8f,
 		.S2Fit_Trans = 0.7f,
 		
-		.Proc_N = 128,
-		.paProc = 0,
-	//	.Axy = -4,
-	//	.Ar = 100,
+		.LinView = {640, 240},
 	},
 };
 
@@ -139,6 +126,15 @@ tM gM =
 #define dspix(_x,_y) ((u32*)gM.pScreen->pixels + ((si)(_x) + (si)(_y)*gM.pScreen->pitch/4))
 
 #define dpixout(_x,_y) ((_x) < 0 || (_y) < 0 || (_x) >= videoIn->width || (_y) >= videoIn->height)
+
+
+#define dset_cyuv(_x,_y,y,u,v)	\
+	do {	\
+		dnpix(_x,_y)->Y = y;	\
+		dnpix(_x,_y)->U = u;	\
+		dnpix(_x,_y)->V = v;	\
+	}while(0)
+#define dset_c1(_x,_y) dset_cyuv (_x,_y,0xFF,0xF,0xF)
 
 float	V2f_dist	(tV2f* pv)
 {
@@ -1095,25 +1091,28 @@ void	Eye_S2Fit		(tEye* peye)
 	}
 }
 
-si	Eye_S3Fit_EdgeGet	(tEye* peye, float t, float* px, float* py)
+
+void	Eye_Ellipse2LinDraw	(tEye* peye)
 {
+	if (peye->LinView.x == 0)
+		return;
 //	si border = peye->Exp_R*peye->Exp_R*3;
-	float x = peye->P.x, y = peye->P.y;
+	si i = 0;
 	
-	for (; ddist2(x,y,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R*3; ) {
-		if (	1//dnpix(x,y)->Y == 0xFF
-			&& dnpix(x,y)->U == 0xF
-			&& dnpix(x,y)->V == 0xF
-		) {
-			*px = x+0.000000000001f;
-			*py = y+0.000000000001f;
-			return 1;
+	float a;
+	for (a = 0; a < 2*M_PI; a += M_PI/100.0f) {
+		si n = 0;
+		float x = peye->P.x, y = peye->P.y;
+		for (; ddist2(x,y,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R*2; ) {
+			*dspix(peye->LinView.x+n, peye->LinView.y+i) = dopix(x,y)->Y | dopix(x,y)->Y<<8 | dopix(x,y)->Y<<16;
+			x += cos(a);
+			y += sin(a);
+			++n;
 		}
-		x += cos(t);
-		y += sin(t);
+		++i;
 	}/**/
-	return 0;
 }
+
 si	Eye_S3Fit_EdgeMark	(tEye* peye, si i, float t, float* px, float* py)
 {
 //	si border = peye->Exp_R*peye->Exp_R*3;
@@ -1122,12 +1121,10 @@ si	Eye_S3Fit_EdgeMark	(tEye* peye, si i, float t, float* px, float* py)
 	si n = 0;
 	
 	for (; ddist2(x,y,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R; ) {
-		*dspix(videoIn->width+n,i) = dnpix(x,y)->Y | dnpix(x,y)->Y<<8 | dnpix(x,y)->Y<<16;
+		if (peye->LinView.x != 0)
+			*dspix(peye->LinView.x+n, peye->LinView.y+i) = dnpix(x,y)->Y | dnpix(x,y)->Y<<8 | dnpix(x,y)->Y<<16;
+		
 		if (	dopix(x,y)->Y > ay + 18
-			&& ddist2(x,y,peye->P.x,peye->P.y) >= 14*14
-	//	if (	1//dnpix(x,y)->Y == 0xFF
-	//		&& dnpix(x,y)->U == 0xF
-	//		&& dnpix(x,y)->V == 0xF
 		) {
 		//	return 1;
 			float x1 = x, y1 = y;
@@ -1143,9 +1140,98 @@ si	Eye_S3Fit_EdgeMark	(tEye* peye, si i, float t, float* px, float* py)
 					wrote = 1;
 					*px = x+0.000000000001f;
 					*py = y+0.000000000001f;
-					*dspix(videoIn->width+n,i) = 0xFF<<8;
+					*dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
 				}
-				*dspix(videoIn->width+n,i) = 0xFF<<8;
+				*dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
+			}
+		}/**/
+		
+		x += cos(t);
+		y += sin(t);
+		++n;
+	}/**/
+	return wrote;
+	return 0;
+}
+si	Eye_S3Fit_EdgeMark2	(tEye* peye, si i, float t, float* px, float* py)
+{
+//	si border = peye->Exp_R*peye->Exp_R*3;
+	u08 wrote = 0;
+	float x = peye->P.x, y = peye->P.y;
+	si n = 0;
+	
+	for (; ddist2(x,y,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R; ) {
+		if (peye->LinView.x != 0)
+			*dspix(peye->LinView.x+n, peye->LinView.y+i) = dnpix(x,y)->Y | dnpix(x,y)->Y<<8 | dnpix(x,y)->Y<<16;
+		
+		if (	dopix(x,y)->Y > ay + 18
+			&& ddist2(x,y,peye->P.x,peye->P.y) >= 14*14
+		) {
+		//	return 1;
+			float x1 = x, y1 = y;
+			for (; ddist2(x1,y1,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R*4; ) {
+				if (	dopix(x1,y1)->Y <= ay + 8) {
+					break;
+				}
+				x1 += cos(t);
+				y1 += sin(t);
+			}
+			if (ddist2(x1,y1,x,y) >= 2*2) {
+				if (!wrote) {
+					wrote = 1;
+					*px = x+0.000000000001f;
+					*py = y+0.000000000001f;
+					*dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
+				}
+				*dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
+			}
+		}/**/
+		
+		x += cos(t);
+		y += sin(t);
+		++n;
+	}/**/
+	return wrote;
+	return 0;
+}
+si	Eye_S3Fit_EdgeMark3	(tEye* peye, si i, float t, float* px, float* py)
+{
+//	si border = peye->Exp_R*peye->Exp_R*3;
+	u08 wrote = 0;
+	float x = peye->P.x, y = peye->P.y, mindiff = peye->Exp_R*peye->Exp_R;
+	si n = 0;
+	
+	for (; ddist2(x,y,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R; ) {
+		if (peye->LinView.x != 0)
+			*dspix(peye->LinView.x+n, peye->LinView.y+i) = dnpix(x,y)->Y | dnpix(x,y)->Y<<8 | dnpix(x,y)->Y<<16;
+		
+		if (	dopix(x,y)->Y > ay + 18
+		//	&& ddist2(x,y,peye->P.x,peye->P.y) >= 14*14
+		) {
+		//	return 1;
+			float x1 = x, y1 = y;
+			for (; ddist2(x1,y1,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R*4; ) {
+				if (	dopix(x1,y1)->Y <= ay + 8) {
+					break;
+				}
+				x1 += cos(t);
+				y1 += sin(t);
+			}
+			if (ddist2(x1,y1,x,y) >= 2*2) {
+			//	if (!wrote) {
+					float diff = ddist2(x,y,peye->P.x,peye->P.y) - peye->Exp_R*peye->Exp_R;
+					if (fabsf(diff) < mindiff) {
+						wrote = 1;
+						mindiff = fabsf(diff);
+						*px = x+0.000000000001f;
+						*py = y+0.000000000001f;
+					}
+					*dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
+			//	}
+				*dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
+				x = x1;
+				y = y1;
+				continue;
 			}
 		}/**/
 		
@@ -1165,6 +1251,13 @@ void	Eye_S3Fit		(tEye* peye)
 //	si n = 0;
 	si i = 0;
 	
+	si	(*edge)	(tEye* peye, si i, float t, float* px, float* py);
+	switch (peye->Fit) {
+	case eEye_Fit_S3Fit_Point:	edge = Eye_S3Fit_EdgeMark;	break;
+	case eEye_Fit_S3Fit_Eye:	edge = Eye_S3Fit_EdgeMark2;	break;
+	case eEye_Fit_S3Fit_Eye3:	edge = Eye_S3Fit_EdgeMark3;	break;
+	}
+	
 	float ao, a;
 //	for (a = 0; a < M_PI; a += M_PI/100.0f) {
 //	for (a = -M_PI_2; a < M_PI_2; a += M_PI/100.0f) {
@@ -1173,22 +1266,50 @@ void	Eye_S3Fit		(tEye* peye)
 	for (a = ao; a <= ao+M_PI_2+M_PI_4; a += M_PI_2) {
 //	{
 	//	printf ("mino ");
-		float x0, y0;
-		float t0 = a;
-	//	u08 skip = Eye_S3Fit_EdgeMark (peye, i, t0, &x0, &y0);
-		u08 skip = Eye_S3Fit_EdgeMark (peye, a/(M_PI/100.0f), t0, &x0, &y0);
+		u08 skip;
+		float x0, y0, x1, y1;
+		float t0 = a, t1 = t0 - M_PI;
 		
-		float t1 = t0 - M_PI;
-		float x1, y1;
-	//	skip &= Eye_S3Fit_EdgeMark (peye, 110 + i, t1, &x1, &y1);
-		skip &= Eye_S3Fit_EdgeMark (peye, 110 + a/(M_PI/100.0f), t1, &x1, &y1);
+	//	skip = edge (peye, i, t0, &x0, &y0);
+		skip = edge (peye, a/(M_PI/100.0f), t0, &x0, &y0);
+		
+		if (skip == 0) {
+			t0 = t1;
+		//	skip = edge (peye, 110 + i, t0, &x0, &y0);
+			skip = edge (peye, 110 + a/(M_PI/100.0f), t0, &x0, &y0);
+		}else {
+		//	skip += edge (peye, 110 + i, t1, &x1, &y1);
+			skip += edge (peye, 110 + a/(M_PI/100.0f), t1, &x1, &y1);
+		}
 		++i;
 		
-	//	printf ("Heee? eye %f %f %f %f\n", peye->P.x, peye->P.y, dx0, dy0);
-		
-		if (!skip)
+		if (skip == 0)
 			continue;
 		
+		if (skip == 1) {
+			dnpix(x0,y0)->Y = 0xFF;
+			dnpix(x0,y0)->U = 0xF;
+			dnpix(x0,y0)->V = 0xF;
+			
+			float t, dx, dy, xx, yy;
+			dx = x0 - peye->P.x;
+			dy = y0 - peye->P.y;
+			t = atan2(dy,dx)/* - peye->Aa*/;
+			
+			xx = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
+			yy = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
+			
+			float diff = sqrt(dx*dx+dy*dy) - sqrt(xx*xx+yy*yy);
+			if (fabs(diff) >= 0.1f) {
+			//	printf ("f1\n");
+				peye->Ax += peye->Fit_Scale*diff*fabs(cos(t));
+				peye->Ay += peye->Fit_Scale*diff*fabs(sin(t));
+				
+				Eye_Xset (peye, peye->P.x + peye->Fit_Trans*(diff )*cos(t));
+				Eye_Yset (peye, peye->P.y + peye->Fit_Trans*(diff )*sin(t));
+			}
+			continue;
+		}
 		dnpix(x0,y0)->Y = 0xFF;
 		dnpix(x0,y0)->U = 0x0;
 		dnpix(x0,y0)->V = 0x0;
@@ -1302,6 +1423,148 @@ void	Eye_S3Fit		(tEye* peye)
 	return;
 }
 
+
+si	Eye_S4Fit_EdgeMark	(tEye* peye, float t, float* px, float* py)
+{
+//	si border = peye->Exp_R*peye->Exp_R*3;
+	u08 wrote = 0;
+	float x = peye->P.x, y = peye->P.y, mindiff = peye->Exp_R*peye->Exp_R;
+	si n = 0;
+	
+	for (; ddist2(x,y,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R; ) {
+		
+		if (	dopix(x,y)->Y > ay + 18
+		//	&& ddist2(x,y,peye->P.x,peye->P.y) >= 14*14
+		) {
+		//	return 1;
+			float x1 = x, y1 = y;
+			for (; ddist2(x1,y1,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R*4; ) {
+				if (	dopix(x1,y1)->Y <= ay + 18) {
+					break;
+				}
+				x1 += cos(t);
+				y1 += sin(t);
+			}
+			if (ddist2(x1,y1,x,y) >= 2*2) {
+			//	if (!wrote) {
+					float diff = ddist2(x,y,peye->P.x,peye->P.y) - peye->Exp_R*peye->Exp_R;
+					if (fabsf(diff) < mindiff) {
+						wrote = 1;
+						mindiff = fabsf(diff);
+						*px = x+0.000000000001f;
+						*py = y+0.000000000001f;
+					}
+				//	*dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
+			//	}
+			//	*dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
+				x = x1;
+				y = y1;
+				continue;
+			}
+		}/**/
+		x += cos(t);
+		y += sin(t);
+		++n;
+	}/**/
+	return wrote;
+	return 0;
+}
+
+void	Eye_S4Fit_Edge_Line	(tEye* peye, float as, float inc, float* pae, float* pr)
+{
+	float a;//, inc = M_PI/100.0f;
+	*pr = 0;
+	si num = 0;
+	for (a = as; ; a += inc) {
+		if (inc > 0) {
+			if (a > as+2*M_PI)
+				break;
+		}else if (a < as-2*M_PI)
+			break;
+		
+		u08 skip;
+		float x0, y0, x1, y1;
+		float t0 = a, t1 = t0 + inc;
+		
+		if (!Eye_S4Fit_EdgeMark (peye, t0, &x0, &y0))
+			continue;
+		
+		si tries = 11;
+		do {
+			skip = Eye_S4Fit_EdgeMark (peye, t1, &x1, &y1);
+		}while (--tries && (!skip || x1 != x0 && y1 != y0));
+	//	if (n == 0)
+	//		break;
+		if (!skip)
+			break;
+		
+		if (ddist2(x0,y0,x1,y1) <= 2*2) {
+			dnpix(x0,y0)->Y = 0xFF;
+			dnpix(x0,y0)->U = 0x0;
+			dnpix(x0,y0)->V = 0x0;
+			
+			*pr += ddist2(peye->P.x, peye->P.y, x0, x1);
+			++num;
+		//	dnpix(x1,y1)->Y = 0xFF;
+		//	dnpix(x1,y1)->U = 0x0;
+		//	dnpix(x1,y1)->V = 0x0;
+		}else
+			break;
+	}
+	*pae = a;
+}
+
+void	Eye_S4Fit_Edge		(tEye* peye)
+{
+//	float ax = 0, ay = 0;
+//	
+	float ae, r;
+	Eye_S4Fit_Edge_Line (peye, 0, M_PI/100.0f, &ae, &r);
+	Eye_S4Fit_Edge_Line (peye, 0, -M_PI/100.0f, &ae, &r);
+	
+	Eye_S4Fit_Edge_Line (peye, M_PI, -M_PI/100.0f, &ae, &r);
+	Eye_S4Fit_Edge_Line (peye, M_PI, M_PI/100.0f, &ae, &r);
+	
+//	Eye_S4Fit_Edge_Line (peye, M_PI, -M_PI/100.0f, &ae, &r);
+	
+/*	for (a = ao; a <= ao+M_PI_2+M_PI_4; a += M_PI_2) {
+//	{
+	//	printf ("mino ");
+		u08 skip;
+		float x0, y0, x1, y1;
+		float t0 = a, t1 = t0 - M_PI;
+		
+	//	skip = edge (peye, i, t0, &x0, &y0);
+		skip = edge (peye, a/(M_PI/100.0f), t0, &x0, &y0);
+		
+		if (skip == 0) {
+			t0 = t1;
+		//	skip = edge (peye, 110 + i, t0, &x0, &y0);
+			skip = edge (peye, 110 + a/(M_PI/100.0f), t0, &x0, &y0);
+		}else {
+		//	skip += edge (peye, 110 + i, t1, &x1, &y1);
+			skip += edge (peye, 110 + a/(M_PI/100.0f), t1, &x1, &y1);
+		}
+		++i;
+		
+		if (skip == 0)
+			continue;
+		
+	}
+	}/**/
+	return;
+}
+
+void	Eye_S4Fit		(tEye* peye)
+{
+	Eye_Ellipse2LinDraw (peye);
+	Eye_S4Fit_Edge (peye);
+	
+	return;
+}
+
+
+
 float	Eye_CFit_AvgDiff	(tEye* peye)
 {
 	si border = 4*peye->Exp_R;
@@ -1379,6 +1642,31 @@ void	Eye_CFit		(tEye* peye)
 	printf ("\n");
 }
 
+void	Eye_Fit		(tEye* peye)
+{
+	switch (peye->Fit) {
+	case eEye_Fit_S2Fit:
+		Eye_FF (peye);
+		Eye_EdgeMark (peye);
+		Eye_S2Fit (peye);
+		break;
+	case eEye_Fit_S3Fit_START ... eEye_Fit_S3Fit_END:
+		Eye_CalcAYUV (peye);
+		Eye_S3Fit (peye);
+		break;
+	case eEye_Fit_S4Fit_START ... eEye_Fit_S4Fit_END:
+		Eye_CalcAYUV (peye);
+		Eye_S4Fit (peye);
+		break;
+	case eEye_Fit_SFit:
+	default:
+		Eye_FF (peye);
+		Eye_EdgeMark (peye);
+		Eye_SFit (peye);
+		break;
+	}
+}
+
 void	Eye_Clip		(tEye* peye)
 {
 	si x, y;
@@ -1392,11 +1680,11 @@ void	Eye_Clip		(tEye* peye)
 		peye->Ay = 5;
 }
 
-void	Eye_Draw		(tEye* peye)
+void	Eye_Draw_Ellipse	(tEye* peye, float tb, float te)
 {
 	si x, y;
 	float t;
-	for (t = 0; t < 2*M_PI; t += M_PI/180) {
+	for (t = tb; t < te; t += M_PI/180) {
 	//	peye->Ax*x*x + peye->Ay*y*y + peye->Axy*x*y = peye->Ar
 		x = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
 		y = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
@@ -1408,9 +1696,42 @@ void	Eye_Draw		(tEye* peye)
 		dnpix(peye->P.x+x,peye->P.y+y)->U = 0xF;
 		dnpix(peye->P.x+x,peye->P.y+y)->V = 0xF;
 	}/**/
-	dnpix(gM.Left.P.x,gM.Left.P.y)->Y = 0xFF;
-	dnpix(gM.Left.P.x,gM.Left.P.y)->U = 0xF;
-	dnpix(gM.Left.P.x,gM.Left.P.y)->V = 0xF;
+}
+void	Eye_Draw		(tEye* peye)
+{
+	si x, y;
+//	Eye_Draw_Ellipse (peye, 0, M_PI*2);
+/*	Eye_Draw_Ellipse (peye, 0 - 10*M_PI/180,		0 + 10*M_PI/180);
+	Eye_Draw_Ellipse (peye, M_PI_2 - 10*M_PI/180,	M_PI_2 + 10*M_PI/180);
+	Eye_Draw_Ellipse (peye, M_PI - 10*M_PI/180,	M_PI + 10*M_PI/180);
+	Eye_Draw_Ellipse (peye, -M_PI_2 - 10*M_PI/180,	-M_PI_2 + 10*M_PI/180);
+	/**/
+	dset_c1(peye->P.x - peye->Ax,		peye->P.y - peye->Ay);
+	dset_c1(peye->P.x - peye->Ax+1,	peye->P.y - peye->Ay);
+	dset_c1(peye->P.x - peye->Ax+2,	peye->P.y - peye->Ay);
+	dset_c1(peye->P.x - peye->Ax,		peye->P.y - peye->Ay+1);
+	dset_c1(peye->P.x - peye->Ax,		peye->P.y - peye->Ay+2);
+	
+	dset_c1(peye->P.x + peye->Ax,		peye->P.y - peye->Ay);
+	dset_c1(peye->P.x + peye->Ax-1,	peye->P.y - peye->Ay);
+	dset_c1(peye->P.x + peye->Ax-2,	peye->P.y - peye->Ay);
+	dset_c1(peye->P.x + peye->Ax,		peye->P.y - peye->Ay+1);
+	dset_c1(peye->P.x + peye->Ax,		peye->P.y - peye->Ay+2);
+	
+	dset_c1(peye->P.x - peye->Ax,		peye->P.y + peye->Ay);
+	dset_c1(peye->P.x - peye->Ax+1,	peye->P.y + peye->Ay);
+	dset_c1(peye->P.x - peye->Ax+2,	peye->P.y + peye->Ay);
+	dset_c1(peye->P.x - peye->Ax,		peye->P.y + peye->Ay-1);
+	dset_c1(peye->P.x - peye->Ax,		peye->P.y + peye->Ay-2);
+	
+	dset_c1(peye->P.x + peye->Ax,		peye->P.y + peye->Ay);
+	dset_c1(peye->P.x + peye->Ax-1,	peye->P.y + peye->Ay);
+	dset_c1(peye->P.x + peye->Ax-2,	peye->P.y + peye->Ay);
+	dset_c1(peye->P.x + peye->Ax,		peye->P.y + peye->Ay-1);
+	dset_c1(peye->P.x + peye->Ax,		peye->P.y + peye->Ay-2);
+	/**/
+	
+	dset_c1(peye->P.x,peye->P.y);
 }
 
 
@@ -1699,48 +2020,53 @@ void	muhaha	()
 	
 //	Eye_CalcAYUV (&gM.Head.DotC);
 //	Eye_S3Fit (&gM.Head.DotC);
-	Eye_FF (&gM.Head.DotC);
-	Eye_EdgeMark (&gM.Head.DotC);
-	Eye_SFit (&gM.Head.DotC);
+//	Eye_FF (&gM.Head.DotC);
+//	Eye_EdgeMark (&gM.Head.DotC);
+//	Eye_SFit (&gM.Head.DotC);
+	Eye_Fit (&gM.Head.DotC);
 	Eye_Clip (&gM.Head.DotC);
 	
-	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
+//	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
 	
 //	Eye_CalcAYUV (&gM.Head.DotL);
 //	Eye_S3Fit (&gM.Head.DotL);
-	Eye_FF (&gM.Head.DotL);
-	Eye_EdgeMark (&gM.Head.DotL);
-	Eye_SFit (&gM.Head.DotL);
+//	Eye_FF (&gM.Head.DotL);
+//	Eye_EdgeMark (&gM.Head.DotL);
+//	Eye_SFit (&gM.Head.DotL);
+	Eye_Fit (&gM.Head.DotL);
 	Eye_Clip (&gM.Head.DotL);
 	
-	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
+//	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
 	
 //	Eye_CalcAYUV (&gM.Head.DotR);
 //	Eye_S3Fit (&gM.Head.DotR);
-	Eye_FF (&gM.Head.DotR);
-	Eye_EdgeMark (&gM.Head.DotR);
-	Eye_SFit (&gM.Head.DotR);
+//	Eye_FF (&gM.Head.DotR);
+//	Eye_EdgeMark (&gM.Head.DotR);
+//	Eye_SFit (&gM.Head.DotR);
+	Eye_Fit (&gM.Head.DotR);
 	Eye_Clip (&gM.Head.DotR);
 	
-	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
+//	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
 	
-	Eye_CalcAYUV (&gM.Right);
-	Eye_S3Fit (&gM.Right);
+//	Eye_CalcAYUV (&gM.Right);
+//	Eye_S3Fit (&gM.Right);
 //	Eye_FF (&gM.Right);
 //	Eye_EdgeMark (&gM.Right);
 //	Eye_SFit (&gM.Right);
 	
+	Eye_Fit (&gM.Right);
 	Eye_Clip (&gM.Right);
 	
 	
 	//hehehe evil
-	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
+//	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
 	
-	Eye_CalcAYUV (&gM.Left);
-	Eye_S3Fit (&gM.Left);
+//	Eye_CalcAYUV (&gM.Left);
+//	Eye_S3Fit (&gM.Left);
 //	Eye_FF (&gM.Left);
 //	Eye_EdgeMark (&gM.Left);
 //	Eye_CFit (&gM.Left);
+	Eye_Fit (&gM.Left);
 	Eye_Clip (&gM.Left);
 	
 	

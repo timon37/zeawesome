@@ -1,6 +1,7 @@
 
 #ifndef inc_muhaha_h
 #define inc_muhaha_h
+//}
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,6 +44,9 @@ typedef signed long s00;
 typedef u00 ui;
 typedef s00 si;
 
+typedef struct {
+	si x, y;
+}tV2si;
 
 typedef struct {
 	float x, y;
@@ -80,6 +84,18 @@ typedef struct {
 	float cmx[4], cmy[4];                           // corner correctioncoefficients
 }tHomo;
 
+enum tEye_Fit {
+	eEye_Fit_Default,
+	eEye_Fit_SFit,
+	eEye_Fit_S2Fit,
+	eEye_Fit_S3Fit_START,
+	eEye_Fit_S3Fit_Point,
+	eEye_Fit_S3Fit_Eye,
+	eEye_Fit_S3Fit_Eye3,
+	eEye_Fit_S3Fit_END,
+	eEye_Fit_S4Fit_START,
+	eEye_Fit_S4Fit_END,
+};
 
 typedef struct {
 	tV2f P; tV2f V; // Position, Velocity
@@ -87,11 +103,14 @@ typedef struct {
 	
 	si Exp_R;
 	
+	ui Fit;
 	float Fit_Scale, Fit_Trans;
 	float S2Fit_Scale, S2Fit_Trans;
 	
-	si Proc_N;	//
-	u08* paProc;
+	si Point_N, Point_Max;
+	tV2f*	paPoint;
+	
+	tV2si LinView;
 	
 	SDL_Surface *pLines;
 	
@@ -144,5 +163,6 @@ struct pt_data {
 
 int muhaha_eventThread(void *data);
 
+//{
 #endif
 
