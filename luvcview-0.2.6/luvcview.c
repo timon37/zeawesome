@@ -439,7 +439,7 @@ int main(int argc, char *argv[])
 	if ( readconfigfile )
 		load_controls(videoIn->fd);
 	
-	gM.pScreen = pscreen = SDL_SetVideoMode(videoIn->width+320, videoIn->height + 32, 0, SDL_VIDEO_Flags);
+	gM.pScreen = pscreen = SDL_SetVideoMode(videoIn->width+640, videoIn->height + 32, 0, SDL_VIDEO_Flags);
 	
 	gM.pOverlay = overlay = SDL_CreateYUVOverlay(videoIn->width, videoIn->height + 32, sdl_format, pscreen);
 	p = (unsigned char *) overlay->pixels[0];

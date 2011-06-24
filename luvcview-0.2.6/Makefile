@@ -28,7 +28,7 @@ VERSION = 0.2.6
 CFLAGS += -O2 -ggdb3 -DUSE_SDL  -DLINUX -DVERSION=\"$(VERSION)\" -I$(SDLFLAGS) $(V4L2FLAGS) $(WARNINGS) 
 CPPFLAGS = $(CFLAGS)
 
-OBJECTS = luvcview.o muhaha.o color.o utils.o v4l2uvc.o gui.o avilib.o
+OBJECTS = luvcview.o muhaha.o muhaha_ransac_ellipse.o color.o utils.o v4l2uvc.o gui.o avilib.o
 
 
 all:	luvcview

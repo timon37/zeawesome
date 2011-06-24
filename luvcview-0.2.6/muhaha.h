@@ -84,7 +84,7 @@ typedef struct {
 	float cmx[4], cmy[4];                           // corner correctioncoefficients
 }tHomo;
 
-enum tEye_Fit {
+enum {
 	eEye_Fit_Default,
 	eEye_Fit_SFit,
 	eEye_Fit_S2Fit,
@@ -94,6 +94,9 @@ enum tEye_Fit {
 	eEye_Fit_S3Fit_Eye3,
 	eEye_Fit_S3Fit_END,
 	eEye_Fit_S4Fit_START,
+	eEye_Fit_S4Fit_Edge0,
+	eEye_Fit_S4Fit_Edge1,
+	eEye_Fit_S4Fit_Edge2,
 	eEye_Fit_S4Fit_END,
 };
 
@@ -103,7 +106,7 @@ typedef struct {
 	
 	si Exp_R;
 	
-	ui Fit;
+	u08 Fit, Fit_Edge;
 	float Fit_Scale, Fit_Trans;
 	float S2Fit_Scale, S2Fit_Trans;
 	
@@ -111,8 +114,6 @@ typedef struct {
 	tV2f*	paPoint;
 	
 	tV2si LinView;
-	
-	SDL_Surface *pLines;
 	
 	tHomo Homo;
 }tEye;
@@ -136,7 +137,7 @@ typedef struct {
 	tEye Left, Right;
 	tV2f L_Vec, R_Vec;
 	
-	tV2f Gaze;
+	tV2f GazeL, GazeR, Gaze;
 	
 	u08* pDst;
 	
@@ -162,6 +163,13 @@ struct pt_data {
 } ptdata;
 
 int muhaha_eventThread(void *data);
+
+void svd(int m, int n, double **a, double **p, double *d, double **q);
+//tV2d* normalize_point_set(tV2d* point_set, double *dis_scale, tV2d *nor_center, int num);
+
+extern ui gM_edge_point_N;
+extern tV2d gM_edge_point[204];
+extern double pupil_param[5];//parameters of an ellipse {ellipse_a, ellipse_b, cx, cy, theta}; a & b is the major or minor axis; 
 
 //{
 #endif
