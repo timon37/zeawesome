@@ -137,6 +137,7 @@ typedef struct {
 	tEye Left, Right;
 	tV2f L_Vec, R_Vec;
 	
+	SDL_mutex* pGaze_Mutex;
 	tV2f GazeL, GazeR, Gaze;
 	
 	u08* pDst;
@@ -170,6 +171,33 @@ void svd(int m, int n, double **a, double **p, double *d, double **q);
 extern ui gM_edge_point_N;
 extern tV2d gM_edge_point[204];
 extern double pupil_param[5];//parameters of an ellipse {ellipse_a, ellipse_b, cx, cy, theta}; a & b is the major or minor axis; 
+
+
+
+
+typedef struct _dyn_config_entry dyn_config_entry;
+typedef struct _dyn_config_mapping dyn_config_mapping;
+typedef struct _dyn_config dyn_config;
+typedef enum DYN_ENTRY_TYPE dyn_entry_t;
+
+enum { dyn_config_entry_value_max = 64 };
+struct _dyn_config_entry {
+	dyn_config_entry *next;
+	dyn_config_entry *child;
+	char name[32];
+	char value[dyn_config_entry_value_max];
+//	float value;
+};
+
+struct _dyn_config {
+	dyn_config_entry *entries;
+	int count;
+};
+
+
+void dyn_config_read(dyn_config *dc, const char *f_name);
+void dyn_config_watch(dyn_config *dc, const char *f_name);
+
 
 //{
 #endif
