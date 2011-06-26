@@ -53,8 +53,17 @@ typedef struct {
 }tV2f;
 
 typedef struct {
+	float x, y, z;
+}tV3f;
+
+typedef struct {
+	float x, y, z, w;
+}tV4f;
+
+typedef struct {
 	double x, y;
 }tV2d;
+
 
 typedef struct {
 	float a, b, c, d;
@@ -65,6 +74,18 @@ typedef struct {
 	float x10, x11, x12;
 	float x20, x21, x22;
 }tM3f;
+
+typedef struct {
+	union {
+	struct {
+	float x00, x01, x02, x03;
+	float x10, x11, x12, x13;
+	float x20, x21, x22, x23;
+	float x30, x31, x32, x33;
+	};
+	float f[4][4];
+	};
+}tM4f;
 
 #define CALIBRATIONPOINTS    9
 typedef struct {
@@ -122,12 +143,32 @@ typedef struct {
 typedef struct {
 	tEye DotC, DotL, DotR;
 	tM3f M, MI;
+	
+	tM4f M4, M4I;
 }tHead;
+
+
+typedef struct {
+	ui Full_W, Full_H;
+	float Full_FOV;
+	
+	ui Image_W, Image_H;
+	float Image_FOV;
+	
+	ui Zoom;
+}tCam;
 
 typedef struct {
 	int Y_Level;
 	
 	u08 DeSat;
+	
+	tCam Cam;
+	
+	si View_W, View_H;
+	float Proj_W, Proj_H, Proj_N, Proj_F;
+	tM4f Proj, World;
+	
 	
 	tHead Head, HeadC;
 //		tEye DotC, DotL, DotR;
@@ -165,14 +206,6 @@ struct pt_data {
 
 int muhaha_eventThread(void *data);
 
-void svd(int m, int n, double **a, double **p, double *d, double **q);
-//tV2d* normalize_point_set(tV2d* point_set, double *dis_scale, tV2d *nor_center, int num);
-
-extern ui gM_edge_point_N;
-extern tV2d gM_edge_point[204];
-extern double pupil_param[5];//parameters of an ellipse {ellipse_a, ellipse_b, cx, cy, theta}; a & b is the major or minor axis; 
-
-
 
 
 typedef struct _dyn_config_entry dyn_config_entry;
@@ -197,6 +230,48 @@ struct _dyn_config {
 
 void dyn_config_read(dyn_config *dc, const char *f_name);
 void dyn_config_watch(dyn_config *dc, const char *f_name);
+
+
+
+
+void svd(int m, int n, double **a, double **p, double *d, double **q);
+tV2d* normalize_point_set(tV2d* point_set, double *dis_scale, tV2d *nor_center, int num);
+
+extern ui gM_edge_point_N;
+extern tV2d gM_edge_point[204];
+extern double pupil_param[5];//parameters of an ellipse {ellipse_a, ellipse_b, cx, cy, theta}; a & b is the major or minor axis; 
+
+
+
+
+
+
+
+typedef struct TObject{
+	int nbPts;
+	double **objectPts;/* Array of coordinates of points */
+	double **objectVects;/* Array of coordinates of vectors from reference pt to all pts */
+	double **objectCopy;/* Copy of objectVects, used because SVD code destroys input data */
+	double **objectMatrix;/* Pseudoinverse of objectVects */
+}TObject;
+
+typedef struct TImage{
+	int nbPts;
+	int imageCenter[2];
+	int **imagePts;
+	double **imageVects;/* scaled orthographic projections */
+	double **oldImageVects;/* projections at previous iteration step */
+	double *epsilon;/* Corrections to scaled orthographic projections at each iteration */
+}TImage;
+
+typedef struct TCamera{
+	int focalLength;
+	double rotation[3][3];/* Rotation of SCENE in camera reference, NOT other way around */
+	double translation[3];/* Translation of SCENE in camera reference */
+}TCamera;
+
+
+double **InitDoubleArray(int nbRows, int nbCols);
 
 
 //{

@@ -17,6 +17,7 @@ V4L2FLAGS = $(shell pkg-config --cflags libv4l2)
 #LIBX11FLAGS= -I/usr/X11R6/include -L/usr/X11R6/lib
 VERSION = 0.2.6
 
+#WARNINGS = -Werror
 #WARNINGS = -Wall \
 #           -Wundef -Wpointer-arith -Wbad-function-cast \
 #           -Wcast-align -Wwrite-strings -Wstrict-prototypes \
@@ -28,7 +29,7 @@ VERSION = 0.2.6
 CFLAGS += -O2 -ggdb3 -DUSE_SDL  -DLINUX -DVERSION=\"$(VERSION)\" -I$(SDLFLAGS) $(V4L2FLAGS) $(WARNINGS) 
 CPPFLAGS = $(CFLAGS)
 
-OBJECTS = luvcview.o muhaha.o muhaha_ransac_ellipse.o config.o color.o utils.o v4l2uvc.o gui.o avilib.o
+OBJECTS = luvcview.o muhaha.o muhaha_ransac_ellipse.o config.o Posit.o color.o utils.o v4l2uvc.o gui.o avilib.o
 
 
 all:	luvcview
