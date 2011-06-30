@@ -1,0 +1,146 @@
+
+Proj:
+  x00: 0
+  x01: 0
+  x02: 0
+  x03: 0
+  x10: 0
+  x11: 0
+  x12: 0
+  x13: 0
+  x20: 0
+  x21: 0
+  x22: 0
+  x23: 0
+  x30: 0
+  x31: 0
+  x32: 0
+  x33: 0
+
+Cam:
+  Full_W: 2592
+  Full_H: 1944
+  Full_FOV: 43
+  Image_W: 800
+  Image_H: 600
+  Image_FOV: 43
+
+View_W: 800
+View_H: 600
+
+Proj_W: 4
+Proj_H: 3
+Proj_N: 1
+Proj_F: 100
+
+Proj_L: -1
+Proj_R: 1
+Proj_B: -1
+Proj_T: 1
+
+tmp:
+  x: 12
+  y: 10
+  z: 1
+
+Y_Level: 128
+DeSat: 0
+Head:
+  DotC:
+    Ax: 20
+    Ay: 20
+    Aa: 0
+#    Aa: M_PI/4
+    
+    Exp_R: 20
+    
+    Fit: eEye_Fit_S0
+    Fit_Scale: 0.2
+    Fit_Trans: 0.2
+    S2Fit_Scale: 0.8
+    S2Fit_Trans: 0.7
+    
+    LinView:
+      x: 1050
+      y: 0
+  
+  DotL:
+    Ax: 20
+    Ay: 20
+    Aa: 0
+#  //  Aa: M_PI/4
+    
+    Exp_R: 20
+    
+    Fit: eEye_Fit_S3Fit_Point
+    Fit_Scale: 0.2
+    Fit_Trans: 0.2
+    S2Fit_Scale: 0.8
+    S2Fit_Trans: 0.7
+    
+    LinView:
+      x: 950
+      y: 0
+  
+  DotR:
+    Ax: 20
+    Ay: 20
+    Aa: 0
+#  //  Aa: M_PI/4
+    
+    Exp_R: 20
+    
+    Fit: eEye_Fit_S3Fit_Point
+    Fit_Scale: 0.2
+    Fit_Trans: 0.2
+    S2Fit_Scale: 0.8
+    S2Fit_Trans: 0.7
+    
+    LinView:
+      x: 1150
+      y: 0
+  
+
+Left:
+  Ax: 30
+  Ay: 30
+  Aa: 0
+#  Aa: M_PI/4
+  
+  Exp_R: 20
+#  Exp_R: 20
+  
+  Fit: eEye_Fit_S3Fit_Eye
+#  Fit: eEye_Fit_S4Fit_Edge0
+#  Fit: eEye_Fit_S4Fit_Edge1
+#  Fit: eEye_Fit_S4Fit_Edge2
+  Fit_Scale: 0.1
+  Fit_Trans: 0.1
+  S2Fit_Scale: 0.8
+  S2Fit_Trans: 0.7
+  
+  LinView:
+    x: 800
+    y: 0
+
+Right:
+  Ax: 30
+  Ay: 30
+  Aa: 0
+#  Aa: M_PI/4
+  
+  Exp_R: 20
+#  Exp_R: 20
+  
+  Fit: eEye_Fit_S3Fit_Eye
+#  Fit: eEye_Fit_S4Fit_Edge2
+  
+  Fit_Scale: 0.1
+  Fit_Trans: 0.1
+  S2Fit_Scale: 0.8
+  S2Fit_Trans: 0.7
+  
+  LinView:
+    x: 800
+    y: 240
+

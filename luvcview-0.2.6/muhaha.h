@@ -70,18 +70,23 @@ typedef struct {
 }tM2f;
 
 typedef struct {
-	float x00, x01, x02;
-	float x10, x11, x12;
-	float x20, x21, x22;
+	union {
+	struct {
+		float x00, x01, x02;
+		float x10, x11, x12;
+		float x20, x21, x22;
+	};
+	float f[3][3];
+	};
 }tM3f;
 
 typedef struct {
 	union {
 	struct {
-	float x00, x01, x02, x03;
-	float x10, x11, x12, x13;
-	float x20, x21, x22, x23;
-	float x30, x31, x32, x33;
+		float x00, x01, x02, x03;
+		float x10, x11, x12, x13;
+		float x20, x21, x22, x23;
+		float x30, x31, x32, x33;
 	};
 	float f[4][4];
 	};
@@ -108,6 +113,7 @@ typedef struct {
 enum {
 	eEye_Fit_Default,
 	eEye_Fit_SFit,
+	eEye_Fit_S0,
 	eEye_Fit_S2Fit,
 	eEye_Fit_S3Fit_START,
 	eEye_Fit_S3Fit_Point,
@@ -166,6 +172,7 @@ typedef struct {
 	tCam Cam;
 	
 	si View_W, View_H;
+	float Proj_L, Proj_R, Proj_B, Proj_T;
 	float Proj_W, Proj_H, Proj_N, Proj_F;
 	tM4f Proj, World;
 	
@@ -185,6 +192,11 @@ typedef struct {
 	
 	SDL_Surface* pScreen;
 	SDL_Overlay* pOverlay;
+	
+	
+	struct {
+		float x, y, z;
+	}tmp;
 }tM;
 
 extern tM gM;
