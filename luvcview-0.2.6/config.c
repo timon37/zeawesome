@@ -57,6 +57,13 @@ int dyn_get_value_float(dyn_config_entry *de, const char *path, float *val) {
 	sscanf(de->value, "%f", val);
 	return 1; 
 }
+int dyn_get_value_u08(dyn_config_entry *de, const char *path, u08 *val) {
+	de = dyn_find_entry(de, path);
+	if (!de)
+		return 0;
+	sscanf(de->value, "%hhu", val);
+	return 1; 
+}
 
 int dyn_get_value_enum(dyn_config_entry *de, const char *path, int *val) {
 	de = dyn_find_entry(de, path);
@@ -174,6 +181,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	dyn_config_entry *dce = dyn_parse(&parser);
 	
 	int val_int;
+	u08 val_u08;
 	float val_f;
 	//test
 /*	if (dyn_get_value_float(dce, strdup("ala"), &val))
@@ -185,8 +193,38 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	if (dyn_get_value_float(dce, strdup("lukasz.e.a"), &val))
 		printf("\n%f\n", val);/**/
 	//end test
+	#define drw_full_u08(name,tgt)	if (dyn_get_value_float(dce, name , &val_f)) { tgt = val_f; }
+	#define drw_full_f(name,tgt)		if (dyn_get_value_u08(dce, name , &val_u08)) { tgt = val_u08; }
+	
+	#define drw_u08(name)	drw_full_f(#name, gM.name)
 	#define drw_f(name)	if (dyn_get_value_float(dce, #name , &val_f)) { /*printf(#name " = %f\n", val_f);/**/ gM.name = val_f; }
 	#define drw_e(name)	if (dyn_get_value_enum(dce, #name , &val_int)) { /*printf(#name " = %d\n", val_int);/**/ gM.name = val_int; }
+	
+	#define drw_full_v4f(name,tgt)		\
+		do {		\
+			drw_full_f(name ".x", tgt.x);		\
+			drw_full_f(name ".y", tgt.y);		\
+			drw_full_f(name ".z", tgt.z);		\
+			tgt.w = 1.0f;		\
+		}while(0)
+	#define drw_v4f(name)	drw_full_v4f(#name, gM.name)
+	
+	#define drw_a_f(name,idx,rest)	\
+		do {		\
+			drw_full_f (#name "[" #idx "]." #rest, gM.name[idx].rest);	\
+		}while(0)
+	#define drw_aa_f(name,i0,i1,rest)	\
+		do {		\
+			drw_full_f (#name "[" #i0 "][" #i1 "]." #rest, gM.name[i0][i1].rest);	\
+		}while(0)
+	#define drw_aa_v4f(name,i0,i1,rest)	\
+		do {		\
+			drw_full_v4f (#name "[" #i0 "][" #i1 "]." #rest, gM.name[i0][i1].rest);	\
+		}while(0)
+	
+	drw_u08 (Eye_Line_Ray)
+	drw_u08 (Pointer_Mode)
+	
 //	.Y_Level = 128,
 //	.DeSat = 0,
 	/*
@@ -213,7 +251,10 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	
 	drw_f (Cam.Image_W)
 	drw_f (Cam.Image_H)
+	drw_f (Cam.Image_Zoom)
 	drw_f (Cam.Image_FOV)
+	drw_f (Cam.Image_FOV_W)
+	drw_f (Cam.Image_FOV_H)
 	
 	drw_f (View_W)
 	drw_f (View_H)
@@ -228,7 +269,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_f (Proj_B)
 	drw_f (Proj_T)
 	//void makeFrustum(double fovY, double aspectRatio, double front, double back)
-	{
+/*	{
 		double fovY = gM.Cam.Full_FOV, aspectRatio = (float)gM.Cam.Image_W/(float)gM.Cam.Image_H, front = 1, back = 10;
 		const double DEG2RAD = M_PI / 180;
 		
@@ -257,13 +298,16 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	//	gM.Proj_F = back;
 	}/**/
 	
-	gM.Proj.x00 = gM.Proj_N / (gM.Proj_W/2);
+/*	gM.Proj.x00 = gM.Proj_N / (gM.Proj_W/2);
 	gM.Proj.x11 = gM.Proj_N / (gM.Proj_H/2);
 	
 	gM.Proj.x22 = -(gM.Proj_F+gM.Proj_N) / (gM.Proj_F - gM.Proj_N);
 	
 	gM.Proj.x23 = (-2*gM.Proj_F*gM.Proj_N) / (gM.Proj_F - gM.Proj_N);
-	gM.Proj.x32 = -1;
+	gM.Proj.x32 = -1;/**/
+	
+	Proj_Cam ();
+	
 	
 	drw_f (Head.DotC.Exp_R)
 	drw_e (Head.DotC.Fit)
@@ -310,6 +354,52 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_f (tmp.y)
 	drw_f (tmp.z)
 	
+	drw_full_v4f ("Screen.C", gM.aScreen[0].C);
+	drw_full_f ("Screen.W", gM.aScreen[0].W);
+	drw_full_f ("Screen.H", gM.aScreen[0].H);
+	
+	Screen_Eye_PreCal (&gM.Left);
+	Screen_Eye_PreCal (&gM.Right);
+	
+	drw_f (Left.InHead.R)
+	
+/*	drw_aa_f (Left.InHead.aaCal,0,0,SX);
+	drw_aa_f (Left.InHead.aaCal,0,0,SY);
+	drw_aa_v4f (Left.InHead.aaCal,0,0,P);
+	
+	drw_aa_f (Left.InHead.aaCal,0,1,SX);
+	drw_aa_f (Left.InHead.aaCal,0,1,SY);
+	drw_aa_v4f (Left.InHead.aaCal,0,1,P);
+	
+	drw_aa_f (Left.InHead.aaCal,1,0,SX);
+	drw_aa_f (Left.InHead.aaCal,1,0,SY);
+	drw_aa_v4f (Left.InHead.aaCal,1,0,P);
+	
+	drw_aa_f (Left.InHead.aaCal,1,1,SX);
+	drw_aa_f (Left.InHead.aaCal,1,1,SY);
+	drw_aa_v4f (Left.InHead.aaCal,1,1,P);
+	/**/
+	
+	drw_f (Right.InHead.R)
+	
+/*	drw_aa_f (Right.InHead.aaCal,0,0,SX);
+	drw_aa_f (Right.InHead.aaCal,0,0,SY);
+	drw_aa_v4f (Right.InHead.aaCal,0,0,P);
+	
+	drw_aa_f (Right.InHead.aaCal,0,1,SX);
+	drw_aa_f (Right.InHead.aaCal,0,1,SY);
+	drw_aa_v4f (Right.InHead.aaCal,0,1,P);
+	
+	drw_aa_f (Right.InHead.aaCal,1,0,SX);
+	drw_aa_f (Right.InHead.aaCal,1,0,SY);
+	drw_aa_v4f (Right.InHead.aaCal,1,0,P);
+	
+	drw_aa_f (Right.InHead.aaCal,1,1,SX);
+	drw_aa_f (Right.InHead.aaCal,1,1,SY);
+	drw_aa_v4f (Right.InHead.aaCal,1,1,P);/**/
+	
+	
+	#undef drw_v4f
 	#undef drw_f
 	#undef drw_e
 	//TODO free the dyn_config_entries...

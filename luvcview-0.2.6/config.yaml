@@ -20,10 +20,13 @@ Proj:
 Cam:
   Full_W: 2592
   Full_H: 1944
-  Full_FOV: 43
+  Full_FOV: 83
+  Image_Zoom: 3
+#  Image_Zoom: 2.2
+  Image_Zoom: 1.9
   Image_W: 800
   Image_H: 600
-  Image_FOV: 43
+#  Image_FOV: 83
 
 View_W: 800
 View_H: 600
@@ -38,13 +41,26 @@ Proj_R: 1
 Proj_B: -1
 Proj_T: 1
 
+Eye_Line_Ray: 0
+
+Pointer_Mode: 1
+
+Screen:
+  W: 8
+  H: 5
+  C:
+    x: -0.5
+    y: 2
+    z: 0
+
 tmp:
   x: 12
-  y: 10
+  y: 5
   z: 1
 
 Y_Level: 128
 DeSat: 0
+
 Head:
   DotC:
     Ax: 20
@@ -72,7 +88,7 @@ Head:
     
     Exp_R: 20
     
-    Fit: eEye_Fit_S3Fit_Point
+    Fit: eEye_Fit_S0
     Fit_Scale: 0.2
     Fit_Trans: 0.2
     S2Fit_Scale: 0.8
@@ -90,7 +106,7 @@ Head:
     
     Exp_R: 20
     
-    Fit: eEye_Fit_S3Fit_Point
+    Fit: eEye_Fit_S0
     Fit_Scale: 0.2
     Fit_Trans: 0.2
     S2Fit_Scale: 0.8
@@ -111,6 +127,7 @@ Left:
 #  Exp_R: 20
   
   Fit: eEye_Fit_S3Fit_Eye
+#  Fit: eEye_Fit_S3Fit_Eye
 #  Fit: eEye_Fit_S4Fit_Edge0
 #  Fit: eEye_Fit_S4Fit_Edge1
 #  Fit: eEye_Fit_S4Fit_Edge2
@@ -119,6 +136,36 @@ Left:
   S2Fit_Scale: 0.8
   S2Fit_Trans: 0.7
   
+  InHead:
+    R: 1.2
+    aaCal[0][0]:
+      SX: 0
+      SY: 0
+      P:
+        x: -2
+        y: 1
+        z: 0
+    aaCal[0][1]:
+      SX: 0
+      SY: 0
+      P:
+        x: 6.5
+        y: 1
+        z: 0
+    aaCal[1][0]:
+      SX: 0
+      SY: 0
+      P:
+        x: -2
+        y: 3.5
+        z: 0
+    aaCal[1][1]:
+      SX: 0
+      SY: 0
+      P:
+        x: 6.5
+        y: 3.5
+        z: 0
   LinView:
     x: 800
     y: 0
@@ -140,6 +187,36 @@ Right:
   S2Fit_Scale: 0.8
   S2Fit_Trans: 0.7
   
+  InHead:
+    R: 1.2
+    aaCal[0][0]:
+      SX: 0
+      SY: 0
+      P:
+        x: -1
+        y: 0.5
+        z: 0
+    aaCal[0][1]:
+      SX: 0
+      SY: 0
+      P:
+        x: 3
+        y: 0.5
+        z: 0
+    aaCal[1][0]:
+      SX: 0
+      SY: 0
+      P:
+        x: -1
+        y: 3.5
+        z: 0
+    aaCal[1][1]:
+      SX: 0
+      SY: 0
+      P:
+        x: 3
+        y: 3.5
+        z: 0
   LinView:
     x: 800
     y: 240

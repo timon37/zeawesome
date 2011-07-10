@@ -538,6 +538,9 @@ int main(int argc, char *argv[])
 	//	SDL_UnlockSurface (gM.pScreen);
 		SDL_Flip (gM.pScreen);
 	}
+	
+	muhaha_DeInit ();
+	
 	SDL_WaitThread(mythread, &status);
 	SDL_DestroyMutex(affmutex);
 	

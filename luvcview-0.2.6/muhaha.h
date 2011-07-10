@@ -32,6 +32,12 @@
 
 #include <math.h>
 
+#include <cv.h>
+
+#include <X11/Xlib.h>
+#include <X11/extensions/XInput2.h>
+#include <X11/extensions/shape.h>
+#include <X11/cursorfont.h>
 
 typedef unsigned char u08;
 typedef unsigned short u16;
@@ -92,7 +98,7 @@ typedef struct {
 	};
 }tM4f;
 
-#define CALIBRATIONPOINTS    9
+#define CALIBRATIONPOINTS    5
 typedef struct {
 	//tV2f  calipoints[CALIBRATIONPOINTS];       //conversion from eye to scene calibration points
 	tV2f  scenecalipoints[CALIBRATIONPOINTS];  //captured (with mouse) calibration points
@@ -127,6 +133,11 @@ enum {
 	eEye_Fit_S4Fit_END,
 };
 
+
+enum {
+	dEye_InHead_Cal_NUM = 2,
+};
+
 typedef struct {
 	tV2f P; tV2f V; // Position, Velocity
 	float Ax, Ay, Aa;
@@ -143,6 +154,21 @@ typedef struct {
 	tV2si LinView;
 	
 	tHomo Homo;
+	struct {
+		ui Line_N;
+		struct {
+			tV4f P, V, P0, P1;
+		}aLine[128];
+		
+		struct {
+			si SX, SY;
+			tV4f P;
+		}aaCal[dEye_InHead_Cal_NUM][dEye_InHead_Cal_NUM];
+		
+		
+		tV4f P;
+		float R;
+	}InHead;
 }tEye;
 
 
@@ -150,7 +176,13 @@ typedef struct {
 	tEye DotC, DotL, DotR;
 	tM3f M, MI;
 	
-	tM4f M4, M4I;
+	tM4f M4, M4_T, M4_R;
+	tM4f M4I, M4I_T, M4I_R;
+	
+	tV4f P, N;
+	
+//	struct {
+//	}L;
 }tHead;
 
 
@@ -159,12 +191,38 @@ typedef struct {
 	float Full_FOV;
 	
 	ui Image_W, Image_H;
-	float Image_FOV;
+	float Image_Zoom, Image_FOV, Image_FOV_W, Image_FOV_H;
 	
 	ui Zoom;
 }tCam;
 
 typedef struct {
+	tV4f C; //center
+	float W, H;
+	
+	ui PixW, PixH;
+	
+	Window Win;
+	tV2si	Off;
+	
+	XWindowAttributes Attr;
+	
+	struct {
+		ui sx, sy;
+		si ix, iy;
+	}Cal;
+}tScreen;
+
+
+typedef struct {
+	u08 Type;
+	ui Win_W;
+	Window Win;
+}tMarker;
+
+typedef struct {
+	u08 Eye_Line_Ray, Pointer_Mode;
+	
 	int Y_Level;
 	
 	u08 DeSat;
@@ -185,14 +243,28 @@ typedef struct {
 	tEye Left, Right;
 	tV2f L_Vec, R_Vec;
 	
+	ui Screen_N;
+	tScreen aScreen[6];
+	
 	SDL_mutex* pGaze_Mutex;
 	tV2f GazeL, GazeR, Gaze;
+	
+	
+	tMarker CrossHair, CalPoint;
 	
 	u08* pDst;
 	
 	SDL_Surface* pScreen;
 	SDL_Overlay* pOverlay;
 	
+	struct {
+		Display* pDisp;
+		
+	//	Window RootWin;
+	//	XWindowAttributes RootAttr;
+		
+		XIDeviceInfo Pointer;
+	}X;
 	
 	struct {
 		float x, y, z;
@@ -203,8 +275,9 @@ extern tM gM;
 
 extern struct vdIn *videoIn;
 
-void	muhaha_Init	();
-void	muhaha	();
+void	muhaha_Init		();
+void	muhaha_DeInit	();
+void	muhaha		();
 
 
 struct pt_data {
@@ -218,6 +291,8 @@ struct pt_data {
 
 int muhaha_eventThread(void *data);
 
+void	Head_Eye_CalcP	(tHead* p, tEye* peye);
+void	Screen_Eye_PreCal	(tEye* peye);
 
 
 typedef struct _dyn_config_entry dyn_config_entry;
