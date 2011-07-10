@@ -43,6 +43,7 @@ typedef unsigned char u08;
 typedef unsigned short u16;
 typedef unsigned int u32;
 
+typedef signed char s08;
 
 typedef unsigned long u00;
 typedef signed long s00;
@@ -135,7 +136,9 @@ enum {
 
 
 enum {
-	dEye_InHead_Cal_NUM = 2,
+//	dEye_InHead_Cal_NUM = 2,
+	dScreen_MAX = 6,
+	dEye_Screen_Cal_NUM = 2,
 };
 
 typedef struct {
@@ -160,15 +163,22 @@ typedef struct {
 			tV4f P, V, P0, P1;
 		}aLine[128];
 		
-		struct {
-			si SX, SY;
-			tV4f P;
-		}aaCal[dEye_InHead_Cal_NUM][dEye_InHead_Cal_NUM];
-		
 		
 		tV4f P;
 		float R;
 	}InHead;
+	
+	struct {
+		
+		struct {
+			si SX, SY;
+			tV4f P;
+		}aaCal[dEye_Screen_Cal_NUM][dEye_Screen_Cal_NUM];
+		
+		struct {
+			tV2si Top, Left, Front;
+		}View;
+	}aScreen[dScreen_MAX];
 }tEye;
 
 
@@ -197,10 +207,13 @@ typedef struct {
 }tCam;
 
 typedef struct {
-	tV4f C; //center
-	float W, H;
+	ui Idx;
+	u08 bGood;
 	
 	ui PixW, PixH;
+	
+	tV4f C; //center
+	float W, H;
 	
 	Window Win;
 	tV2si	Off;
@@ -221,7 +234,7 @@ typedef struct {
 }tMarker;
 
 typedef struct {
-	u08 Eye_Line_Ray, Pointer_Mode;
+	u08 Eye_Line_Ray, GazeAvg, Pointer_Mode;
 	
 	int Y_Level;
 	
@@ -236,15 +249,13 @@ typedef struct {
 	
 	
 	tHead Head, HeadC;
-//		tEye DotC, DotL, DotR;
-//	}Cent;
-//	tM3f HeadC, Head, HeadT;
 	
 	tEye Left, Right;
 	tV2f L_Vec, R_Vec;
 	
 	ui Screen_N;
-	tScreen aScreen[6];
+	tScreen aScreen[dScreen_MAX];
+	si Screen_CalIdx;
 	
 	SDL_mutex* pGaze_Mutex;
 	tV2f GazeL, GazeR, Gaze;
@@ -292,7 +303,7 @@ struct pt_data {
 int muhaha_eventThread(void *data);
 
 void	Head_Eye_CalcP	(tHead* p, tEye* peye);
-void	Screen_Eye_PreCal	(tEye* peye);
+void	Screen_Eye_PreCal	(tScreen* p, tEye* peye);
 
 
 typedef struct _dyn_config_entry dyn_config_entry;

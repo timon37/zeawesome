@@ -42,6 +42,7 @@ Proj_B: -1
 Proj_T: 1
 
 Eye_Line_Ray: 0
+GazeAvg: 0
 
 Pointer_Mode: 1
 
@@ -52,6 +53,30 @@ Screen:
     x: -0.5
     y: 2
     z: 0
+
+
+Screen_N: 3
+aScreen[0]:
+  PixW: 1280
+  PixH: 1024
+  Off:
+    x: 1200
+    y: 896
+
+aScreen[1]:
+  PixW: 1200
+  PixH: 1920
+  Off:
+    x: 0
+    y: 0
+
+aScreen[2]:
+  PixW: 1280
+  PixH: 1024
+  Off:
+    x: 2480
+    y: 896
+
 
 tmp:
   x: 12

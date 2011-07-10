@@ -182,6 +182,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	
 	int val_int;
 	u08 val_u08;
+	si val_si;
 	float val_f;
 	//test
 /*	if (dyn_get_value_float(dce, strdup("ala"), &val))
@@ -193,12 +194,18 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	if (dyn_get_value_float(dce, strdup("lukasz.e.a"), &val))
 		printf("\n%f\n", val);/**/
 	//end test
-	#define drw_full_u08(name,tgt)	if (dyn_get_value_float(dce, name , &val_f)) { tgt = val_f; }
-	#define drw_full_f(name,tgt)		if (dyn_get_value_u08(dce, name , &val_u08)) { tgt = val_u08; }
+	#define drw_full_f(name,tgt)		if (dyn_get_value_float(dce, name , &val_f)) { tgt = val_f; }
+	#define drw_full_u08(name,tgt)	if (dyn_get_value_u08(dce, name , &val_u08)) { tgt = val_u08; }
 	
 	#define drw_u08(name)	drw_full_f(#name, gM.name)
 	#define drw_f(name)	if (dyn_get_value_float(dce, #name , &val_f)) { /*printf(#name " = %f\n", val_f);/**/ gM.name = val_f; }
 	#define drw_e(name)	if (dyn_get_value_enum(dce, #name , &val_int)) { /*printf(#name " = %d\n", val_int);/**/ gM.name = val_int; }
+	
+	#define drw_full_v2f(name,tgt)		\
+		do {		\
+			drw_full_f(name ".x", tgt.x);		\
+			drw_full_f(name ".y", tgt.y);		\
+		}while(0)
 	
 	#define drw_full_v4f(name,tgt)		\
 		do {		\
@@ -213,6 +220,11 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 		do {		\
 			drw_full_f (#name "[" #idx "]." #rest, gM.name[idx].rest);	\
 		}while(0)
+	#define drw_a_v2f(name,idx,rest)	\
+		do {		\
+			drw_full_v2f (#name "[" #idx "]." #rest, gM.name[idx].rest);	\
+		}while(0)
+	
 	#define drw_aa_f(name,i0,i1,rest)	\
 		do {		\
 			drw_full_f (#name "[" #i0 "][" #i1 "]." #rest, gM.name[i0][i1].rest);	\
@@ -223,6 +235,8 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 		}while(0)
 	
 	drw_u08 (Eye_Line_Ray)
+	drw_u08 (GazeAvg)
+	
 	drw_u08 (Pointer_Mode)
 	
 //	.Y_Level = 128,
@@ -358,10 +372,25 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_full_f ("Screen.W", gM.aScreen[0].W);
 	drw_full_f ("Screen.H", gM.aScreen[0].H);
 	
-	Screen_Eye_PreCal (&gM.Left);
-	Screen_Eye_PreCal (&gM.Right);
-	
 	drw_f (Left.InHead.R)
+	
+	drw_f (Screen_N)
+	
+	drw_a_f (aScreen,0,PixW);
+	drw_a_f (aScreen,0,PixH);
+	drw_a_v2f (aScreen,0,Off);
+	
+	drw_a_f (aScreen,1,PixW);
+	drw_a_f (aScreen,1,PixH);
+	drw_a_v2f (aScreen,1,Off);
+	
+	drw_a_f (aScreen,2,PixW);
+	drw_a_f (aScreen,2,PixH);
+	drw_a_v2f (aScreen,2,Off);
+	
+//	printf ("aScreen[0].Off %d %d\n", gM.aScreen[0].Off.x, gM.aScreen[0].Off.y);
+//	Screen_Eye_PreCal (gM.aScreen + 0, &gM.Left);
+//	Screen_Eye_PreCal (gM.aScreen + 0, &gM.Right);
 	
 /*	drw_aa_f (Left.InHead.aaCal,0,0,SX);
 	drw_aa_f (Left.InHead.aaCal,0,0,SY);
