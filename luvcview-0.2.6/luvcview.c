@@ -198,11 +198,16 @@ static Uint32 SDL_VIDEO_Flags =
 
 int main(int argc, char *argv[])
 {
+	if (!XInitThreads()) {
+		printf("Xlib not thread safe\n");
+		exit(1);
+	}
+	
 	const SDL_VideoInfo *info;
 	char driver[128];
 	SDL_Surface *pscreen;
 	SDL_Overlay *overlay;
-	SDL_Rect drect;
+	SDL_Rect drect, dclip;
 	SDL_Event sdlevent;
 	SDL_Thread *mythread;
 	SDL_mutex *affmutex;
@@ -439,14 +444,20 @@ int main(int argc, char *argv[])
 	if ( readconfigfile )
 		load_controls(videoIn->fd);
 	
-	gM.pScreen = pscreen = SDL_SetVideoMode(videoIn->width+640, videoIn->height + 32, 0, SDL_VIDEO_Flags);
 	
-	gM.pOverlay = overlay = SDL_CreateYUVOverlay(videoIn->width, videoIn->height + 32, sdl_format, pscreen);
+	gM.pScreen = pscreen = SDL_SetVideoMode(800+640, 600, 0, SDL_VIDEO_Flags);
+	
+	gM.pOverlay = overlay = SDL_CreateYUVOverlay(videoIn->width, videoIn->height, sdl_format, pscreen);
 	p = (unsigned char *) overlay->pixels[0];
-	drect.x = 0;
-	drect.y = 0;
+	dclip.x = 0;
+	dclip.y = 0;
+	dclip.w = 800;
+	dclip.h = 600;
+//	drect.h = (drect.w*gM.pOverlay->h)/gM.pOverlay->w;
+	
 	drect.w = videoIn->width;
-	drect.h = pscreen->h;
+	drect.h = videoIn->height;
+	
 	if (enableRawStreamCapture) {
 		videoIn->captureFile = fopen("stream.raw", "wb");
 		if(videoIn->captureFile == NULL) {
@@ -460,13 +471,13 @@ int main(int argc, char *argv[])
 	initLut();
 	SDL_WM_SetCaption(title_act[A_VIDEO].title, NULL);
 	lasttime = SDL_GetTicks();
-	creatButt(videoIn->width, 32);
+//	creatButt(videoIn->width, 32);
 	
-	SDL_LockYUVOverlay(overlay);
+//	SDL_LockYUVOverlay(overlay);
 	
-	memcpy(p + (videoIn->width * (videoIn->height) * 2), YUYVbutt, videoIn->width * 64);
+//	memcpy(p + (videoIn->width * (videoIn->height) * 2), YUYVbutt, videoIn->width * 64);
 	
-	SDL_UnlockYUVOverlay(overlay);
+//	SDL_UnlockYUVOverlay(overlay);
 	
 	/* initialize thread data */
 	ptdata.ptscreen = &pscreen;
@@ -505,12 +516,21 @@ int main(int argc, char *argv[])
 		if (videoIn->toggleAvi)
 			printf("\rframe rate: %g     ", frmrate);
 		
+	//	SDL_SetClipRect(pscreen, 0);
+		
 		SDL_LockYUVOverlay(overlay);
 		
 	//	memcpy(p, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
 		muhaha ();
 		
 		SDL_UnlockYUVOverlay(overlay);
+		
+	//	SDL_SetClipRect(pscreen, &dclip);
+		
+		drect.x = gM.Draw_X;
+		drect.y = gM.Draw_Y;
+		drect.w = gM.Draw_W;
+		drect.h = gM.Draw_H;
 		SDL_DisplayYUVOverlay(overlay, &drect);
 		
 		if (videoIn->getPict) {

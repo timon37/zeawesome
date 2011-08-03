@@ -57,6 +57,16 @@ int dyn_get_value_float(dyn_config_entry *de, const char *path, float *val) {
 	sscanf(de->value, "%f", val);
 	return 1; 
 }
+int dyn_get_value_si(dyn_config_entry *de, const char *path, si *val) {
+	de = dyn_find_entry(de, path);
+	if (!de)
+		return 0;
+	if (de->value[0] == '0' && de->value[1] == 'x')
+		sscanf(de->value, "%lx", val);
+	else
+		sscanf(de->value, "%ld", val);
+	return 1; 
+}
 int dyn_get_value_u08(dyn_config_entry *de, const char *path, u08 *val) {
 	de = dyn_find_entry(de, path);
 	if (!de)
@@ -85,6 +95,15 @@ int dyn_get_value_enum(dyn_config_entry *de, const char *path, int *val) {
 	dhack(eEye_Fit_S4Fit_Edge1)
 	dhack(eEye_Fit_S4Fit_Edge2)
 	dhack(eEye_Fit_S4Fit_END)
+	dhack(eEye_Fit_S5_START)
+	dhack(eEye_Fit_S5_END)
+	dhack(eEye_Fit_C)
+	
+	dhack(eEye_PFit_S1)
+	dhack(eEye_PFit_S2)
+	dhack(eEye_PFit_S3)
+	dhack(eEye_PFit_S3const)
+	dhack(eEye_PFit_RANSAC)
 	
 	#undef dhack
 	return 0; 
@@ -163,11 +182,15 @@ dyn_config_entry* dyn_parse(yaml_parser_t *parser) {
 	
 	fflush(stdout);
 	
+	if (!stack[0])	//every once in a while it would segfault on this, maybe because some editors
+		return 0;	//first truncate we get an event then they write and we get another event?
+	
 	dyn_config_entry *ret_val = stack[0]->child;
 	free(stack[0]);
 	traverse(0, ret_val);
 	return ret_val;
 }
+
 
 void dyn_config_read(dyn_config *dc, const char *f_name) {
 	FILE *file;
@@ -177,8 +200,11 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	assert(file);
 	assert(yaml_parser_initialize(&parser));
 	yaml_parser_set_input_file(&parser, file);
-
+	
 	dyn_config_entry *dce = dyn_parse(&parser);
+	
+	if (!dce)
+		return;
 	
 	int val_int;
 	u08 val_u08;
@@ -194,11 +220,12 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	if (dyn_get_value_float(dce, strdup("lukasz.e.a"), &val))
 		printf("\n%f\n", val);/**/
 	//end test
-	#define drw_full_f(name,tgt)		if (dyn_get_value_float(dce, name , &val_f)) { tgt = val_f; }
-	#define drw_full_u08(name,tgt)	if (dyn_get_value_u08(dce, name , &val_u08)) { tgt = val_u08; }
+	#define drw_full_f(name,tgt)		if (dyn_get_value_float(dce, name , &val_f)) { tgt = val_f; } else { printf ("fail to get " name "\n"); }
+	#define drw_full_u08(name,tgt)	if (dyn_get_value_u08(dce, name , &val_u08)) { tgt = val_u08; } else { printf ("fail to get " name "\n"); }
 	
 	#define drw_u08(name)	drw_full_f(#name, gM.name)
-	#define drw_f(name)	if (dyn_get_value_float(dce, #name , &val_f)) { /*printf(#name " = %f\n", val_f);/**/ gM.name = val_f; }
+	#define drw_si(name)	if (dyn_get_value_si(dce, #name , &val_si)) { /*printf(#name " = %ld\n", val_si);/**/ gM.name = val_si; } else { printf ("fail to get " #name "\n"); }
+	#define drw_f(name)	if (dyn_get_value_float(dce, #name , &val_f)) { /*printf(#name " = %f\n", val_f);/**/ gM.name = val_f; } else { printf ("fail to get " #name "\n"); }
 	#define drw_e(name)	if (dyn_get_value_enum(dce, #name , &val_int)) { /*printf(#name " = %d\n", val_int);/**/ gM.name = val_int; }
 	
 	#define drw_full_v2f(name,tgt)		\
@@ -239,25 +266,10 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	
 	drw_u08 (Pointer_Mode)
 	
-//	.Y_Level = 128,
-//	.DeSat = 0,
-	/*
-	drw_f (Proj.x00)
-	drw_f (Proj.x01)
-	drw_f (Proj.x02)
-	drw_f (Proj.x03)
-	drw_f (Proj.x10)
-	drw_f (Proj.x11)
-	drw_f (Proj.x12)
-	drw_f (Proj.x13)
-	drw_f (Proj.x20)
-	drw_f (Proj.x21)
-	drw_f (Proj.x22)
-	drw_f (Proj.x23)
-	drw_f (Proj.x30)
-	drw_f (Proj.x31)
-	drw_f (Proj.x32)
-	drw_f (Proj.x33)*/
+	
+	drw_u08 (bHead_Eye_LineDraw)
+	
+	drw_u08 (bEye_S4_EdgeMark3_Micro)
 	
 	drw_f (Cam.Full_W)
 	drw_f (Cam.Full_H)
@@ -269,6 +281,12 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_f (Cam.Image_FOV)
 	drw_f (Cam.Image_FOV_W)
 	drw_f (Cam.Image_FOV_H)
+	
+	drw_f (Cam.Focus)
+	drw_f (Cam.Exposure)
+	drw_f (Cam.Zoom)
+	
+	Cam_Param_Set (&gM.Cam);
 	
 	drw_f (View_W)
 	drw_f (View_H)
@@ -322,13 +340,44 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	
 	Proj_Cam ();
 	
+	Cam_Param_Set (&gM.Cam);
 	
+	drw_v4f (Head.Mod.PC);
+	drw_v4f (Head.Mod.PL);
+	drw_v4f (Head.Mod.PR);
+	
+	drw_v4f (Head.Mod.TInc);
+	drw_v4f (Head.Mod.RInc);
+	
+	drw_f (Head.DotC.AngRes)
 	drw_f (Head.DotC.Exp_R)
+	drw_f (Head.DotC.Min_R)
+	drw_f (Head.DotC.Max_R)
+	drw_f (Head.DotC.PFit_R)
 	drw_e (Head.DotC.Fit)
+	drw_e (Head.DotC.PFit)
 	drw_f (Head.DotC.Fit_Scale)
 	drw_f (Head.DotC.Fit_Trans)
 	drw_f (Head.DotC.S2Fit_Scale)
 	drw_f (Head.DotC.S2Fit_Trans)
+	
+	drw_f (Head.DotC.S4_Pix_Bright)
+	
+	drw_si (Head.DotC.S5.Min_N)
+	drw_f (Head.DotC.S5.Min_R)
+	drw_f (Head.DotC.S5.Pix_Dark)
+	drw_f (Head.DotC.S5.Pix_Bright)
+	drw_f (Head.DotC.S5.Diff_Dist)
+	drw_si (Head.DotC.S5.Pix_Diff_Start)
+	drw_si (Head.DotC.S5.Pix_Diff_Min)
+	
+	
+	gM.Head.DotC.LinView.x = 0;
+	gM.Head.DotC.LinView.y = 0;
+	
+	
+	memcpy (&gM.Head.DotL.Ax, &gM.Head.DotC.Ax, sizeof(gM.Head.DotC) - ((si)&gM.Head.DotC.Ax - (si)&gM.Head.DotC));
+	memcpy (&gM.Head.DotR.Ax, &gM.Head.DotC.Ax, sizeof(gM.Head.DotC) - ((si)&gM.Head.DotC.Ax - (si)&gM.Head.DotC));
 	
 	drw_f (Head.DotL.Exp_R)
 	drw_e (Head.DotL.Fit)
@@ -344,25 +393,76 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_f (Head.DotR.S2Fit_Scale)
 	drw_f (Head.DotR.S2Fit_Trans)
 	
+	drw_f (Head.DotC.LinView.x)
+	drw_f (Head.DotC.LinView.y)
+	drw_f (Head.DotL.LinView.x)
+	drw_f (Head.DotL.LinView.y)
+	drw_f (Head.DotR.LinView.x)
+	drw_f (Head.DotR.LinView.y)
+	
+	
+	drw_f (Left.AngRes)
 	drw_f (Left.Exp_R)
+	drw_f (Left.Min_R)
+	drw_f (Left.Max_R)
+	drw_f (Left.PFit_R)
 	drw_e (Left.Fit)
+	drw_e (Left.PFit)
 	drw_f (Left.Fit_Scale)
 	drw_f (Left.Fit_Trans)
 	drw_f (Left.S2Fit_Scale)
 	drw_f (Left.S2Fit_Trans)
 	
+	drw_f (Left.Pix_Dark)
+	drw_f (Left.Pix_Bright)
+	drw_f (Left.S4_Pix_Bright)
+	
+	drw_si (Left.S5.Min_N)
+	drw_f (Left.S5.Min_R)
+	drw_f (Left.S5.Pix_Dark)
+	drw_f (Left.S5.Pix_Bright)
+	drw_f (Left.S5.Diff_Dist)
+	drw_si (Left.S5.Pix_Diff_Start)
+	drw_si (Left.S5.Pix_Diff_Min)
+	
+	drw_f (Left.InHead.R)
+	drw_v4f (Left.InHead.P);
+	
 	drw_f (Left.LinView.x)
 	drw_f (Left.LinView.y)
 	
+//	memcpy (&gM.Right, &gM.Left, sizeof(gM.Left));
+	
+	drw_f (Right.AngRes)
 	drw_f (Right.Exp_R)
+	drw_f (Right.Min_R)
+	drw_f (Right.Max_R)
+	drw_f (Right.PFit_R)
 	drw_e (Right.Fit)
+	drw_e (Right.PFit)
 	drw_f (Right.Fit_Scale)
 	drw_f (Right.Fit_Trans)
 	drw_f (Right.S2Fit_Scale)
 	drw_f (Right.S2Fit_Trans)
 	
+	drw_f (Right.Pix_Dark)
+	drw_f (Right.Pix_Bright)
+	drw_f (Right.S4_Pix_Bright)
+	
+	drw_si (Right.S5.Min_N)
+	drw_f (Right.S5.Min_R)
+	drw_f (Right.S5.Pix_Dark)
+	drw_f (Right.S5.Pix_Bright)
+	drw_f (Right.S5.Diff_Dist)
+	drw_si (Right.S5.Pix_Diff_Start)
+	drw_si (Right.S5.Pix_Diff_Min)
+	
+	drw_f (Right.InHead.R)
+	drw_v4f (Right.InHead.P);
+	
 	drw_f (Right.LinView.x)
 	drw_f (Right.LinView.y)
+	
 	
 	drw_f (tmp.x)
 	drw_f (tmp.y)
@@ -371,8 +471,9 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_full_v4f ("Screen.C", gM.aScreen[0].C);
 	drw_full_f ("Screen.W", gM.aScreen[0].W);
 	drw_full_f ("Screen.H", gM.aScreen[0].H);
+	gM.aScreen[1].C = gM.aScreen[0].C;
+	gM.aScreen[2].C = gM.aScreen[0].C;
 	
-	drw_f (Left.InHead.R)
 	
 	drw_f (Screen_N)
 	
@@ -387,6 +488,15 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_a_f (aScreen,2,PixW);
 	drw_a_f (aScreen,2,PixH);
 	drw_a_v2f (aScreen,2,Off);
+	
+	Screen_Eye_Init (gM.aScreen + 0, &gM.Left);
+	Screen_Eye_Init (gM.aScreen + 0, &gM.Right);
+	
+	Screen_Eye_Init (gM.aScreen + 1, &gM.Left);
+	Screen_Eye_Init (gM.aScreen + 1, &gM.Right);
+	
+	Screen_Eye_Init (gM.aScreen + 2, &gM.Left);
+	Screen_Eye_Init (gM.aScreen + 2, &gM.Right);
 	
 //	printf ("aScreen[0].Off %d %d\n", gM.aScreen[0].Off.x, gM.aScreen[0].Off.y);
 //	Screen_Eye_PreCal (gM.aScreen + 0, &gM.Left);
@@ -409,8 +519,6 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_aa_v4f (Left.InHead.aaCal,1,1,P);
 	/**/
 	
-	drw_f (Right.InHead.R)
-	
 /*	drw_aa_f (Right.InHead.aaCal,0,0,SX);
 	drw_aa_f (Right.InHead.aaCal,0,0,SY);
 	drw_aa_v4f (Right.InHead.aaCal,0,0,P);
@@ -426,6 +534,14 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_aa_f (Right.InHead.aaCal,1,1,SX);
 	drw_aa_f (Right.InHead.aaCal,1,1,SY);
 	drw_aa_v4f (Right.InHead.aaCal,1,1,P);/**/
+	
+	#define dact(name,press_stuff) drw_si(Action.name)
+	#include "actions.h"
+	#undef dact
+	
+	
+	drw_f (Micro.SX)
+	drw_f (Micro.SY)
 	
 	
 	#undef drw_v4f
@@ -446,7 +562,7 @@ void dyn_config_watch(dyn_config *dc, const char *f_name) {
 	dc->count = 0;
 	
 	int fd = inotify_init();
-	int wd = inotify_add_watch(fd, "config.yaml", IN_MODIFY);
+	int wd = inotify_add_watch(fd, "config.yaml", IN_MODIFY | IN_CLOSE_WRITE);
 	struct inotify_event evt;
 	
 	while (1) {
@@ -457,6 +573,7 @@ void dyn_config_watch(dyn_config *dc, const char *f_name) {
 	
 	
 }
+
 /*
 int main(int argc, char **argv) {
 	dyn_config dc;

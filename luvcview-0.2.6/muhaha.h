@@ -30,11 +30,14 @@
 #include "utils.h"
 #include "color.h"
 
+#include "uvcvideo.h"
+
 #include <math.h>
 
 #include <cv.h>
 
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <X11/extensions/XInput2.h>
 #include <X11/extensions/shape.h>
 #include <X11/cursorfont.h>
@@ -132,24 +135,62 @@ enum {
 	eEye_Fit_S4Fit_Edge1,
 	eEye_Fit_S4Fit_Edge2,
 	eEye_Fit_S4Fit_END,
+	eEye_Fit_S5_START,
+	eEye_Fit_S5_END,
+	eEye_Fit_C,
+};
+
+enum {
+	eEye_PFit_S1,
+	eEye_PFit_S2,
+	eEye_PFit_S3,
+	eEye_PFit_S3const,
+	eEye_PFit_RANSAC,
 };
 
 
 enum {
 //	dEye_InHead_Cal_NUM = 2,
 	dScreen_MAX = 6,
-	dEye_Screen_Cal_NUM = 2,
+	dEye_Screen_Cal_NUM = 5,
+	dEye_Screen_Cal_LAST = dEye_Screen_Cal_NUM-1,
 };
 
+enum {//Calibration point state
+	dEye_Screen_Cal_NULL,
+	dEye_Screen_Cal_Set,	//set by the user
+	dEye_Screen_Cal_Interp,	//interpolated between other points set by the user
+	dEye_Screen_Cal_Extra,	//guess
+};
+
+typedef struct {
+	tV2f P;
+//	float A, D;	//Angle, Distance
+}tEye_Point;
 typedef struct {
 	tV2f P; tV2f V; // Position, Velocity
 	float Ax, Ay, Aa;
 	
-	si Exp_R;
+	si Pix_Dark, Pix_Bright;
+	si S4_Pix_Bright;
 	
-	u08 Fit, Fit_Edge;
+	float Exp_R;
+	float Min_R, Max_R, PFit_R;
+	
+	u08 Fit, Fit_Edge, PFit;
+	float AngRes;
 	float Fit_Scale, Fit_Trans;
 	float S2Fit_Scale, S2Fit_Trans;
+	
+	struct {
+		si Min_N;
+		float Min_R;
+		si Pix_Dark, Pix_Bright;
+		si Pix_Diff_Start;
+		si Pix_Diff_Min;
+		
+		float Diff_Dist;
+	}S5;
 	
 	si Point_N, Point_Max;
 	tV2f*	paPoint;
@@ -171,6 +212,7 @@ typedef struct {
 	struct {
 		
 		struct {
+			u08 State;
 			si SX, SY;
 			tV4f P;
 		}aaCal[dEye_Screen_Cal_NUM][dEye_Screen_Cal_NUM];
@@ -189,22 +231,18 @@ typedef struct {
 	tM4f M4, M4_T, M4_R;
 	tM4f M4I, M4I_T, M4I_R;
 	
+	float R_X, R_Y, R_Z;
+	
 	tV4f P, N;
 	
+	struct {
+		tV4f PC, PL, PR;
+		tV4f TInc, RInc;
+	}Mod;
 //	struct {
 //	}L;
 }tHead;
 
-
-typedef struct {
-	ui Full_W, Full_H;
-	float Full_FOV;
-	
-	ui Image_W, Image_H;
-	float Image_Zoom, Image_FOV, Image_FOV_W, Image_FOV_H;
-	
-	ui Zoom;
-}tCam;
 
 typedef struct {
 	ui Idx;
@@ -228,13 +266,27 @@ typedef struct {
 
 
 typedef struct {
+	ui Full_W, Full_H;
+	float Full_FOV;
+	
+	ui Image_W, Image_H;
+	float Image_Zoom, Image_FOV, Image_FOV_W, Image_FOV_H;
+	
+	si Focus, Exposure, Zoom;
+}tCam;
+
+
+typedef struct {
 	u08 Type;
 	ui Win_W;
 	Window Win;
+	u32 Col;
 }tMarker;
 
 typedef struct {
 	u08 Eye_Line_Ray, GazeAvg, Pointer_Mode;
+	
+	u08 bGazeHold, bHead_Eye_LineDraw, bEye_S4_EdgeMark3_Micro;
 	
 	int Y_Level;
 	
@@ -242,11 +294,12 @@ typedef struct {
 	
 	tCam Cam;
 	
+	si Draw_X, Draw_Y, Draw_W, Draw_H;
+	
 	si View_W, View_H;
 	float Proj_L, Proj_R, Proj_B, Proj_T;
 	float Proj_W, Proj_H, Proj_N, Proj_F;
 	tM4f Proj, World;
-	
 	
 	tHead Head, HeadC;
 	
@@ -263,6 +316,8 @@ typedef struct {
 	
 	tMarker CrossHair, CalPoint;
 	
+	tMarker ScreenPoint[dEye_Screen_Cal_NUM][dEye_Screen_Cal_NUM];
+	
 	u08* pDst;
 	
 	SDL_Surface* pScreen;
@@ -274,8 +329,25 @@ typedef struct {
 	//	Window RootWin;
 	//	XWindowAttributes RootAttr;
 		
-		XIDeviceInfo Pointer;
+		XIDeviceInfo Pointer, Keyboard;
 	}X;
+	
+	struct {
+		
+		#define dact(name,press_stuff) name,
+		int
+		#include "actions.h"
+		NONE;
+		#undef dact
+	}Action;
+	
+	struct {
+		u08 State;
+		tM4f Head_CR;
+		tV2f Gaze;
+		float SX, SY;	//scale
+		float R_X, R_Y;
+	}Micro;
 	
 	struct {
 		float x, y, z;

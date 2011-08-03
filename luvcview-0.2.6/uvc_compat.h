@@ -10,6 +10,7 @@
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
+#error WRONG
 /*
  * Extended control API
  */
@@ -61,6 +62,7 @@ struct v4l2_ext_controls {
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
+#error WRONG
 /*
  * Frame size and frame rate enumeration
  *
@@ -131,6 +133,7 @@ struct v4l2_frmivalenum {
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26)
+#error WRONG
 /*
  * V4L2 Control identifiers.
  */
@@ -178,6 +181,7 @@ enum  v4l2_exposure_auto_type {
 #ifdef __KERNEL__
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,14)
+#error WRONG
 /*
  * kzalloc()
  */
@@ -192,6 +196,7 @@ kzalloc(size_t size, unsigned int __nocast gfp_flags)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,15)
+#error WRONG
 /*
  * vm_insert_page()
  */
@@ -211,6 +216,7 @@ vm_insert_page(struct vm_area_struct *vma, unsigned long addr,
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,16)
+#error WRONG
 /*
  * v4l_printk_ioctl()
  */
@@ -233,6 +239,7 @@ v4l_printk_ioctl(unsigned int cmd)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,16)
+#error WRONG
 /*
  * Mutex API
  */
@@ -247,6 +254,7 @@ v4l_printk_ioctl(unsigned int cmd)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
+#error WRONG
 /*
  * usb_endpoint_* functions
  *
@@ -296,6 +304,7 @@ static inline void usb_autopm_put_interface(struct usb_interface *intf)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
+#error WRONG
 /*
  * Linked list API
  */

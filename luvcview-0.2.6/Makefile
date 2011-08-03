@@ -39,6 +39,7 @@ clean:
 	rm -f *.a *.o $(APP_BINARY) core *~ log errlog *.avi
 
 $(OBJECTS):	muhaha.h
+$(OBJECTS):	actions.h
 
 # Applications:
 luvcview:	$(OBJECTS)
