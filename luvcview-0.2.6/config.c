@@ -96,6 +96,7 @@ int dyn_get_value_enum(dyn_config_entry *de, const char *path, int *val) {
 	dhack(eEye_Fit_S4Fit_Edge2)
 	dhack(eEye_Fit_S4Fit_END)
 	dhack(eEye_Fit_S5_START)
+	dhack(eEye_Fit_S5_Diff)
 	dhack(eEye_Fit_S5_END)
 	dhack(eEye_Fit_C)
 	

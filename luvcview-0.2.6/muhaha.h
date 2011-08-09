@@ -136,6 +136,7 @@ enum {
 	eEye_Fit_S4Fit_Edge2,
 	eEye_Fit_S4Fit_END,
 	eEye_Fit_S5_START,
+	eEye_Fit_S5_Diff,
 	eEye_Fit_S5_END,
 	eEye_Fit_C,
 };
@@ -167,6 +168,7 @@ typedef struct {
 	tV2f P;
 //	float A, D;	//Angle, Distance
 }tEye_Point;
+
 typedef struct {
 	tV2f P; tV2f V; // Position, Velocity
 	float Ax, Ay, Aa;
@@ -277,7 +279,7 @@ typedef struct {
 
 
 typedef struct {
-	u08 Type;
+	u08 Type, Dirty;
 	ui Win_W;
 	Window Win;
 	u32 Col;

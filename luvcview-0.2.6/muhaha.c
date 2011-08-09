@@ -797,6 +797,7 @@ void	Marker_Show		(tMarker* p)
 {
 	XMapWindow(gM.X.pDisp, p->Win);
 	XFlush(gM.X.pDisp);
+	p->Dirty = 1;
 }
 void	Marker_Hide		(tMarker* p)
 {
@@ -806,15 +807,21 @@ void	Marker_Hide		(tMarker* p)
 
 void	Marker_Move		(tMarker* p, si x, si y)
 {
+	p->Dirty = 1;
 	XMoveWindow (gM.X.pDisp, p->Win,
 		x - p->Win_W/2,
 		y - p->Win_W/2
 	);
 	XFlush(gM.X.pDisp);
+	XClearArea (gM.X.pDisp, p->Win, 0, 0, 0, 0, True);
 }
 
 void	Marker_Paint	(tMarker* p)
 {
+//	if (!p->Dirty)
+//		return;
+	p->Dirty = 0;
+	
 	int blackColor = BlackPixel (gM.X.pDisp, DefaultScreen(gM.X.pDisp));
 	int whiteColor = WhitePixel (gM.X.pDisp, DefaultScreen(gM.X.pDisp));
 	
@@ -860,7 +867,15 @@ void	Marker_Paint	(tMarker* p)
 	XFlush(gM.X.pDisp);
 	
 	XFreeGC (gM.X.pDisp, gc);
-	
+}
+
+void	Marker_ColorSet	(tMarker* p, u32 col)
+{
+	if (col == p->Col)
+		return;
+	p->Dirty = 1;
+	p->Col = col;
+	XClearArea (gM.X.pDisp, p->Win, 0, 0, 0, 0, True);
 }
 
 void	Marker_Init	(tMarker* p, u08 type)
@@ -992,6 +1007,7 @@ void	Marker_Init	(tMarker* p, u08 type)
 	XFlush(gM.X.pDisp);
 //	XSync(gM.X.pDisp,False);
 	
+	p->Dirty = 1;
 }
 
 
@@ -3993,6 +4009,15 @@ si	Eye_S5_Edge_Mark1		(tEye* peye, float t, si* pnum, tV2f* papoint)
 	*pnum = n;
 	return 0;
 }
+
+si	Eye_S5_Edge_Mark		(tEye* peye, float t, si* pnum, tV2f* papoint)
+{
+	switch (peye->Fit) {
+	case eEye_Fit_S5_Diff:	return Eye_S5_Edge_Mark1 (peye, t, pnum, papoint);
+	default:			return Eye_S5_Edge_Mark00 (peye, t, pnum, papoint);
+	}
+}
+
 void	Eye_S5_Edge_Scan	(tEye* peye)
 {
 	float a = 0;
@@ -4000,8 +4025,7 @@ void	Eye_S5_Edge_Scan	(tEye* peye)
 		si n = 20;
 		tV2f point[20];
 		
-	//	Eye_S5_Edge_Mark00 (peye, a, &n, point);
-		Eye_S5_Edge_Mark1 (peye, a, &n, point);
+		Eye_S5_Edge_Mark (peye, a, &n, point);
 		
 	//	Eye_Ellipse2LinDraw_Pix_ad (peye, a,border_s, 0xFF<<0);
 	//	Eye_Ellipse2LinDraw_Pix_ad (peye, a,peye->Exp_R, 0xFF<<16);
@@ -4022,7 +4046,7 @@ void	Eye_S5_Edge_Trace	(tEye* peye, float as, si ns, float inc)
 	float a = as;
 	{
 		si n = 20;	tV2f point[20];
-		Eye_S5_Edge_Mark00 (peye, a, &n, point);
+		Eye_S5_Edge_Mark (peye, a, &n, point);
 		prev_point = point[ns];
 		Eye_Points_Ins (peye, a, &prev_point);
 	//	Eye_Ellipse2LinDraw_Pix_ad (peye, a, ddist(point[ns].x,point[ns].y, peye->P.x,peye->P.y), col);
@@ -4039,7 +4063,7 @@ void	Eye_S5_Edge_Trace	(tEye* peye, float as, si ns, float inc)
 		si n = 20;
 		tV2f point[20];
 		
-		Eye_S5_Edge_Mark00 (peye, a, &n, point);
+		Eye_S5_Edge_Mark (peye, a, &n, point);
 		
 		float mind = dpow2(8.0f);
 		si i, mini = -1;
@@ -4079,7 +4103,7 @@ void	Eye_S5_Edges	(tEye* peye)
 		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+2, 0xFF<<8);
 		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+3, 0xFF<<8);
 		
-		Eye_S5_Edge_Mark1 (peye, a, &n, point);
+		Eye_S5_Edge_Mark (peye, a, &n, point);
 		return;
 	}
 //	Eye_S5_Edge_Scan (peye);	return;
@@ -4095,7 +4119,7 @@ void	Eye_S5_Edges	(tEye* peye)
 		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+2, 0xFF<<8);
 		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+3, 0xFF<<8);
 		
-		Eye_S5_Edge_Mark00 (peye, a, &n, point);
+		Eye_S5_Edge_Mark (peye, a, &n, point);
 		
 		for (i = 0; i < n; ++i) {
 			if (edge_n >= edge_max)
@@ -4117,7 +4141,7 @@ void	Eye_S5_Edges	(tEye* peye)
 		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+2, 0xFF<<8);
 		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+3, 0xFF<<8);
 		
-		Eye_S5_Edge_Mark00 (peye, a, &n, point);
+		Eye_S5_Edge_Mark (peye, a, &n, point);
 		
 		for (i = 0; i < n; ++i) {
 			if (edge_n >= edge_max)
@@ -4923,8 +4947,8 @@ void	Head_Calc_M4_Rel	(tHead* p, tHead* pcen)
 				dz += angle_norm_pi_pi(atan2(s_vrc.y,s_vrc.x) - atan2(os_vrc.y,os_vrc.x));
 			//	dz = -dz;
 			//	printf ("rotz %f\n", dz);
-				p->R_Z += p->Mod.TInc.z*dz;
-				M4f_rotz (&rot, p->Mod.TInc.z*dz);
+				p->R_Z += p->Mod.RInc.z*dz;
+				M4f_rotz (&rot, p->Mod.RInc.z*dz);
 			}/**/
 			
 			if (1) {
@@ -4932,8 +4956,8 @@ void	Head_Calc_M4_Rel	(tHead* p, tHead* pcen)
 				float cross = V2f_cross (&s_vlc, &s_vrc) / (sdlc*sdrc);
 				dx = -ocross + cross;
 			//	printf ("rotx %f\n", dx);
-				p->R_X += -p->Mod.TInc.x*dx;
-				M4f_rotx (&rot, -p->Mod.TInc.x*dx);
+				p->R_X += -p->Mod.RInc.x*dx;
+				M4f_rotx (&rot, -p->Mod.RInc.x*dx);
 			}/**/
 			if (1) {
 				float ocross = V2f_cross (&os_vrl, &os_vlc) / (osdlr*osdlc) - V2f_cross (&os_vrl, &os_vrc) / (osdlr*osdrc);
@@ -4954,9 +4978,9 @@ void	Head_Calc_M4_Rel	(tHead* p, tHead* pcen)
 				//	dy *= 0.1f;
 			//		printf ("roty %f\n", dy);
 				}
-				p->R_Y += -p->Mod.TInc.y*dy;
+				p->R_Y += -p->Mod.RInc.y*dy;
 			//	printf ("roty %f\n", dy);
-				M4f_roty (&rot, -p->Mod.TInc.y*dy);
+				M4f_roty (&rot, -p->Mod.RInc.y*dy);
 			}/**/
 			
 		/*	if (++i >= 100) {
@@ -5512,6 +5536,7 @@ void	Screen_Eye_ExtraAll	(tScreen* p)
 	}
 }
 
+
 void	Screen_MarkersUpdate	(tScreen* p)
 {
 	tEye* peye = &gM.Left;
@@ -5521,13 +5546,32 @@ void	Screen_MarkersUpdate	(tScreen* p)
 		//	Marker_Hide (&gM.ScreenPoint[iy][ix]);
 			
 			switch (dcal(ix,iy).State) {
-			case dEye_Screen_Cal_NULL:	gM.ScreenPoint[iy][ix].Col = 0xFFC00000;	break;
-			case dEye_Screen_Cal_Set:	gM.ScreenPoint[iy][ix].Col = 0xFF00C000;	break;
-			case dEye_Screen_Cal_Interp:	gM.ScreenPoint[iy][ix].Col = 0xFF808080;	break;
-			case dEye_Screen_Cal_Extra:	gM.ScreenPoint[iy][ix].Col = 0xFF404040;	break;
+			case dEye_Screen_Cal_NULL:	Marker_ColorSet (&gM.ScreenPoint[iy][ix], 0xFFC00000);	break;
+			case dEye_Screen_Cal_Set:	Marker_ColorSet (&gM.ScreenPoint[iy][ix], 0xFF00C000);	break;
+			case dEye_Screen_Cal_Interp:	Marker_ColorSet (&gM.ScreenPoint[iy][ix], 0xFF808080);	break;
+			case dEye_Screen_Cal_Extra:	Marker_ColorSet (&gM.ScreenPoint[iy][ix], 0xFF404040);	break;
 			}
 			if (iy == p->Cal.iy && ix == p->Cal.ix)
-				gM.ScreenPoint[iy][ix].Col = 0xFFFFFFFF;
+				Marker_ColorSet (&gM.ScreenPoint[iy][ix], 0xFFFFFFFF);
+			
+		/*	Marker_Show (&gM.ScreenPoint[iy][ix]);
+			
+			Marker_Move (&gM.ScreenPoint[iy][ix],
+				p->Off.x + dcal(ix,iy).SX,
+				p->Off.y + dcal(ix,iy).SY
+			);*/
+		//	XClearWindow (gM.X.pDisp, gM.ScreenPoint[iy][ix].Win);
+		}
+	}
+}
+
+void	Screen_MarkersShow	(tScreen* p)
+{
+	tEye* peye = &gM.Left;
+	si ix, iy;
+	for (iy = 0; iy < dEye_Screen_Cal_NUM; ++iy) {
+		for (ix = 0; ix < dEye_Screen_Cal_NUM; ++ix) {
+		//	Marker_Hide (&gM.ScreenPoint[iy][ix]);
 			
 			Marker_Show (&gM.ScreenPoint[iy][ix]);
 			
@@ -5536,7 +5580,7 @@ void	Screen_MarkersUpdate	(tScreen* p)
 				p->Off.y + dcal(ix,iy).SY
 			);
 		//	XClearWindow (gM.X.pDisp, gM.ScreenPoint[iy][ix].Win);
-			XClearArea (gM.X.pDisp, gM.ScreenPoint[iy][ix].Win, 0, 0, 0, 0, True);
+		//	XClearArea (gM.X.pDisp, gM.ScreenPoint[iy][ix].Win, 0, 0, 0, 0, True);
 		}
 	}
 }
@@ -5652,8 +5696,10 @@ void	Screen_Cal_Init		(tScreen* p)
 	p->Cal.ix = 0;
 	p->Cal.iy = 0;
 	
-	Marker_Show (&gM.CalPoint);
+//	Marker_Show (&gM.CalPoint);
 	Screen_Cal_Prep (p);
+	Screen_MarkersUpdate (p);
+	Screen_MarkersShow (p);
 }
 
 
@@ -6160,6 +6206,23 @@ void	muhaha_Init	()
 		printf("Xlib not thread safe\n");
 		exit(1);
 	}
+	{
+		char** p = environ;
+		for (; ; ++p) {
+			if (!*p) {
+				printf("NO DISPLAY environment variable\n");
+			}
+			if (strncmp(*p, "DISPLAY=", 8) == 0) {
+				gM.X.pDisp = XOpenDisplay((*p)+8);
+				break;
+			}
+		}/**/
+	//	gM.X.pDisp = XOpenDisplay(":0");
+		if (gM.X.pDisp == NULL) {
+			fprintf(stderr, "Couldn't open display\n");
+			exit (1);
+		}
+	}
 //	angle_test ();
 	
 	gM.Draw_X = 0;
@@ -6188,14 +6251,6 @@ void	muhaha_Init	()
 //	M4f_trans (&gM.World, 0, 0, -15);
 //	M4f_rotx (&gM.World, 15*deg2rad);
 	
-	
-	
-	gM.X.pDisp = XOpenDisplay(":0");
-	
-	if (gM.X.pDisp == NULL) {
-		fprintf(stderr, "Couldn't open display\n");
-		exit (1);
-	}
 /*	for (gM.X.Screen_N = 0; gM.X.Screen_N < ScreenCount(gM.X.pDisp); ++gM.X.Screen_N) {
 		gM.X.aScreen[gM.X.Screen_N].Win = RootWindow(gM.X.pDisp, gM.X.Screen_N);
 		
@@ -6735,7 +6790,7 @@ void	muhaha	()
 			V4f_DrawPosPos (&c, &dy);
 			V4f_DrawPosPos (&c, &dz);
 		}
-		if (0) {
+		if (1) {
 		/*	tV4f pc = {0,	-1,	3.5,	1};
 			tV4f pl = {-7.5,	0,	0,	1};
 			tV4f pr = {7.5,	0,	0,	1};/**/

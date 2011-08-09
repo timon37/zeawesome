@@ -196,7 +196,7 @@ static Uint32 SDL_VIDEO_Flags =
       SDL_ANYFORMAT | SDL_DOUBLEBUF | SDL_RESIZABLE;
 
 
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
 	if (!XInitThreads()) {
 		printf("Xlib not thread safe\n");
