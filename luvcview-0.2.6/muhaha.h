@@ -138,6 +138,8 @@ enum {
 	eEye_Fit_S5_START,
 	eEye_Fit_S5_Diff,
 	eEye_Fit_S5_END,
+	eEye_Fit_FF_START,
+	eEye_Fit_FF_END,
 	eEye_Fit_C,
 };
 
@@ -187,12 +189,19 @@ typedef struct {
 	struct {
 		si Min_N;
 		float Min_R;
+		float Break_Dist;
 		si Pix_Dark, Pix_Bright;
 		si Pix_Diff_Start;
 		si Pix_Diff_Min;
 		
 		float Diff_Dist;
 	}S5;
+	
+	struct {
+		si tmpNum;
+		si Max_R, Search_R;
+		si Y;
+	}FF;
 	
 	si Point_N, Point_Max;
 	tV2f*	paPoint;

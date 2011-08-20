@@ -1916,7 +1916,7 @@ void	Eye_crap_ff		(tEye* peye, si x, si y)
 	}
 };
 
-void	Eye_FF		(tEye* peye)
+void	Eye_OldFF		(tEye* peye)
 {
 	si x, y;
 //	si ay = 0, au = 0, av = 0, n = 0;
@@ -4065,7 +4065,7 @@ void	Eye_S5_Edge_Trace	(tEye* peye, float as, si ns, float inc)
 		
 		Eye_S5_Edge_Mark (peye, a, &n, point);
 		
-		float mind = dpow2(8.0f);
+		float mind = dpow2(peye->S5.Break_Dist);
 		si i, mini = -1;
 		for (i = 0; i < n; ++i) {
 			if (ddist2(point[i].x,point[i].y, prev_point.x,prev_point.y) < mind) {
@@ -4254,6 +4254,84 @@ void	Eye_S5		(tEye* peye)
 }
 
 
+//haha back to the roots
+
+void	Eye_FF_MarkCrap		(tEye* peye, si x, si y)
+{
+	if (x < 0 || y < 0 || x >= videoIn->width || y >= videoIn->height)
+		return;
+	
+	if (	1//dnpix(x,y)->Y == 0xFF
+		&& dnpix(x,y)->U == 0
+		&& dnpix(x,y)->V == 0
+	)
+		return;
+	
+	if (ddist2(x,y,peye->P.x,peye->P.y) >= dpow2(peye->Max_R))
+		return;
+	
+	if (	dopix(x,y)->Y < ay
+		//abs(dopix(x,y)->Y - ay) <= 16
+	//	&& abs(dopix(x,y)->U - au) <= 12
+	//	&& abs(dopix(x,y)->V - av) <= 12
+	) {
+		++peye->FF.tmpNum;
+	//	dnpix(x,y)->Y = 0xFF;
+		dnpix(x,y)->U = 0x0;
+		dnpix(x,y)->V = 0x0;
+		Eye_crap_ff (peye, x-1, y);
+		Eye_crap_ff (peye, x+1, y);
+		Eye_crap_ff (peye, x, y-1);
+		Eye_crap_ff (peye, x, y+1);
+	}
+}
+
+void	Eye_FF_Mark2Pos	(tEye* peye)
+{
+	si ax = 0, ay = 0;
+	si num = 0;
+	si x, y;
+	for (y = peye->P.y - peye->Max_R-1; y < peye->P.y + peye->Max_R+1; ++y) {
+		for (x = peye->P.x - peye->Max_R-1; x < peye->P.x + peye->Max_R+1; ++x) {
+			if (	1//dnpix(x,y)->Y == 0xFF
+				&& dnpix(x,y)->U == 0x0
+				&& dnpix(x,y)->V == 0x0
+			) {
+				ax += x;
+				ay += y;
+				++num;
+			}
+		}
+	}/**/
+	if (num > 20) {
+		peye->P.x = (float)ax / num;
+		peye->P.y = (float)ay / num;
+	}
+}
+
+
+void	Eye_FF		(tEye* peye)
+{
+	
+	ay = peye->FF.Y;
+	au = 0;
+	av = 0;
+	
+	peye->FF.tmpNum = 0;
+	
+//	Eye_FF_MarkCrap (peye, peye->P.x, peye->P.y);
+	si search_r = peye->FF.Search_R;
+	si x, y;
+	for (y = peye->P.y - search_r; y < peye->P.y + search_r; ++y) {
+		for (x = peye->P.x - search_r; x < peye->P.x + search_r; ++x) {
+			Eye_FF_MarkCrap (peye, x, y);
+		}
+	}/**/
+	
+	Eye_FF_Mark2Pos (peye);
+}
+
+
 float	Eye_CFit_AvgDiff	(tEye* peye)
 {
 	si border = 4*peye->Exp_R;
@@ -4345,7 +4423,7 @@ void	Eye_Fit		(tEye* peye)
 		Eye_S0 (peye);
 		break;
 	case eEye_Fit_S2Fit:
-		Eye_FF (peye);
+		Eye_OldFF (peye);
 		Eye_EdgeMark (peye);
 		Eye_S2Fit (peye);
 		break;
@@ -4361,12 +4439,15 @@ void	Eye_Fit		(tEye* peye)
 		Eye_CalcAYUV (peye);
 		Eye_S5 (peye);
 		break;
+	case eEye_Fit_FF_START ... eEye_Fit_FF_END:
+		Eye_FF (peye);
+		break;
 	case eEye_Fit_C:
 		Eye_CFit (peye);
 		break;
 	case eEye_Fit_SFit:
 	default:
-		Eye_FF (peye);
+		Eye_OldFF (peye);
 		Eye_EdgeMark (peye);
 		Eye_SFit (peye);
 		break;
@@ -5156,7 +5237,7 @@ void	Head_Eye_LineAdd	(tHead* p, tEye* peye)
 	V4f_add_V4f (&peye->InHead.aLine[peye->InHead.Line_N].P1, &vec);
 	peye->InHead.Line_N++;
 	
-	if (peye->InHead.Line_N >= 2)
+	if (peye->InHead.Line_N >= 3)
 		Head_Eye_CalcP (p, peye);
 }
 
@@ -5264,6 +5345,66 @@ void PrintMat(CvMat *A)
 	printf("\n");
 }
 
+
+
+float	Head_Eye_CalcP_PosEr	(tHead* p, tEye* peye, tV4f* pos)
+{
+	float mse = 0;
+	si i;
+	for (i = 0; i < peye->InHead.Line_N; ++i) {
+		tV4f p0 = peye->InHead.aLine[i].P0;	V4f_sub_V4f (&p0, pos);
+		tV4f p1 = peye->InHead.aLine[i].P1;	V4f_sub_V4f (&p1, pos);
+		
+		tV4f cross;
+		V4f_cross (&cross, &p1, &p0);
+		mse += V4f_dot_V4f (&cross, &cross) / V4f_dot_V4f(&p1, &p1);
+	}
+	return mse / (float)peye->InHead.Line_N;
+}
+
+void	Head_Eye_CalcP_Iter	(tHead* p, tEye* peye)
+{
+	printf ("Head_Eye_CalcP_Iter error %f\n", Head_Eye_CalcP_PosEr (p, peye, &peye->InHead.P));
+	
+	float dx = 0.1f, dy = dx, dz = dx;
+	si i;
+	for (i = 0; i < 100; ++i) {
+		si fix = 0;
+		
+		#define dfix(dim,val)	\
+			do {			\
+				tV4f tmp = peye->InHead.P;			\
+				float omse = Head_Eye_CalcP_PosEr (p, peye, &tmp);			\
+				tmp.dim += val;			\
+				float nmse = Head_Eye_CalcP_PosEr (p, peye, &tmp);			\
+				if (nmse < omse) {			\
+					peye->InHead.P = tmp;			\
+					++fix;			\
+				}else {			\
+					tmp.dim -= 2*val;			\
+					nmse = Head_Eye_CalcP_PosEr (p, peye, &tmp);			\
+					if (nmse < omse) {			\
+						peye->InHead.P = tmp;			\
+						++fix;			\
+					}			\
+				}			\
+			}while(0)
+		
+		dfix (x,dx);
+		dfix (y,dy);
+		dfix (z,dz);
+		
+		if (fix == 0) {
+			dx /= 2;
+			dy /= 2;
+			dz /= 2;
+		}
+		
+		printf ("Head_Eye_CalcP_Iter error %f\n", Head_Eye_CalcP_PosEr (p, peye, &peye->InHead.P));
+	}
+	
+}
+
 void	Head_Eye_CalcP	(tHead* p, tEye* peye)
 {
 	CvMat* ma = cvCreateMatHeader(peye->InHead.Line_N, 3, CV_32FC1);
@@ -5299,6 +5440,8 @@ void	Head_Eye_CalcP	(tHead* p, tEye* peye)
 	peye->InHead.P.y = cvGet2D (mx, 1, 0).val[0];
 	peye->InHead.P.z = cvGet2D (mx, 2, 0).val[0];
 	peye->InHead.P.w = 1;
+	
+	Head_Eye_CalcP_Iter (p, peye);
 	
 	printf ("xyz %f %f %f\n", peye->InHead.P.x, peye->InHead.P.y, peye->InHead.P.z);
 }
@@ -5640,6 +5783,32 @@ void	Screen_Cal_DoDown		(tScreen* p)
 {
 	if (p->Cal.iy < dEye_Screen_Cal_LAST)
 		++p->Cal.iy;
+	Screen_Cal_Prep (p);
+}
+void	Screen_Cal_DoPoint	(tScreen* p, si x, si y)
+{
+	si gridx = p->PixW / (dEye_Screen_Cal_NUM-1);
+	si gridy = p->PixH / (dEye_Screen_Cal_NUM-1);
+	
+	x -= p->Off.x - gridx/2;
+	y -= p->Off.y - gridy/2;
+	
+	si ix = x / gridx;
+	si iy = y / gridy;
+	
+	if (ix < 0)
+		p->Cal.ix = 0;
+	if (ix > dEye_Screen_Cal_LAST)
+		p->Cal.ix = dEye_Screen_Cal_LAST;
+	else
+		p->Cal.ix = ix;
+	
+	if (iy < 0)
+		p->Cal.iy = 0;
+	if (iy > dEye_Screen_Cal_LAST)
+		p->Cal.iy = dEye_Screen_Cal_LAST;
+	else
+		p->Cal.iy = iy;
 	Screen_Cal_Prep (p);
 }
 void	Screen_Cal_Save_Eye	(tScreen* p, tEye* peye)
@@ -6532,7 +6701,7 @@ void	muhaha	()
 		
 		Eye_Draw (&gM.Left);
 		Eye_Draw (&gM.Right);
-	//	printf ("Eye pos Left %f %f\n", gM.Left.P.x, gM.Left.P.y);
+		printf ("Eye pos Left %f %f\n", gM.Left.P.x, gM.Left.P.y);
 	//	printf ("Eye pos Righ %f %f\n", gM.Right.P.x, gM.Right.P.y);
 		
 		Eye_Draw (&gM.Head.DotC);

@@ -98,6 +98,8 @@ int dyn_get_value_enum(dyn_config_entry *de, const char *path, int *val) {
 	dhack(eEye_Fit_S5_START)
 	dhack(eEye_Fit_S5_Diff)
 	dhack(eEye_Fit_S5_END)
+	dhack(eEye_Fit_FF_START)
+	dhack(eEye_Fit_FF_END)
 	dhack(eEye_Fit_C)
 	
 	dhack(eEye_PFit_S1)
@@ -366,12 +368,16 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	
 	drw_si (Head.DotC.S5.Min_N)
 	drw_f (Head.DotC.S5.Min_R)
+	drw_f (Head.DotC.S5.Break_Dist)
 	drw_f (Head.DotC.S5.Pix_Dark)
 	drw_f (Head.DotC.S5.Pix_Bright)
 	drw_f (Head.DotC.S5.Diff_Dist)
 	drw_si (Head.DotC.S5.Pix_Diff_Start)
 	drw_si (Head.DotC.S5.Pix_Diff_Min)
 	
+	drw_si (Head.DotC.FF.Max_R)
+	drw_si (Head.DotC.FF.Search_R)
+	drw_si (Head.DotC.FF.Y)
 	
 	gM.Head.DotC.LinView.x = 0;
 	gM.Head.DotC.LinView.y = 0;
@@ -401,68 +407,45 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_f (Head.DotR.LinView.x)
 	drw_f (Head.DotR.LinView.y)
 	
+	#define deye(name)	\
+		drw_f (name.AngRes)	\
+		drw_f (name.Exp_R)	\
+		drw_f (name.Min_R)	\
+		drw_f (name.Max_R)	\
+		drw_f (name.PFit_R)	\
+		drw_e (name.Fit)	\
+		drw_e (name.PFit)	\
+		drw_f (name.Fit_Scale)	\
+		drw_f (name.Fit_Trans)	\
+		drw_f (name.S2Fit_Scale)	\
+		drw_f (name.S2Fit_Trans)	\
+			\
+		drw_f (name.Pix_Dark)	\
+		drw_f (name.Pix_Bright)	\
+		drw_f (name.S4_Pix_Bright)	\
+			\
+		drw_si (name.S5.Min_N)	\
+		drw_f (name.S5.Min_R)	\
+		drw_f (name.S5.Break_Dist)	\
+		drw_f (name.S5.Pix_Dark)	\
+		drw_f (name.S5.Pix_Bright)	\
+		drw_f (name.S5.Diff_Dist)	\
+		drw_si (name.S5.Pix_Diff_Start)	\
+		drw_si (name.S5.Pix_Diff_Min)	\
+			\
+		drw_si (name.FF.Max_R)	\
+		drw_si (name.FF.Search_R)	\
+		drw_si (name.FF.Y)	\
+			\
+		drw_f (name.InHead.R)	\
+		drw_v4f (name.InHead.P);	\
+			\
+		drw_f (name.LinView.x)	\
+		drw_f (name.LinView.y)
 	
-	drw_f (Left.AngRes)
-	drw_f (Left.Exp_R)
-	drw_f (Left.Min_R)
-	drw_f (Left.Max_R)
-	drw_f (Left.PFit_R)
-	drw_e (Left.Fit)
-	drw_e (Left.PFit)
-	drw_f (Left.Fit_Scale)
-	drw_f (Left.Fit_Trans)
-	drw_f (Left.S2Fit_Scale)
-	drw_f (Left.S2Fit_Trans)
 	
-	drw_f (Left.Pix_Dark)
-	drw_f (Left.Pix_Bright)
-	drw_f (Left.S4_Pix_Bright)
-	
-	drw_si (Left.S5.Min_N)
-	drw_f (Left.S5.Min_R)
-	drw_f (Left.S5.Pix_Dark)
-	drw_f (Left.S5.Pix_Bright)
-	drw_f (Left.S5.Diff_Dist)
-	drw_si (Left.S5.Pix_Diff_Start)
-	drw_si (Left.S5.Pix_Diff_Min)
-	
-	drw_f (Left.InHead.R)
-	drw_v4f (Left.InHead.P);
-	
-	drw_f (Left.LinView.x)
-	drw_f (Left.LinView.y)
-	
-//	memcpy (&gM.Right, &gM.Left, sizeof(gM.Left));
-	
-	drw_f (Right.AngRes)
-	drw_f (Right.Exp_R)
-	drw_f (Right.Min_R)
-	drw_f (Right.Max_R)
-	drw_f (Right.PFit_R)
-	drw_e (Right.Fit)
-	drw_e (Right.PFit)
-	drw_f (Right.Fit_Scale)
-	drw_f (Right.Fit_Trans)
-	drw_f (Right.S2Fit_Scale)
-	drw_f (Right.S2Fit_Trans)
-	
-	drw_f (Right.Pix_Dark)
-	drw_f (Right.Pix_Bright)
-	drw_f (Right.S4_Pix_Bright)
-	
-	drw_si (Right.S5.Min_N)
-	drw_f (Right.S5.Min_R)
-	drw_f (Right.S5.Pix_Dark)
-	drw_f (Right.S5.Pix_Bright)
-	drw_f (Right.S5.Diff_Dist)
-	drw_si (Right.S5.Pix_Diff_Start)
-	drw_si (Right.S5.Pix_Diff_Min)
-	
-	drw_f (Right.InHead.R)
-	drw_v4f (Right.InHead.P);
-	
-	drw_f (Right.LinView.x)
-	drw_f (Right.LinView.y)
+	deye(Left)
+	deye(Right)
 	
 	
 	drw_f (tmp.x)

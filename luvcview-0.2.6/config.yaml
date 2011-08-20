@@ -12,7 +12,7 @@ Cam:
 #  Image_FOV: 83
   Focus: 0
   #Focus:	130	120	80	0	-1
-  Exposure: 400
+  Exposure: 600
   #Exposure:	200	400	600	800
   Zoom: 1
 
@@ -32,7 +32,7 @@ Proj_B: -1
 Proj_T: 1
 
 Eye_Line_Ray: 0
-GazeAvg: 0
+GazeAvg: 1
 
 Pointer_Mode: 1
 
@@ -131,19 +131,25 @@ Head:
     Min_R: 10
     Max_R: 70
     
-    S4_Pix_Bright: 80
+    S4_Pix_Bright: 20
     AngRes: 3.0
     S5:
       Min_N: 70
       Min_R: 0
-      Pix_Bright: 220
-      Pix_Dark: 200
+      Break_Dist: 5
+      Pix_Bright: 50
+      Pix_Dark: 30
       Diff_Dist: 10
       Pix_Diff_Start: 20
       Pix_Diff_Min: 2
     
-    #Fit: eEye_Fit_S0
-    Fit: eEye_Fit_S5_START
+    FF:
+      Max_R: 100
+      Search_R: 1
+      Y: 30
+    
+    #Fit: eEye_Fit_S0		eEye_Fit_S5_START		eEye_Fit_FF_START
+    Fit: eEye_Fit_FF_START
     PFit: eEye_PFit_S2
     Fit_Scale: 0.2
     Fit_Trans: 0.2
@@ -172,26 +178,32 @@ Left:
 #  Aa: M_PI/4
   
   AngRes: 1.0
-  Exp_R: 50
-  Min_R: 80
-  Max_R: 120
+  Exp_R: 30
+  Min_R: 0
+  Max_R: 50
 
-  Pix_Bright: 60
+  Pix_Bright: 5
   S4_Pix_Bright: 60
   S5:
-    Min_N: 150
+    Min_N: 90
     Min_R: 30
-    Pix_Bright: 120
-    Pix_Dark: 100
+    Break_Dist: 5
+    Pix_Bright: 16
+    Pix_Dark: 10
     Diff_Dist: 10
     Pix_Diff_Start: 30
     Pix_Diff_Min: 5
   
-  PFit_R: 100
+  FF:
+    Max_R: 100
+    Search_R: 40
+    Y: 16
   
-  Fit: eEye_Fit_S5_START
-# Fit: eEye_Fit_S3Fit_Eye	eEye_Fit_S4Fit_Edge0	eEye_Fit_S4Fit_Edge1	eEye_Fit_S4Fit_Edge2	eEye_Fit_S5_START		eEye_Fit_S5_Diff	eEye_Fit_C
-  PFit: eEye_PFit_S3const
+  PFit_R: 40
+  
+  Fit: eEye_Fit_FF_START
+# Fit: eEye_Fit_S3Fit_Eye	eEye_Fit_S4Fit_Edge0	eEye_Fit_S4Fit_Edge1	eEye_Fit_S4Fit_Edge2	eEye_Fit_S5_START		eEye_Fit_S5_Diff		eEye_Fit_FF_START		eEye_Fit_C
+  PFit: eEye_PFit_S3
 # PFit: eEye_PFit_S1	eEye_PFit_S2	eEye_PFit_S3	eEye_PFit_S3const	eEye_PFit_RANSAC
   Fit_Scale: 0.1
   Fit_Trans: 0.1
@@ -199,7 +211,7 @@ Left:
   S2Fit_Trans: 0.7
   
   InHead:
-    R: 1.2
+    R: 1.1
     P:
       #x: -3.308714
       #y: 0.000961
@@ -218,25 +230,31 @@ Right:
   Aa: 0
   
   AngRes: 1.0
-  Exp_R: 50
-  Min_R: 80
-  Max_R: 120
+  Exp_R: 30
+  Min_R: 0
+  Max_R: 50
 
-  Pix_Bright: 60
+  Pix_Bright: 5
   S4_Pix_Bright: 60
   S5:
     Min_N: 90
-    Min_R: 0
-    Pix_Bright: 110
-    Pix_Dark: 90
+    Min_R: 30
+    Break_Dist: 5
+    Pix_Bright: 20
+    Pix_Dark: 15
     Diff_Dist: 10
     Pix_Diff_Start: 30
     Pix_Diff_Min: 5
   
+  FF:
+    Max_R: 50
+    Search_R: 40
+    Y: 15
+  
   PFit_R: 100
   
-  Fit: eEye_Fit_S5_START
-  PFit: eEye_PFit_S3const
+  Fit: eEye_Fit_FF_START
+  PFit: eEye_PFit_S3
   
   Fit_Scale: 0.1
   Fit_Trans: 0.1
@@ -244,7 +262,7 @@ Right:
   S2Fit_Trans: 0.7
   
   InHead:
-    R: 1.2
+    R: 1.1
     P:
       #x: 3.332723
       #y: 0.124271
@@ -281,6 +299,9 @@ Action:
   Screen_Right: 0xff53
   Screen_Down: 0xff54
   Screen_Up: 0xff52
+  
+  Screen_Point: 0x75
+#  Screen_Around: 
   Screen_TL: 79
   Screen_TC: 80
   Screen_TR: 81
@@ -319,4 +340,4 @@ Action:
   Screen_BR: 89
   View_Zoom: 49
   Head_Eye_LineDraw: 19
-;j
+

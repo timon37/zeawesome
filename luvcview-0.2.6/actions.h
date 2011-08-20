@@ -57,6 +57,9 @@ dact (Screen_Down,
 dact (Screen_Up,
 	Screen_Cal_DoUp (gM.aScreen + gM.Screen_CalIdx);
 )
+dact (Screen_Point,
+	Screen_Cal_DoPoint (gM.aScreen + gM.Screen_CalIdx, gM.Gaze.x, gM.Gaze.y);
+)
 #if 0
 dact (Screen_TL,
 	Screen_Cal_DoThis (gM.aScreen + gM.Screen_CalIdx, 0, 0);
