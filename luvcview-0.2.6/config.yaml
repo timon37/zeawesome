@@ -32,7 +32,7 @@ Proj_B: -1
 Proj_T: 1
 
 Eye_Line_Ray: 0
-GazeAvg: 1
+GazeAvg: 3
 
 Pointer_Mode: 1
 
@@ -74,6 +74,23 @@ tmp:
   y: 5
   z: 1
 
+Dbg:
+  Front:
+    Scale: 0.1
+    Off:
+      x: 1300
+      y: 500
+  Top:
+    Scale: 0.1
+    Off:
+      x: 1100
+      y: 300
+  Left:
+    Scale: 0.1
+    Off:
+      x: 1300
+      y: 300
+
 Y_Level: 128
 DeSat: 0
 
@@ -92,16 +109,16 @@ Head:
       #y: 0
       #z: 0
     PC:
-      x: 0
-      y: -1.0
-      z: 3.0
+      x: 0.0
+      y: -1.6
+      z: 4
     PL:
-      x: -7.5
-      y: 2.0
+      x: -7.2
+      y: 0.0
       z: 0
     PR:
-      x: 7.5
-      y: 2.0
+      x: 7.2
+      y: 0.0
       z: 0
     #PC:
       #x: 0
@@ -146,8 +163,8 @@ Head:
     
     FF:
       Max_R: 60
-      Search_R: 1
-      Y: 80
+      Search_R: 10
+      Y: 20
     
     #Fit: eEye_Fit_S0		eEye_Fit_S5_START		eEye_Fit_FF_START
     Fit: eEye_Fit_FF_START
@@ -196,9 +213,9 @@ Left:
     Pix_Diff_Min: 5
   
   FF:
-    Max_R: 100
-    Search_R: 40
-    Y: 40
+    Max_R: 40
+    Search_R: 10
+    Y: 15
   
   PFit_R: 40
   
@@ -217,9 +234,9 @@ Left:
       #x: -3.308714
       #y: 0.000961
       #z: 0.001262
-      x: -3.151785
-      y: 0.527396
-      z: -0.008276
+      x: -2.861347
+      y: 0.638425
+      z: -0.148953
 
   LinView:
     x: 800
@@ -248,9 +265,9 @@ Right:
     Pix_Diff_Min: 5
   
   FF:
-    Max_R: 50
-    Search_R: 40
-    Y: 40
+    Max_R: 40
+    Search_R: 10
+    Y: 15
   
   PFit_R: 100
   
@@ -268,9 +285,9 @@ Right:
       #x: 3.332723
       #y: 0.124271
       #z: 0.002492
-      x: 3.115145
-      y: 0.821904
-      z: -0.008704
+      x: 2.961064
+      y: 1.030101
+      z: 0.146166
 
   LinView:
     x: 0
@@ -281,8 +298,8 @@ bHead_Eye_LineDraw: 1
 
 
 Micro:
-  SX: -200.0
-  SY: 150.0
+  SX: 200.0
+  SY: -400.0
 
 
 
@@ -290,9 +307,13 @@ Action:
   Mod_Key: 66
   GazeHold: 0x20
   Mode_Switch: 0xff09
+  
   EyeCent_CalNext: 0x5c
   CalNext: 0xff0d
   Back: 0xff08
+  
+  ReThr: 0x72
+  
   Screen0: 0x27
   Screen1: 0x2c
   Screen2: 0x2e
@@ -301,7 +322,8 @@ Action:
   Screen_Down: 0xff54
   Screen_Up: 0xff52
   
-  Screen_Point: 0x75
+  Screen_Point: 0xff57
+  Screen_PointDel: 0xffff
 #  Screen_Around: 
   Screen_TL: 79
   Screen_TC: 80
@@ -319,7 +341,7 @@ Action:
   
   View_Zoom: 0x69
   Head_Eye_LineDraw: 0x30
-  Micro_Tog: 0xffc5
+  Micro_Tog: 0x75
 
 Action:
   Mod_Key: 66

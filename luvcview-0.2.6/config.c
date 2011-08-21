@@ -375,7 +375,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_si (Head.DotC.S5.Pix_Diff_Start)
 	drw_si (Head.DotC.S5.Pix_Diff_Min)
 	
-	drw_si (Head.DotC.FF.Max_R)
+	drw_f (Head.DotC.FF.Max_R)
 	drw_si (Head.DotC.FF.Search_R)
 	drw_si (Head.DotC.FF.Y)
 	
@@ -433,7 +433,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 		drw_si (name.S5.Pix_Diff_Start)	\
 		drw_si (name.S5.Pix_Diff_Min)	\
 			\
-		drw_si (name.FF.Max_R)	\
+		drw_f (name.FF.Max_R)	\
 		drw_si (name.FF.Search_R)	\
 		drw_si (name.FF.Y)	\
 			\
@@ -482,6 +482,15 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	
 	Screen_Eye_Init (gM.aScreen + 2, &gM.Left);
 	Screen_Eye_Init (gM.aScreen + 2, &gM.Right);
+	
+	#define dview(name)	\
+	drw_f (Dbg.name.Scale);	\
+	drw_si (Dbg.name.Off.x);	\
+	drw_si (Dbg.name.Off.y);
+	
+	dview(Front)
+	dview(Left)
+	dview(Top)
 	
 //	printf ("aScreen[0].Off %d %d\n", gM.aScreen[0].Off.x, gM.aScreen[0].Off.y);
 //	Screen_Eye_PreCal (gM.aScreen + 0, &gM.Left);

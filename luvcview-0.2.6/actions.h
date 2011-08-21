@@ -19,6 +19,25 @@ dact (Mode_Switch,
 	}
 )
 
+dact (ReThr,
+	printf ("HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaa\n");
+	tEye* peye = &gM.Left;
+	Eye_CalcAYUV (peye, 5);	peye->FF.Y = ay + 5;
+	
+	peye = &gM.Right;
+	Eye_CalcAYUV (peye, 5);	peye->FF.Y = ay + 5;
+	
+	peye = &gM.Head.DotC;
+	Eye_CalcAYUV (peye, 8);	peye->FF.Y = ay + 3;
+	
+	peye = &gM.Head.DotL;
+	Eye_CalcAYUV (peye, 8);	peye->FF.Y = ay + 3;
+	
+	peye = &gM.Head.DotR;
+	Eye_CalcAYUV (peye, 8);	peye->FF.Y = ay + 3;
+)
+
+
 dact (EyeCent_CalNext,
 	Head_Eye_LineAdd (&gM.Head, &gM.Left);
 	Head_Eye_LineAdd (&gM.Head, &gM.Right);
@@ -59,6 +78,9 @@ dact (Screen_Up,
 )
 dact (Screen_Point,
 	Screen_Cal_DoPoint (gM.aScreen + gM.Screen_CalIdx, gM.Gaze.x, gM.Gaze.y);
+)
+dact (Screen_PointDel,
+	Screen_Cal_PointDel (gM.aScreen + gM.Screen_CalIdx);
 )
 #if 0
 dact (Screen_TL,
@@ -114,6 +136,9 @@ dact (Micro_Tog,
 	case 0:
 		gM.Micro.Gaze = gM.Gaze;
 		gM.Micro.Head_CR = gM.Head.M4_R;
+		
+		gM.Micro.R_X = gM.Head.R_X;
+		gM.Micro.R_Y = gM.Head.R_Y;
 		
 		gM.Micro.State = 1;
 		break;

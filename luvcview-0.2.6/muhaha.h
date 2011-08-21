@@ -199,7 +199,8 @@ typedef struct {
 	
 	struct {
 		si tmpNum;
-		si Max_R, Search_R;
+		float Max_R;
+		si Search_R;
 		si Y;
 	}FF;
 	
@@ -363,6 +364,11 @@ typedef struct {
 	}Micro;
 	
 	struct {
+		struct sDbg_View {
+			float Scale;
+			tV2si Off;
+		}Top, Left, Front;
+		
 		tM4f Proj, World;
 		si View_X, View_Y, View_W, View_H;	//x y is the center
 		
