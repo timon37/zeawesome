@@ -69,6 +69,7 @@ aScreen[2]:
 
 
 tmp:
+  scale: 6
   x: 12
   y: 5
   z: 1
@@ -144,9 +145,9 @@ Head:
       Pix_Diff_Min: 2
     
     FF:
-      Max_R: 100
+      Max_R: 60
       Search_R: 1
-      Y: 30
+      Y: 80
     
     #Fit: eEye_Fit_S0		eEye_Fit_S5_START		eEye_Fit_FF_START
     Fit: eEye_Fit_FF_START
@@ -178,9 +179,9 @@ Left:
 #  Aa: M_PI/4
   
   AngRes: 1.0
-  Exp_R: 30
-  Min_R: 0
-  Max_R: 50
+  Exp_R: 50
+  Min_R: 20
+  Max_R: 80
 
   Pix_Bright: 5
   S4_Pix_Bright: 60
@@ -197,7 +198,7 @@ Left:
   FF:
     Max_R: 100
     Search_R: 40
-    Y: 16
+    Y: 40
   
   PFit_R: 40
   
@@ -230,9 +231,9 @@ Right:
   Aa: 0
   
   AngRes: 1.0
-  Exp_R: 30
-  Min_R: 0
-  Max_R: 50
+  Exp_R: 50
+  Min_R: 20
+  Max_R: 80
 
   Pix_Bright: 5
   S4_Pix_Bright: 60
@@ -249,7 +250,7 @@ Right:
   FF:
     Max_R: 50
     Search_R: 40
-    Y: 15
+    Y: 40
   
   PFit_R: 100
   
@@ -311,6 +312,11 @@ Action:
   Screen_BL: 87
   Screen_BC: 88
   Screen_BR: 89
+  
+  Mouse_Click_L: 0x68
+  Mouse_Click_R: 0x74
+  Mouse_Click_M: 0x6e
+  
   View_Zoom: 0x69
   Head_Eye_LineDraw: 0x30
   Micro_Tog: 0xffc5

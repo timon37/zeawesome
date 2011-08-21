@@ -587,6 +587,66 @@ void	V4f_ScreenPos	(tV4f* ppos0, tV2si* pret)
 }
 
 
+
+
+void	Dbg_V4f_DrawPosPos	(tV4f* ppos0, tV4f* ppos1)
+{
+	tV4f p0 = *ppos0, p1 = *ppos1;
+	
+//	V4f_mul_M4f (&p0, &gM.World);	V4f_mul_M4f (&p1, &gM.World);
+//	V4f_mul_M4f (&p0, &gM.Proj);	V4f_mul_M4f (&p1, &gM.Proj);
+	
+	printf ("4f p0 ");	V4f_Print (&p0);
+	
+	M4f_mul_V4f (&gM.Dbg.World, &p0);		M4f_mul_V4f (&gM.Dbg.World, &p1);
+	printf ("4f p0 ");	V4f_Print (&p0);
+	
+	M4f_mul_V4f (&gM.Dbg.Proj, &p0);		M4f_mul_V4f (&gM.Dbg.Proj, &p1);
+	printf ("4f p0 ");	V4f_Print (&p0);
+	
+	p0.x /= p0.w;
+	p0.y /= p0.w;
+	p0.z /= p0.w;
+	
+	p1.x /= p1.w;
+	p1.y /= p1.w;
+	p1.z /= p1.w;
+	
+	printf ("p0 %f %f  p1 %f %f\n", p0.x, p0.y, p1.x, p1.y);
+	
+	p0.x *= gM.Dbg.View_W/2;	p0.x += gM.Dbg.View_X;
+	p0.y *= gM.Dbg.View_H/2;	p0.y += gM.Dbg.View_Y;
+	p1.x *= gM.Dbg.View_W/2;	p1.x += gM.Dbg.View_X;
+	p1.y *= gM.Dbg.View_H/2;	p1.y += gM.Dbg.View_Y;
+	
+	printf ("p0 %f %f  p1 %f %f\n", p0.x, p0.y, p1.x, p1.y);
+	S_Draw_Line_2d (p0.x, p0.y, p1.x, p1.y);
+}
+
+
+
+void	M4f_Frustrum		(tM4f* pproj, float w, float h, float n, float f)
+{
+	pproj->x00 = n / (w/2);
+	pproj->x11 = n / (h/2);
+	
+	pproj->x22 = -(f+n) / (f-n);
+	
+	pproj->x23 = (-2*f*n) / (f-n);
+	pproj->x32 = -1;
+	
+}
+void	M4f_Ortho		(tM4f* pproj, float w, float h, float n, float f)
+{
+	pproj->x00 = 1 / (w/2);
+	pproj->x11 = 1 / (h/2);
+	
+	pproj->x22 = -2 / (f-n);
+	pproj->x23 = -(f+n) / (f-n);
+	
+	pproj->x33 = 1;
+	
+}
 void	Proj_Cam		()
 {
 	{
@@ -614,16 +674,36 @@ void	Proj_Cam		()
 	gM.Proj_W *= 2;
 	gM.Proj_H *= 2;
 	
-	gM.Proj.x00 = gM.Proj_N / (gM.Proj_W/2);
+/*	gM.Proj.x00 = gM.Proj_N / (gM.Proj_W/2);
 	gM.Proj.x11 = gM.Proj_N / (gM.Proj_H/2);
 	
 	gM.Proj.x22 = -(gM.Proj_F+gM.Proj_N) / (gM.Proj_F - gM.Proj_N);
 	
 	gM.Proj.x23 = (-2*gM.Proj_F*gM.Proj_N) / (gM.Proj_F - gM.Proj_N);
-	gM.Proj.x32 = -1;
-	
+	gM.Proj.x32 = -1;/**/
+	M4f_Frustrum (&gM.Proj, gM.Proj_W, gM.Proj_H, gM.Proj_N, gM.Proj_F);
 }
 
+void	Dbg_Ortho_Front	()
+{
+	gM.Dbg.View_X = gM.Left.aScreen[0].View.Front.x;
+	gM.Dbg.View_Y = gM.Left.aScreen[0].View.Front.y;
+	gM.Dbg.View_W = 100;
+	gM.Dbg.View_H = 100;
+	
+	M4f_Iden (&gM.Dbg.Proj);
+	
+	M4f_Ortho (&gM.Dbg.Proj, gM.Dbg.View_W, gM.Dbg.View_H, 0.1f, 100);
+//	M4f_Frustrum (&gM.Dbg.Proj, gM.Dbg.View_W, gM.Dbg.View_H, 0.1f, 100);
+	
+	M4f_Iden (&gM.Dbg.World);
+	
+	M4f_trans (&gM.Dbg.World, 0, 0, -20);
+	
+//	M4f_rotx (&gM.Dbg.World, 15*deg2rad);
+//	M4f_trans (&gM.Dbg.World, 0, 0, -15);
+//	M4f_rotx (&gM.Dbg.World, 15*deg2rad);
+}
 
 float	M3f_Det	(tM3f* pm)
 {
@@ -765,6 +845,112 @@ u08	V4f_Intersect_Line01_Tri012	(
 		ppos->y = v0.y + s*u.y + t*v.y;
 		ppos->z = v0.z + s*u.z + t*v.z;
 	}
+}
+
+
+
+struct {
+	int state;
+}Mouse;
+
+void mouse_coords (int *x, int *y)
+{
+	XEvent event;
+	XQueryPointer (gM.X.pDisp, DefaultRootWindow (gM.X.pDisp),
+	&event.xbutton.root, &event.xbutton.window,
+	&event.xbutton.x_root, &event.xbutton.y_root,
+	&event.xbutton.x, &event.xbutton.y,
+	&event.xbutton.state);
+	*x = event.xbutton.x;
+	*y = event.xbutton.y;
+}
+
+void mouse_move (int dx, int dy)
+{
+	XWarpPointer (gM.X.pDisp, None, None, 0,0,0,0, dx, dy);
+	XFlush (gM.X.pDisp);
+	usleep (1);
+}
+
+void setup_event(XEvent * event, int button)
+{
+	memset(event, 0, sizeof (event));
+	
+	event->xbutton.button = button;
+	event->xbutton.same_screen = True;
+	event->xbutton.subwindow = DefaultRootWindow(gM.X.pDisp);
+	
+	while (event->xbutton.subwindow)
+	{
+		event->xbutton.window = event->xbutton.subwindow;
+		XQueryPointer (gM.X.pDisp, event->xbutton.window,
+			&event->xbutton.root, &event->xbutton.subwindow,
+			&event->xbutton.x_root, &event->xbutton.y_root,
+			&event->xbutton.x, &event->xbutton.y,
+			&event->xbutton.state
+		);
+	}
+}
+
+void mouse_press	(int button)
+{
+	XEvent event;
+	int mask = 0;
+	switch (button) {
+	case 1:	//mask = Button1Mask;	break;
+			system("xdotool mousedown 1");	return;
+	
+	case 2:	//mask = Button2Mask;	break;
+			system("xdotool mousedown 2");	return;
+	case 3:	//mask = Button3Mask;	break;
+			system("xdotool mousedown 3");	return;
+	}
+//	printf ("mouse press %x %x\n", Mouse.state, mask);
+	if (Mouse.state & mask)
+		return;
+	
+	setup_event(&event, button);
+	event.type = ButtonPress;
+	XSetInputFocus (gM.X.pDisp, event.xbutton.window, RevertToParent, CurrentTime);
+	
+	event.xbutton.state = Mouse.state;
+	
+	XSendEvent (gM.X.pDisp, event.xbutton.window, True, ButtonPressMask, &event);
+	XFlush (gM.X.pDisp);
+	
+	Mouse.state |= mask;
+	
+	usleep (1);
+}
+
+void mouse_release	(int button)
+{
+	XEvent event;
+	int mask = 0;
+	switch (button) {
+	case 1:	//mask = Button1Mask;	break;
+			system("xdotool mouseup 1");	return;
+	
+	case 2:	//mask = Button2Mask;	break;
+			system("xdotool mouseup 2");	return;
+	case 3:	//mask = Button3Mask;	break;
+			system("xdotool mouseup 3");	return;
+	}
+//	printf ("mouse_release %x %x\n", Mouse.state, mask);
+	if (Mouse.state & mask == 0)
+		return;
+	
+	setup_event(&event, button);
+	event.type = ButtonRelease;
+	XSetInputFocus(gM.X.pDisp, event.xbutton.window, RevertToParent, CurrentTime);
+	
+	event.xbutton.state = Mouse.state;
+	
+	XSendEvent (gM.X.pDisp, event.xbutton.window, True, ButtonReleaseMask, &event);
+	XFlush (gM.X.pDisp);
+	
+	Mouse.state &= ~mask;
+	usleep (1);
 }
 
 
@@ -5084,6 +5270,7 @@ void	Head_Calc_M4_Rel	(tHead* p, tHead* pcen)
 		p->P.x = p->M4.x03;
 		p->P.y = p->M4.x13;
 		p->P.z = p->M4.x23;
+		p->P.w = 1;
 		
 		p->N.x = 0;
 		p->N.y = 0;
@@ -6051,7 +6238,7 @@ s08	Screen_Eye_XY	(tScreen* p, tEye* peye, float *px, float *py)
 	#endif
 }
 
-void	Screen_Eye_Print	(tScreen* p, tEye* peye)
+void	Screen_Eye_Print	(tScreen* p, tEye* peye)	//print the dots on front view
 {
 //	printf ("Screen_Eye_Print Idx %d\n", p->Idx);
 	
@@ -6139,7 +6326,9 @@ void	Screen_Eye_Print	(tScreen* p, tEye* peye)
 	}
 	
 	if (1) {
-		float scale = 6;
+		Dbg_Ortho_Front ();
+		
+		float scale = gM.tmp.scale;
 		float ox = peye->aScreen[p->Idx].View.Front.x, oy = peye->aScreen[p->Idx].View.Front.y;
 		
 		if (1) {
@@ -6201,7 +6390,7 @@ void	Screen_Eye_Print	(tScreen* p, tEye* peye)
 
 #undef dcal
 
-void	Head_Eye_Print	(tHead* p, tEye* peye)
+void	Head_Eye_Print	(tHead* p, tEye* peye)	//print the eye vectors
 {
 	tV4f eye, ret, vec;
 	Head_Eye_Vector (p, peye, &ret);
@@ -6212,6 +6401,22 @@ void	Head_Eye_Print	(tHead* p, tEye* peye)
 	M4f_mul_V4f (&p->M4, &eye);
 	M4f_mul_V4f (&p->M4, &ret);
 	
+	if (peye == &gM.Left)
+		gColARGB = 0x00FF00;
+	else
+		gColARGB = 0xFF0000;
+	
+	{
+		Dbg_Ortho_Front ();
+		
+		tV4f p0 = gM.Head.P; V4f_add_V4f (&p0, &gM.Head.N);
+		
+		Dbg_V4f_DrawPosPos (&gM.Head.P, &p0);
+		
+		printf ("gM.Head.P ");	V4f_Print (&gM.Head.P);
+		
+	}
+	
 	if (1) {
 		float ox = peye->aScreen[0].View.Top.x, oy = peye->aScreen[0].View.Top.y;
 		
@@ -6219,11 +6424,6 @@ void	Head_Eye_Print	(tHead* p, tEye* peye)
 		vv.x *= 40;
 		vv.y *= 40;
 		vv.z *= 40;
-		
-		if (peye == &gM.Left)
-			gColARGB = 0x00FF00;
-		else
-			gColARGB = 0xFF0000;
 		
 		S_Draw_Line_2d (ox+eye.x, oy+eye.z, ox+eye.x+vv.x, oy+eye.z+vv.z);
 		
@@ -6236,13 +6436,7 @@ void	Head_Eye_Print	(tHead* p, tEye* peye)
 		vv.y *= 40;
 		vv.z *= 40;
 		
-		if (peye == &gM.Left)
-			gColARGB = 0x00FF00;
-		else
-			gColARGB = 0xFF0000;
-		
 		S_Draw_Line_2d (ox+eye.z, oy+eye.y, ox+eye.z+vv.z, oy+eye.y+vv.y);
-		
 	}
 }
 
@@ -6323,8 +6517,29 @@ int	muhaha_XEvent_Thread	(void *data)
 					press_stuff	\
 					break;	\
 				}
+			#define dact2(name,press_stuff,release_stuff)	dact(name,press_stuff)
+			
 			#include "actions.h"
 			#undef dact
+			#undef dact2
+			break;
+		}
+		case KeyRelease: {
+			KeySym key;
+			char buffer[20];
+			int bufsize = 20;
+			int charcount = XLookupString(&e, buffer, bufsize, &key, 0);
+			
+			#define dact(name,press_stuff)	
+			#define dact2(name,press_stuff,release_stuff)	\
+			if (key == gM.Action.name) {	\
+					release_stuff	\
+					break;	\
+				}
+			
+			#include "actions.h"
+			#undef dact
+			#undef dact2
 			break;
 		}
 		}/**/
@@ -6361,8 +6576,10 @@ void	muhaha_Keyboard_Init	()
 		}while(0)
 	
 	#define dact(name,press_stuff)	dgrab(gM.Action.name);
+	#define dact2(name,press_stuff,release_stuff) dact(name,press_stuff)
 	#include "actions.h"
 	#undef dact
+	#undef dact2
 //	XGrabKey(gM.X.pDisp, gM.Action.Mod_Key, Mod2Mask, gM.aScreen[0].Win, True, GrabModeAsync, GrabModeAsync);		\
 	
 	#undef dgrab
@@ -6932,7 +7149,7 @@ void	muhaha	()
 			V4f_DrawPosPos (&gM.Head.P, &p0);
 		}
 		
-		printf ("c:\t%f\t%f\t%f\n", gM.Head.M4.x03, gM.Head.M4.x13, gM.Head.M4.x23);
+	//	printf ("c:\t%f\t%f\t%f\n", gM.Head.M4.x03, gM.Head.M4.x13, gM.Head.M4.x23);
 	//	printf ("c:\t%f\t%f\t%f\n", gM.Head.M4_T.x03, gM.Head.M4_T.x13, gM.Head.M4_T.x23);
 		
 		if (0) {
@@ -6959,7 +7176,7 @@ void	muhaha	()
 			V4f_DrawPosPos (&c, &dy);
 			V4f_DrawPosPos (&c, &dz);
 		}
-		if (1) {
+		if (0) {
 		/*	tV4f pc = {0,	-1,	3.5,	1};
 			tV4f pl = {-7.5,	0,	0,	1};
 			tV4f pr = {7.5,	0,	0,	1};/**/
@@ -7073,10 +7290,10 @@ void	muhaha	()
 		//	gM.GazeL = Eye_map_point(&gM.Left, gM.L_Vec);
 			
 			
-			if (1) {
-				Head_Eye_Print (&gM.Head, &gM.Left);
-				Head_Eye_Print (&gM.Head, &gM.Right);
-			}
+		}
+		if (1) {
+			Head_Eye_Print (&gM.Head, &gM.Left);
+			Head_Eye_Print (&gM.Head, &gM.Right);
 		}
 		
 		

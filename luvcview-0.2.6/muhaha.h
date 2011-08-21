@@ -346,10 +346,12 @@ typedef struct {
 	struct {
 		
 		#define dact(name,press_stuff) name,
+		#define dact2(name,press_stuff,release_stuff) name,
 		int
 		#include "actions.h"
 		NONE;
 		#undef dact
+		#undef dact2
 	}Action;
 	
 	struct {
@@ -361,6 +363,13 @@ typedef struct {
 	}Micro;
 	
 	struct {
+		tM4f Proj, World;
+		si View_X, View_Y, View_W, View_H;	//x y is the center
+		
+	}Dbg;
+	
+	struct {
+		float scale;
 		float x, y, z;
 	}tmp;
 }tM;

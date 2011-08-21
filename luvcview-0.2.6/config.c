@@ -448,6 +448,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	deye(Right)
 	
 	
+	drw_f (tmp.scale)
 	drw_f (tmp.x)
 	drw_f (tmp.y)
 	drw_f (tmp.z)
@@ -520,8 +521,10 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_aa_v4f (Right.InHead.aaCal,1,1,P);/**/
 	
 	#define dact(name,press_stuff) drw_si(Action.name)
+	#define dact2(name,press_stuff,release_stuff) drw_si(Action.name)
 	#include "actions.h"
 	#undef dact
+	#undef dact2
 	
 	
 	drw_f (Micro.SX)

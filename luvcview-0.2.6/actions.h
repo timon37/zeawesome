@@ -90,6 +90,25 @@ dact (Screen_BR,
 )
 #endif
 
+dact2 (Mouse_Click_L,
+	mouse_press (1);
+,
+	mouse_release (1);
+)
+dact2 (Mouse_Click_R,
+	printf ("hahahahahah 2\n");
+	mouse_press (3);
+,
+	printf ("hahahahahah 2 relea\n");
+	mouse_release (3);
+)
+dact2 (Mouse_Click_M,
+	mouse_press (2);
+,
+	mouse_release (2);
+)
+
+
 dact (Micro_Tog,
 	switch (gM.Micro.State) {
 	case 0:
