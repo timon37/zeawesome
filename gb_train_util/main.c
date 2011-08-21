@@ -38,25 +38,25 @@ TrainUtil_Example*	TrainUtil_CreateExample	(IplImage *image, float decision)
 	
 	for (int yi=0; yi<image->height; yi++) {
 		for (int xi=0; xi<image->width; xi++) {
-			int image_idx = yi*image->widthStep + image->nChannels*xi;
-			for (int channel = 0; channel<3; channel++) {
-				example->attrs[idx] = (unsigned char) image->imageData[image_idx+channel];
-				idx++;
-			}
+			int image_idx = yi*image->widthStep + xi;
+			example->attrs[idx] = (unsigned char) image->imageData[image_idx];
+			idx++;
+			
 		}
 	}
 	
 	assert(example->length==idx);
-	assert(example->length==64*64*3);
+	assert(example->length==64*64);
 	
 	return example;
 }
 
+//gray image as input
 IplImage*	TrainUtil_SampleImage	(IplImage *image, TrainUtil_ExampleParams *params)
 {
 	int x_sample_size = 64, y_sample_size = 64;
 	
-	IplImage* sample = cvCreateImage( cvSize(x_sample_size, y_sample_size), IPL_DEPTH_8U, image->nChannels );
+	IplImage* sample = cvCreateImage(cvSize(x_sample_size, y_sample_size), IPL_DEPTH_8U, 1);
 	
 	float x_start = (float) params->x1;
 	float x_end = (float) params->x2;
@@ -81,30 +81,28 @@ IplImage*	TrainUtil_SampleImage	(IplImage *image, TrainUtil_ExampleParams *param
 			int y_ceil = y_floor + 1;
 			float y_fraction = y_point - y_floor;
 			
-			int image_idx_tl = y_floor*image->widthStep + image->nChannels*x_floor;
-			int image_idx_tr = y_floor*image->widthStep + image->nChannels*x_ceil;
-			int image_idx_bl = y_ceil*image->widthStep + image->nChannels*x_floor;
-			int image_idx_br = y_ceil*image->widthStep + image->nChannels*x_ceil;
+			int image_idx_tl = y_floor*image->widthStep + x_floor;
+			int image_idx_tr = y_floor*image->widthStep + x_ceil;
+			int image_idx_bl = y_ceil*image->widthStep + x_floor;
+			int image_idx_br = y_ceil*image->widthStep + x_ceil;
 			
-			int sample_idx = yi*sample->widthStep + sample->nChannels*xi;
+			int sample_idx = yi*sample->widthStep + xi;
 			
 			/* Using openCV macros
 			unsigned char* sample_pixel = &CV_IMAGE_ELEM(sample, unsigned char, yi, xi * sample->nChannels );
 			*/
 			
-			for (int channel = 0; channel<3; channel++) {
-				float c_tl = (unsigned char) image->imageData[image_idx_tl+channel];
-				float c_tr = (unsigned char) image->imageData[image_idx_tr+channel];
-				float c_bl = (unsigned char) image->imageData[image_idx_bl+channel];
-				float c_br = (unsigned char) image->imageData[image_idx_br+channel];
+			float c_tl = (unsigned char) image->imageData[image_idx_tl];
+			float c_tr = (unsigned char) image->imageData[image_idx_tr];
+			float c_bl = (unsigned char) image->imageData[image_idx_bl];
+			float c_br = (unsigned char) image->imageData[image_idx_br];
+			
+			float c_top = x_fraction * (c_tr - c_tl) + c_tl;
+			float c_bottom = x_fraction * (c_br - c_bl) + c_bl;
+			
+			float c_final = y_fraction * (c_bottom - c_top) + c_top;
 				
-				float c_top = x_fraction * (c_tr - c_tl) + c_tl;
-				float c_bottom = x_fraction * (c_br - c_bl) + c_bl;
-				
-				float c_final = y_fraction * (c_bottom - c_top) + c_top;
-				
-				sample->imageData[sample_idx+channel] = (int) c_final;
-			}
+			sample->imageData[sample_idx] = (int) c_final;
 		}
 	}
 	
@@ -134,17 +132,24 @@ int	TrainUtil_OpenList	(char *fileName)
 			while (len > 0 && isspace(buf[len-1]))
 				len--;
 			buf[len] = '\0';
-			puts(buf);
+
 			IplImage *image = cvLoadImage( buf, 1 );
 			
 			if (image) {
+				//convert_image to gray
+				IplImage* gray_image = cvCreateImage(cvSize(image->width,image->height), 8, 1);
+				cvCvtColor( image, gray_image, CV_BGR2GRAY );
+				cvEqualizeHist(gray_image, gray_image);
+				//free rgb image
+				cvReleaseImage(&image);
+				
 				TrainUtil_ExampleParams params;
 				
 				//open image in new window in order to select desired feature
 				cvNamedWindow("original", 1);
 				cvSetMouseCallback("original", TrainUtil_MouseHandler, &params );
 				
-				cvShowImage("original", image);
+				cvShowImage("original", gray_image);
 				if (cvWaitKey(0) == 'e')
 					exit(1);
 					
@@ -160,7 +165,7 @@ int	TrainUtil_OpenList	(char *fileName)
 						mod_params.y1 += yi;
 						mod_params.y2 += yi;
 						
-						IplImage *image_sample = TrainUtil_SampleImage(image, &mod_params);
+						IplImage *image_sample = TrainUtil_SampleImage(gray_image, &mod_params);
 						TrainUtil_Example *example = TrainUtil_CreateExample(image_sample, 1.0);
 						TrainUtil_ExampleList_Add(&training_set, example);
 						cvReleaseImage(&image_sample);
@@ -189,14 +194,14 @@ int	TrainUtil_OpenList	(char *fileName)
 					mod_params.y1 += yi;
 					mod_params.y2 += yi;
 					
-					IplImage *image_sample = TrainUtil_SampleImage(image, &mod_params);
+					IplImage *image_sample = TrainUtil_SampleImage(gray_image, &mod_params);
 					TrainUtil_Example *example = TrainUtil_CreateExample(image_sample, -1.0);
 					TrainUtil_ExampleList_Add(&training_set, example);
 					cvReleaseImage(&image_sample);
 					n_points++;
 				}
 				
-				cvReleaseImage(&image);
+				cvReleaseImage(&gray_image);
 				n_lines++;
 			}
 		}
