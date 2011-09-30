@@ -26,7 +26,7 @@ VERSION = 0.2.6
 #           -Wno-unused
 #           -Wunused
 
-CFLAGS += -O2 -ggdb3 `pkg-config opencv --cflags --libs` -lX11 -lXi -DUSE_SDL  -DLINUX -DVERSION=\"$(VERSION)\" -I$(SDLFLAGS) $(V4L2FLAGS) $(WARNINGS) 
+CFLAGS += -O2 -ggdb3 `pkg-config opencv --cflags --libs` -lX11 -lXi -lXtst  -DUSE_SDL  -DLINUX -DVERSION=\"$(VERSION)\" -I$(SDLFLAGS) $(V4L2FLAGS) $(WARNINGS) 
 CPPFLAGS = $(CFLAGS)
 
 OBJECTS = luvcview.o muhaha.o muhaha_ransac_ellipse.o config.o Posit.o color.o utils.o v4l2uvc.o gui.o avilib.o
@@ -48,6 +48,7 @@ luvcview:	$(OBJECTS)
 		$(SDLLIBS)\
 		$(V4L2LIBS)\
 		-o $(APP_BINARY)
+	$(CC)	-S $(CFLAGS) muhaha.c -o muhaha.S
 	chmod 755 $(APP_BINARY)
 
 

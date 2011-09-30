@@ -42,6 +42,8 @@
 #include <X11/extensions/shape.h>
 #include <X11/cursorfont.h>
 
+//#include "xdo.h"
+
 typedef unsigned char u08;
 typedef unsigned short u16;
 typedef unsigned int u32;
@@ -102,8 +104,9 @@ typedef struct {
 	};
 }tM4f;
 
-#define CALIBRATIONPOINTS    5
+#define CALIBRATIONPOINTS    9
 typedef struct {
+	u08 aPoint_State[CALIBRATIONPOINTS];  //0 not set, 1 set
 	//tV2f  calipoints[CALIBRATIONPOINTS];       //conversion from eye to scene calibration points
 	tV2f  scenecalipoints[CALIBRATIONPOINTS];  //captured (with mouse) calibration points
 	//tV2f  pucalipoints[CALIBRATIONPOINTS];     //captured eye points while looking at the calibration points in the scene
@@ -127,6 +130,7 @@ enum {
 	eEye_Fit_S2Fit,
 	eEye_Fit_S3Fit_START,
 	eEye_Fit_S3Fit_Point,
+	eEye_Fit_S3Fit_Point4,
 	eEye_Fit_S3Fit_Eye,
 	eEye_Fit_S3Fit_Eye3,
 	eEye_Fit_S3Fit_END,
@@ -153,9 +157,8 @@ enum {
 
 
 enum {
-//	dEye_InHead_Cal_NUM = 2,
 	dScreen_MAX = 6,
-	dEye_Screen_Cal_NUM = 5,
+	dEye_Screen_Cal_NUM = 3,
 	dEye_Screen_Cal_LAST = dEye_Screen_Cal_NUM-1,
 };
 
@@ -172,7 +175,7 @@ typedef struct {
 }tEye_Point;
 
 typedef struct {
-	tV2f P; tV2f V; // Position, Velocity
+	tV2f P, OP, V; // Position, OldPosition, Velocity
 	float Ax, Ay, Aa;
 	
 	si Pix_Dark, Pix_Bright;
@@ -198,16 +201,30 @@ typedef struct {
 	}S5;
 	
 	struct {
+		u08 tmpID;
 		si tmpNum;
-		float Max_R;
-		si Search_R;
-		si Y;
+		tV2f tmpP;
+		ui Max_R;
+		float Perf_R, MaxDiff_R;
+		si Search_R, GSearch_R;
+		si Y, Y_Marg, GY;
+		
+		tV2si Mark_P;
+		u08* paMark;
 	}FF;
 	
 	si Point_N, Point_Max;
 	tV2f*	paPoint;
 	
-	tV2si LinView;
+	tV2f GTF;	//Glint Transform Fix, couldn't resist GTF sounds too cool
+	tV2f G0, G1;	//glint points on screen
+	tV2f GV;		//normalized glint-retina vector
+	tV4f GP;	//Lense sphere position based on G0, G1
+	SDL_mutex *GV_mutex;
+	float LR;	//Lense sphere radius
+	
+	
+	tV2si LinView, CirView;
 	
 	tHomo Homo;
 	struct {
@@ -215,7 +232,6 @@ typedef struct {
 		struct {
 			tV4f P, V, P0, P1;
 		}aLine[128];
-		
 		
 		tV4f P;
 		float R;
@@ -233,26 +249,29 @@ typedef struct {
 			tV2si Top, Left, Front;
 		}View;
 	}aScreen[dScreen_MAX];
+	
+	struct {
+		tV2f P[2], GV[2];
+	}tmp;
 }tEye;
 
 
 typedef struct {
+	tV4f P, N, R;	//Position, Normal, Rotation about axes
+	
 	tEye DotC, DotL, DotR;
 	tM3f M, MI;
 	
 	tM4f M4, M4_T, M4_R;
 	tM4f M4I, M4I_T, M4I_R;
 	
-	float R_X, R_Y, R_Z;
+	float R_X, R_Y, R_Z, SRX, SRY;
 	
-	tV4f P, N;
 	
 	struct {
 		tV4f PC, PL, PR;
 		tV4f TInc, RInc;
 	}Mod;
-//	struct {
-//	}L;
 }tHead;
 
 
@@ -262,8 +281,14 @@ typedef struct {
 	
 	ui PixW, PixH;
 	
-	tV4f C; //center
-	float W, H;
+	struct {
+		tV4f C; //center
+		float W, H;
+	};/**/
+	struct {
+		tV4f C, Rot; //center
+		float W, H;
+	}Real;/**/
 	
 	Window Win;
 	tV2si	Off;
@@ -296,15 +321,38 @@ typedef struct {
 }tMarker;
 
 typedef struct {
-	u08 Eye_Line_Ray, GazeAvg, Pointer_Mode;
+	tV4f P;
+	
+}tLight;
+
+typedef struct {
+	
+	
+}tREvDev;
+
+enum {
+	dM_X_Queue_M_Down,
+	dM_X_Queue_M_Up,
+	
+	dM_X_Queue_NUM = 8
+};
+
+//actions should be triggered by 0 - off, 1 - X11 key grab, 2 - kernel zeawesome module
+#define dM_Actions_Mode	2
+
+typedef struct {
+	u08 Eye_Line_Ray, Eye_GlintMode, GazeMode, GazeAvg, Pointer_Mode;
 	
 	u08 bGazeHold, bHead_Eye_LineDraw, bEye_S4_EdgeMark3_Micro;
+	
+	SDL_mutex *Main_mutex;
 	
 	int Y_Level;
 	
 	u08 DeSat;
 	
 	tCam Cam;
+	tLight aLight[2];
 	
 	si Draw_X, Draw_Y, Draw_W, Draw_H;
 	
@@ -342,6 +390,16 @@ typedef struct {
 	//	XWindowAttributes RootAttr;
 		
 		XIDeviceInfo Pointer, Keyboard;
+	//	xdo_t* pDo;
+		
+		struct {
+			u08 Act;
+			
+			union {
+				u08 Button;
+			};
+		}aQueue[dM_X_Queue_NUM];
+		si Queue_C, Queue_N;	//current idx, number of remaning
 	}X;
 	
 	struct {
@@ -355,6 +413,9 @@ typedef struct {
 		#undef dact2
 	}Action;
 	
+	tREvDev KB;
+	
+	float GazeAvg_3_MinAlpha, GazeAvg_3_MinDist, GazeAvg_3_Dist;
 	struct {
 		u08 State;
 		tM4f Head_CR;
@@ -365,7 +426,7 @@ typedef struct {
 	
 	struct {
 		struct sDbg_View {
-			float Scale;
+			float Scale, T_X, T_Y, R_X, R_Y;
 			tV2si Off;
 		}Top, Left, Front;
 		
@@ -388,6 +449,8 @@ void	muhaha_Init		();
 void	muhaha_DeInit	();
 void	muhaha		();
 
+void	Eye_Init	(tEye* peye);
+void	Eye_Conf	(tEye* peye);
 
 struct pt_data {
 	SDL_Surface **ptscreen;
@@ -436,10 +499,6 @@ tV2d* normalize_point_set(tV2d* point_set, double *dis_scale, tV2d *nor_center, 
 extern ui gM_edge_point_N;
 extern tV2d gM_edge_point[204];
 extern double pupil_param[5];//parameters of an ellipse {ellipse_a, ellipse_b, cx, cy, theta}; a & b is the major or minor axis; 
-
-
-
-
 
 
 

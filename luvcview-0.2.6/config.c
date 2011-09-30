@@ -87,6 +87,7 @@ int dyn_get_value_enum(dyn_config_entry *de, const char *path, int *val) {
 	dhack(eEye_Fit_S2Fit)
 	dhack(eEye_Fit_S3Fit_START)
 	dhack(eEye_Fit_S3Fit_Point)
+	dhack(eEye_Fit_S3Fit_Point4)
 	dhack(eEye_Fit_S3Fit_Eye)
 	dhack(eEye_Fit_S3Fit_Eye3)
 	dhack(eEye_Fit_S3Fit_END)
@@ -236,6 +237,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 			drw_full_f(name ".x", tgt.x);		\
 			drw_full_f(name ".y", tgt.y);		\
 		}while(0)
+	#define drw_v2f(name)	drw_full_v2f(#name, gM.name)
 	
 	#define drw_full_v4f(name,tgt)		\
 		do {		\
@@ -264,9 +266,13 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 			drw_full_v4f (#name "[" #i0 "][" #i1 "]." #rest, gM.name[i0][i1].rest);	\
 		}while(0)
 	
+	SDL_mutexP (gM.Main_mutex);
+	
 	drw_u08 (Eye_Line_Ray)
+	drw_u08 (Eye_GlintMode)
 	drw_u08 (GazeAvg)
 	
+	drw_u08 (GazeMode)
 	drw_u08 (Pointer_Mode)
 	
 	
@@ -291,8 +297,10 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	
 	Cam_Param_Set (&gM.Cam);
 	
-	drw_f (View_W)
-	drw_f (View_H)
+	gM.View_W = gM.Cam.Image_W;
+	gM.View_H = gM.Cam.Image_H;
+//	drw_f (View_W)
+//	drw_f (View_H)
 	
 	drw_f (Proj_W)
 	drw_f (Proj_H)
@@ -352,6 +360,9 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_v4f (Head.Mod.TInc);
 	drw_v4f (Head.Mod.RInc);
 	
+	drw_f (Head.SRX);
+	drw_f (Head.SRY);
+	
 	drw_f (Head.DotC.AngRes)
 	drw_f (Head.DotC.Exp_R)
 	drw_f (Head.DotC.Min_R)
@@ -364,6 +375,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_f (Head.DotC.S2Fit_Scale)
 	drw_f (Head.DotC.S2Fit_Trans)
 	
+	drw_f (Head.DotC.Pix_Bright)
 	drw_f (Head.DotC.S4_Pix_Bright)
 	
 	drw_si (Head.DotC.S5.Min_N)
@@ -375,9 +387,12 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_si (Head.DotC.S5.Pix_Diff_Start)
 	drw_si (Head.DotC.S5.Pix_Diff_Min)
 	
-	drw_f (Head.DotC.FF.Max_R)
+	drw_si (Head.DotC.FF.Max_R)
+	drw_f (Head.DotC.FF.Perf_R)
+	drw_f (Head.DotC.FF.MaxDiff_R)
 	drw_si (Head.DotC.FF.Search_R)
 	drw_si (Head.DotC.FF.Y)
+	drw_si (Head.DotC.FF.Y_Marg)
 	
 	gM.Head.DotC.LinView.x = 0;
 	gM.Head.DotC.LinView.y = 0;
@@ -402,10 +417,17 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	
 	drw_f (Head.DotC.LinView.x)
 	drw_f (Head.DotC.LinView.y)
+	drw_v2f (Head.DotC.CirView);
 	drw_f (Head.DotL.LinView.x)
 	drw_f (Head.DotL.LinView.y)
+	drw_v2f (Head.DotL.CirView);
 	drw_f (Head.DotR.LinView.x)
 	drw_f (Head.DotR.LinView.y)
+	drw_v2f (Head.DotR.CirView);
+	
+	Eye_Conf (&gM.Head.DotC);
+	Eye_Conf (&gM.Head.DotL);
+	Eye_Conf (&gM.Head.DotR);
 	
 	#define deye(name)	\
 		drw_f (name.AngRes)	\
@@ -433,20 +455,32 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 		drw_si (name.S5.Pix_Diff_Start)	\
 		drw_si (name.S5.Pix_Diff_Min)	\
 			\
-		drw_f (name.FF.Max_R)	\
+		drw_si (name.FF.Max_R)	\
+		drw_f (name.FF.Perf_R)	\
+		drw_f (name.FF.MaxDiff_R)	\
 		drw_si (name.FF.Search_R)	\
 		drw_si (name.FF.Y)	\
+		drw_si (name.FF.Y_Marg)	\
+		drw_si (name.FF.GY)	\
+		drw_si (name.FF.GSearch_R)	\
+			\
+		drw_v2f (name.GTF);	\
+			\
+		drw_f (name.LR)	\
 			\
 		drw_f (name.InHead.R)	\
 		drw_v4f (name.InHead.P);	\
 			\
 		drw_f (name.LinView.x)	\
-		drw_f (name.LinView.y)
+		drw_f (name.LinView.y)	\
+		drw_v2f (name.CirView);
 	
 	
 	deye(Left)
 	deye(Right)
 	
+	Eye_Conf (&gM.Left);
+	Eye_Conf (&gM.Right);
 	
 	drw_f (tmp.scale)
 	drw_f (tmp.x)
@@ -485,12 +519,23 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	
 	#define dview(name)	\
 	drw_f (Dbg.name.Scale);	\
+	drw_f (Dbg.name.R_X);	\
+	drw_f (Dbg.name.R_Y);	\
+	drw_f (Dbg.name.T_X);	\
+	drw_f (Dbg.name.T_Y);	\
 	drw_si (Dbg.name.Off.x);	\
 	drw_si (Dbg.name.Off.y);
 	
 	dview(Front)
 	dview(Left)
 	dview(Top)
+	
+	
+	#define dlight(name)	\
+		drw_v4f (name.P);
+	
+	dlight (aLight[0])
+	dlight (aLight[1])
 	
 //	printf ("aScreen[0].Off %d %d\n", gM.aScreen[0].Off.x, gM.aScreen[0].Off.y);
 //	Screen_Eye_PreCal (gM.aScreen + 0, &gM.Left);
@@ -536,6 +581,10 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	#undef dact2
 	
 	
+	drw_f (GazeAvg_3_MinAlpha)
+	drw_f (GazeAvg_3_MinDist)
+	drw_f (GazeAvg_3_Dist)
+	
 	drw_f (Micro.SX)
 	drw_f (Micro.SY)
 	
@@ -547,6 +596,9 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	
 	printf ("W %f H %f", gM.Proj_W, gM.Proj_H);
 	printf ("   N %f F %f\n", gM.Proj_N, gM.Proj_F);
+	
+	
+	SDL_mutexV (gM.Main_mutex);
 	
 	yaml_parser_delete(&parser);
 	
