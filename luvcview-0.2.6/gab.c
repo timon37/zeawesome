@@ -1,6 +1,8 @@
-#include "gab.h"
+
 #include <stdio.h>
 #include <math.h>
+
+#include "gab.h"
 
 void    TrainUtil_ExampleList_Add  (TrainUtil_ExampleList **list, TrainUtil_Example *example)
 {
@@ -84,7 +86,7 @@ void TrainUtil_FitDecisionStump(TrainUtil_Example **X, int X_size, int f_index, 
 	else
 		out_cls->th = ( X[min_index]->attrs[f_index]
 		                + X[min_index + 1]->attrs[f_index]) / 2.0f;
-		                
+	
 	free(s_yw);
 	free(s_w);
 	free(a);
@@ -111,7 +113,7 @@ void    TrainUtil_GentleBoost    (
 	
 	//allocate output classifer list
 	*out_cls = (TrainUtil_Classifier*) malloc(sizeof(TrainUtil_Classifier)*n_rounds);
-
+	
 	//creates sorted arrays for each feature
 	TrainUtil_Example ***sorted_X = (TrainUtil_Example***) malloc(sizeof(TrainUtil_Example**)*total_dim);	
 	for (int i = 0; i < total_dim; i++) {
@@ -166,3 +168,20 @@ void    TrainUtil_GentleBoost    (
 	free(stump_out);
 	free(class_out);
 }
+
+
+void	TrainUtil_Classify	(TrainUtil_Classifier *p, TrainUtil_Example* pex)
+{
+	float stump_out, class_out;
+	
+	float dec = (pex->attrs[p->index] > p->th) ? 1.0f : 0.0f;
+	stump_out = p->a * dec + p->b;
+	class_out += stump_out;
+	
+//	pex->w *= exp(-pex->decision * stump_out);
+	
+	return class_out;
+}
+
+
+

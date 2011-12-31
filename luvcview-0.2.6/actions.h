@@ -1,4 +1,5 @@
 
+
 dact (GazeHold,
 	gM.bGazeHold = !gM.bGazeHold;
 )
@@ -52,6 +53,13 @@ dact (Back,
 	if (gM.Right.InHead.Line_N)
 		--gM.Right.InHead.Line_N;
 )
+dact (Head_Point_Train,
+	dSafe_Main_S ();
+	
+	Head_Point_Train (&gM.Head);
+	
+	dSafe_Main_E ();
+)
 
 dact (Screen_Hide,
 	gM.Screen_CalIdx = 0;
@@ -71,7 +79,14 @@ dact (Screen2,
 )
 
 dact (CalNext,
-	Screen_Cal_Save (gM.aScreen + gM.Screen_CalIdx);
+//	Screen_Cal_Save (gM.aScreen + gM.Screen_CalIdx);
+	if (gM.Cal_bRecord) {
+		gM.Cal_bRecord = 0;
+		Screen_Cal_RecordEnd (gM.aScreen + gM.Screen_CalIdx);
+	}else {
+		Screen_Cal_RecordStart (gM.aScreen + gM.Screen_CalIdx);
+		gM.Cal_bRecord = 1;
+	}/**/
 )
 dact (Screen_Left,
 	Screen_Cal_DoLeft (gM.aScreen + gM.Screen_CalIdx);

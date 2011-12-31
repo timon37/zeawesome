@@ -40,6 +40,7 @@ TrainUtil_Example*	TrainUtil_CreateExample	(IplImage *image, float decision)
 		for (int xi=0; xi<image->width; xi++) {
 			int image_idx = yi*image->widthStep + xi;
 			example->attrs[idx] = (unsigned char) image->imageData[image_idx];
+			printf ("example->attrs[idx] %f\n", example->attrs[idx]);
 			idx++;
 			
 		}
@@ -152,9 +153,10 @@ int	TrainUtil_OpenList	(char *fileName)
 				cvShowImage("original", gray_image);
 				if (cvWaitKey(0) == 'e')
 					exit(1);
-					
+				
 				cvDestroyWindow("original");
 				
+				cvNamedWindow("test", 1);
 				//create sample from mouse-selected area
 				//mark 9 positive examples
 				for (int xi=-1; xi <= 1; xi++) {
@@ -166,11 +168,14 @@ int	TrainUtil_OpenList	(char *fileName)
 						mod_params.y2 += yi;
 						
 						IplImage *image_sample = TrainUtil_SampleImage(gray_image, &mod_params);
+						cvShowImage("test", image_sample);
+						cvWaitKey(0);
 						TrainUtil_Example *example = TrainUtil_CreateExample(image_sample, 1.0);
 						TrainUtil_ExampleList_Add(&training_set, example);
 						cvReleaseImage(&image_sample);
 					}
 				}
+				cvDestroyWindow("test");
 				
 				//mark 16 negative points
 				int n_points = 0;

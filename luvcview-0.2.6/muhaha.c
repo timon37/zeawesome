@@ -19,11 +19,6 @@ typedef struct {//YUV 4:2:2
 	u16 Y2:4;
 }tPix __attribute__((packed));
 */
-typedef struct {//YUV 4:2:2
-	u08 Y;
-	u08 U:4;
-	u08 V:4;
-}__attribute__((packed)) tPix;
 
 
 tPix gCol;
@@ -135,44 +130,9 @@ tM gM =
 	},
 };
 
-#define dSMALL_NUM  0.00000001
 
-#define deg2rad	(M_PI/180.0f)
-#define rad2deg	(180.0f/M_PI)
-#define dpow2(_num) ((_num)*(_num))
+#include "priv_macros.h"
 
-#define dclip_l(val,min)	({typeof(val) ret; if ((val) < (min)) ret = (min); else ret = (val); ret;})
-#define dclip_h(val,max)	({typeof(val) ret; if ((val) > (max)) ret = (max); else ret = (val); ret;})
-
-#define ddot(x0,y0,x1,y1) ((x0)*(x1) + (y0)*(y1))
-
-#define ddist2(x0,y0,x1,y1)	(((x1)-(x0))*((x1)-(x0)) + ((y1)-(y0))*((y1)-(y0)))
-
-#define ddist(x0,y0,x1,y1) sqrt(ddist2(x0,y0,x1,y1))
-
-#define dopix(_x,_y) ((tPix*)videoIn->framebuffer + ((si)(_x) + (si)(_y)*videoIn->width))
-#define dnpix(_x,_y) ((tPix*)gM.pDst + ((si)(_x) + (si)(_y)*videoIn->width))
-#define dpix(_x,_y) dnpix(_x,_y)
-
-
-#define dsout(_x,_y) ((_x) < 0 || (_y) < 0 || (_x) >= gM.pScreen->w || (_y) >= gM.pScreen->h)
-#define dspix(_x,_y) (*((u32*)gM.pScreen->pixels + ((si)(_x) + (si)(_y)*gM.pScreen->pitch/4)))
-
-#define dmono2rgb(_g) ((u32)(_g) | (u32)(_g)<<8 | (u32)(_g)<<16)
-
-
-#define dpixout(_x,_y) ((_x) < 0 || (_y) < 0 || (_x) >= videoIn->width || (_y) >= videoIn->height)
-
-
-#define dset_cyuv(_x,_y,y,u,v)	\
-	do {	\
-		if (dpixout(_x,_y))	\
-			break;		\
-		dnpix(_x,_y)->Y = y;	\
-		dnpix(_x,_y)->U = u;	\
-		dnpix(_x,_y)->V = v;	\
-	}while(0)
-#define dset_c1(_x,_y) dset_cyuv (_x,_y,0xFF,0xF,0xF)
 
 void	V4f_Print	(tV4f* p)
 {
@@ -196,63 +156,6 @@ void	M4f_Print	(tM4f* p)
 	}
 }
 
-
-float	V2f_dot_V2f	(tV2f* pv0, tV2f* pv1)
-{
-	return pv0->x*pv1->x + pv0->y*pv1->y;
-}
-float	V4f_dot_V4f	(tV4f* pv0, tV4f* pv1)
-{
-	return pv0->x*pv1->x + pv0->y*pv1->y + pv0->z*pv1->z;
-}
-
-void	V4f_mul_S	(tV4f* pv0, float s)
-{
-	pv0->x *= s;
-	pv0->y *= s;
-	pv0->z *= s;
-}
-
-
-float	V2f_cross	(tV2f* pv0, tV2f* pv1)
-{
-	return pv0->x*pv1->y - pv0->y*pv1->x;
-}
-
-void	V4f_cross	(tV4f* pret, tV4f* pv0, tV4f* pv1)
-{
-	tV4f ret;
-	ret.x = pv0->y*pv1->z - pv0->z*pv1->y;
-	ret.y = pv0->z*pv1->x - pv0->x*pv1->z;
-	ret.z = pv0->x*pv1->y - pv0->y*pv1->x;
-	ret.w = 1;
-	*pret = ret;
-}
-
-float	V2f_dist	(tV2f* pv)
-{
-	return sqrtf(pv->x*pv->x + pv->y*pv->y);
-}
-
-float	V4f_dist2	(tV4f* pv)
-{
-	return pv->x*pv->x + pv->y*pv->y + pv->z*pv->z;
-}
-float	V4f_dist	(tV4f* pv)
-{
-	return sqrtf(V4f_dist2(pv));
-}
-
-
-void	V4f_norm	(tV4f* pv0)
-{
-	V4f_mul_S (pv0, 1.0f/V4f_dist (pv0));
-}
-
-float	V4f_dist_V4f	(tV4f* pv0, tV4f* pv1)
-{
-	return sqrtf(dpow2(pv1->x-pv0->x) + dpow2(pv1->y-pv0->y) + dpow2(pv1->z-pv0->z));
-}
 
 
 void	V2f_add_V2f		(tV2f* pv0, tV2f* pv1)
@@ -479,33 +382,6 @@ void	V4f_rotz	(tV4f* p, float a)
 	M4f_mul_V4f (&op, p);
 }
 
-
-float	angle_norm_0_2pi	(float a)
-{
-	while (a < 0) {
-		a += 2*M_PI;
-	}
-	while (a > 2*M_PI) {
-		a -= 2*M_PI;
-	}
-	return a;
-}
-
-float	angle_norm_pi_pi	(float a)
-{
-	while (a < -M_PI) {
-		a += 2*M_PI;
-	}
-	while (a > M_PI) {
-		a -= 2*M_PI;
-	}
-	return a;
-}
-
-float	angle_diff_norm_pi_pi	(float a0, float a1)
-{
-	return angle_norm_pi_pi(a0 - a1);
-}
 
 void angle_test ()
 {
@@ -777,8 +653,10 @@ void	Proj_Cam		()
 	float fov = gM.Cam.Image_FOV*deg2rad;
 	float a = atan2(gM.Cam.Image_H, gM.Cam.Image_W);
 	
-	gM.Cam.Image_FOV_W = fov*cos(a);
-	gM.Cam.Image_FOV_H = fov*sin(a);
+	if (gM.Cam.Image_FOV_W == 0)
+		gM.Cam.Image_FOV_W = fov*cos(a);
+	if (gM.Cam.Image_FOV_H == 0)
+		gM.Cam.Image_FOV_H = fov*sin(a);
 	
 	printf ("Image_FOV %f  W %f H %f\n", gM.Cam.Image_FOV, gM.Cam.Image_FOV_W*rad2deg, gM.Cam.Image_FOV_H*rad2deg);
 	
@@ -1262,37 +1140,6 @@ s08	Win_PropGet_Cardinal32	(Window win, Atom prop, int* pval)
 
 
 
-void	Col_EyeSet	(tEye* peye)
-{
-	if (peye == &gM.Left)
-		gColARGB = 0x00FF00;
-	else
-		gColARGB = 0xFF0000;
-}
-
-
-void	Eye_Xset	(tEye* peye, float x)
-{
-	if (x < 20)
-		x = 20;
-	else if (x > videoIn->width-20)
-		x = videoIn->width-20;
-	peye->P.x = x;
-}
-void	Eye_Yset	(tEye* peye, float y)
-{
-	if (y < 20)
-		y = 20;
-	else if (y > videoIn->height-20)
-		y = videoIn->height-20;
-	peye->P.y = y;
-}
-void	Eye_XYset	(tEye* peye, float x, float y)
-{
-	Eye_Xset (peye, x);
-	Eye_Yset (peye, y);
-}
-
 
 
 void	Marker_Show		(tMarker* p)
@@ -1515,424 +1362,6 @@ void	Marker_Init	(tMarker* p, u08 type)
 
 
 
-
-void	Homo_PreCalPrint	(tHomo* phomo)
-{
-	si ix, iy, i;
-	
-	printf ("ScreenPoints: \n");
-	for (iy = 0; iy < dEye_Screen_Cal_NUM; ++iy) {
-		for (ix = 0; ix < dEye_Screen_Cal_NUM; ++ix) {
-			i = ix + iy * dEye_Screen_Cal_NUM;
-			printf ("%f\t%f\t\t| ", phomo->scenecalipoints[i].x, phomo->scenecalipoints[i].y);
-		}
-		printf ("\n");
-	}
-	printf ("Vectors: \n");
-	for (iy = 0; iy < dEye_Screen_Cal_NUM; ++iy) {
-		for (ix = 0; ix < dEye_Screen_Cal_NUM; ++ix) {
-			i = ix + iy * dEye_Screen_Cal_NUM;
-			printf ("%f\t%f\t\t| ", phomo->vectors[i].x, phomo->vectors[i].y);
-		}
-		printf ("\n");
-	}
-	
-	printf ("\n");
-}
-
-
-#if 0
-//}
-
-float a, b, c, d, e;                            //temporary storage of coefficients
-//float aa, bb, cc, dd, ee;                       //pupil X coefficients
-//float ff, gg, hh, ii, jj;			//pupil Y coefficients
- 
-//float centx, centy;                             // translation to center pupil data after biquadratics
-//int inx, iny;                                   // translation to center pupil data before biquadratics
-//float cmx[4], cmy[4];                           // corner correctioncoefficients
-
-void dqfit(	tHomo* phomo,
-		float x1, float y1, 
-		float x2, float y2, 
-		float x3, float y3, 
-		float x4, float y4, 
-		float x5, float y5,
-		float X1, float X2, float X3, float X4, float X5 )
-{
-	float den;
-	float x22,x32,x42,x52;    // squared terms 
-	float y22,y32,y42,y52;
-	
-	phomo->inx = (int)x1;            // record eye tracker centering constants 
-	phomo->iny = (int)y1;
-	a = X1;                    // first coefficient 
-	X2 -= X1;  X3 -= X1;       // center screen points 
-	X4 -= X1;  X5 -= X1;
-	x2 -= x1;  x3 -= x1;       // center eye tracker points 
-	x4 -= x1;  x5 -= x1;
-	y2 -= y1;  y3 -= y1;  
-	y4 -= y1;  y5 -= y1;
-	x22 = x2*x2; x32 = x3*x3;   // squared terms of biquadratic 
-	x42 = x4*x4; x52 = x5*x5;
-	y22 = y2*y2; y32 = y3*y3;
-	y42 = y4*y4; y52 = y5*y5;
-	
-	//Cramer's rule solution of 4x4 matrix */
-	den = -x2*y3*x52*y42-x22*y3*x4*y52+x22*y5*x4*y32-y22*x42*y3*x5-
-		x32*y22*x4*y5-x42*x2*y5*y32+x32*x2*y5*y42-y2*x52*x4*y32+
-		x52*x2*y4*y32+y22*x52*y3*x4+y2*x42*x5*y32+x22*y3*x5*y42-
-		x32*x2*y4*y52-x3*y22*x52*y4+x32*y22*x5*y4-x32*y2*x5*y42+
-		x3*y22*x42*y5+x3*y2*x52*y42+x32*y2*x4*y52+x42*x2*y3*y52-
-		x3*y2*x42*y52+x3*x22*y4*y52-x22*y4*x5*y32-x3*x22*y5*y42;
-	
-	b =  (-y32*y2*x52*X4-X2*y3*x52*y42-x22*y3*X4*y52+x22*y3*y42*X5+
-		y32*y2*x42*X5-y22*x42*y3*X5+y22*y3*x52*X4+X2*x42*y3*y52+
-		X3*y2*x52*y42-X3*y2*x42*y52-X2*x42*y5*y32+x32*y42*y5*X2+
-		X2*x52*y4*y32-x32*y4*X2*y52-x32*y2*y42*X5+x32*y2*X4*y52+
-		X4*x22*y5*y32-y42*x22*y5*X3-x22*y4*y32*X5+x22*y4*X3*y52+
-		y22*x42*y5*X3+x32*y22*y4*X5-y22*x52*y4*X3-x32*y22*y5*X4)/den;
-	
-	c =  (-x32*x4*y22*X5+x32*x5*y22*X4-x32*y42*x5*X2+x32*X2*x4*y52+
-		x32*x2*y42*X5-x32*x2*X4*y52-x3*y22*x52*X4+x3*y22*x42*X5+
-		x3*x22*X4*y52-x3*X2*x42*y52+x3*X2*x52*y42-x3*x22*y42*X5-
-		y22*x42*x5*X3+y22*x52*x4*X3+x22*y42*x5*X3-x22*x4*X3*y52-
-		x2*y32*x42*X5+X2*x42*x5*y32+x2*X3*x42*y52+x2*y32*x52*X4+
-		x22*x4*y32*X5-x22*X4*x5*y32-X2*x52*x4*y32-x2*X3*x52*y42)/den;
-	
-	d = -(-x4*y22*y3*X5+x4*y22*y5*X3-x4*y2*X3*y52+x4*y2*y32*X5-
-		x4*y32*y5*X2+x4*y3*X2*y52-x3*y22*y5*X4+x3*y22*y4*X5+
-		x3*y2*X4*y52-x3*y2*y42*X5+x3*y42*y5*X2-x3*y4*X2*y52-
-		y22*y4*x5*X3+y22*X4*y3*x5-y2*X4*x5*y32+y2*y42*x5*X3+
-		x2*y3*y42*X5-y42*y3*x5*X2+X4*x2*y5*y32+y4*X2*x5*y32-
-		y42*x2*y5*X3-x2*y4*y32*X5+x2*y4*X3*y52-x2*y3*X4*y52)/den;
-	
-	e = -(-x3*y2*x52*X4+x22*y3*x4*X5+x22*y4*x5*X3-x3*x42*y5*X2-
-		x42*x2*y3*X5+x42*x2*y5*X3+x42*y3*x5*X2-y2*x42*x5*X3+
-		x32*x2*y4*X5-x22*y3*x5*X4+x32*y2*x5*X4-x22*y5*x4*X3+
-		x2*y3*x52*X4-x52*x2*y4*X3-x52*y3*x4*X2-x32*y2*x4*X5+
-		x3*x22*y5*X4+x3*y2*x42*X5+y2*x52*x4*X3-x32*x5*y4*X2-
-		x32*x2*y5*X4+x3*x52*y4*X2+x32*x4*y5*X2-x3*x22*y4*X5)/den;
-}
-
-
-int CalculateCalibration(tHomo* phomo)
-{
-	Homo_PreCalPrint (phomo);
-	int i, j;
-	float x, y, wx[9], wy[9];	//work data points
-	int calx[10], caly[10];		//scene coordinate interpolation variables
-	int eye_x[10], eye_y[10];	//scene coordinate interpolation variables
-	
-	// Place scene coordinates into calx and caly
-	for(i = 0; i<9;i++) {
-		calx[i] = phomo->scenecalipoints[i].x;  caly[i] = phomo->scenecalipoints[i].y;
-	}
-	
-	// Set the last "tenth"  point
-	calx[9] = phomo->scenecalipoints[0].x;  caly[9] = phomo->scenecalipoints[0].y;
-	
-	// Store pupil into eye_x and eye_y
-	for(i = 0; i < 9; i++) {
-		eye_x[i] = phomo->vectors[i].x;
-		eye_y[i] = phomo->vectors[i].y;
-	}
-	
-	// Solve X biquadratic
-	dqfit(phomo,
-		(float)eye_x[0],(float)eye_y[0],(float)eye_x[1],(float)eye_y[1],(float)eye_x[2],   
-		(float)eye_y[2],(float)eye_x[3],(float)eye_y[3],(float)eye_x[4],(float)eye_y[4],
-		(float)calx[0],(float)calx[1],(float)calx[2],(float)calx[3],(float)calx[4]);
-	phomo->aa = a; phomo->bb = b; phomo->cc = c; phomo->dd = d; phomo->ee = e;
-	
-	// Solve Y biquadratic
-	dqfit(phomo,
-		(float)eye_x[0],(float)eye_y[0],(float)eye_x[1],(float)eye_y[1],(float)eye_x[2],
-		(float)eye_y[2],(float)eye_x[3],(float)eye_y[3],(float)eye_x[4],(float)eye_y[4],
-		(float)caly[0],(float)caly[1],(float)caly[2],(float)caly[3],(float)caly[4]);
-	phomo->ff = a; phomo->gg = b; phomo->hh = c; phomo->ii = d; phomo->jj = e;
-	
-	// Biquadratic mapping of points
-	for(i = 0; i < 9; i++) {
-		x = (float)(eye_x[i] - phomo->inx);
-		y = (float)(eye_y[i] - phomo->iny);
-		wx[i] = phomo->aa+phomo->bb*x+phomo->cc*y+phomo->dd*x*x+phomo->ee*y*y;
-		wy[i] = phomo->ff+phomo->gg*x+phomo->hh*y+phomo->ii*x*x+phomo->jj*y*y;
-	}
-	
-	// Shift screen points to center for quadrant compute
-	phomo->centx = wx[0];      
-	phomo->centy = wy[0];
-	
-	// Normalize to center:
-	for(i = 0; i < 9; i++) {
-		wx[i] -= phomo->centx;
-		wy[i] -= phomo->centy;
-	}
-	
-	// Compute coefficents for each quadrant
-	for(i = 0; i < 4; i++) {
-		j = i + 5;
-		phomo->cmx[i] = (calx[j]-wx[j]-phomo->centx)/(wx[j]*wy[j]);
-		phomo->cmy[i] = (caly[j]-wy[j]-phomo->centy)/(wx[j]*wy[j]);
-	}
-	
-	return 0;
-}
-
-tV2f map_point (tHomo* phomo, tV2f p)
-{
-	tV2f p2;
-	int quad=0;
-	float x1,y1,xx,yy;
-	
-	// correct eye position by recentering offset:
-	x1 = (float) p.x;
-	y1 = (float) p.y;
-	
-	// translate before biquadratic:
-	x1 -= phomo->inx;
-	y1 -= phomo->iny;
-	
-	// biquadratic mapping:
-	xx = phomo->aa+phomo->bb*x1+phomo->cc*y1+phomo->dd*x1*x1+phomo->ee*y1*y1;
-	yy = phomo->ff+phomo->gg*x1+phomo->hh*y1+phomo->ii*x1*x1+phomo->jj*y1*y1;
-	
-	// translate after biquadratic:
-	x1 = xx - phomo->centx;
-	y1 = yy - phomo->centy;
-	
-	// determine quadrant of point:
-	if      (( x1<0 )&&( y1<0 )) quad = 0;
-	else if (( x1>0 )&&( y1<0 )) quad = 1;
-	else if (( x1<0 )&&( y1>0 )) quad = 2;
-	else if (( x1>0 )&&( y1>0 )) quad = 3;
-	
-	// fix up by quadrant:
-	p2.x = (int)(xx + x1*y1*phomo->cmx[quad]);
-	p2.y = (int)(yy + x1*y1*phomo->cmy[quad]);
-	
-	return p2;
-}
-
-//{
-#endif
-
-
-#if 1
-//}
-
-static double   radius(double u, double v);
-/*
-#define CALIBRATIONPOINTS    9
-//tV2f  calipoints[CALIBRATIONPOINTS];       //conversion from eye to scene calibration points
-tV2f  phomo->scenecalipoints[CALIBRATIONPOINTS];  //captured (with mouse) calibration points
-//tV2f  pucalipoints[CALIBRATIONPOINTS];     //captured eye points while looking at the calibration points in the scene
-//tV2f  crcalipoints[CALIBRATIONPOINTS];     //captured corneal reflection points while looking at the calibration points in the scene
-tV2f  phomo->vectors[CALIBRATIONPOINTS];          //differences between the corneal reflection and pupil center
-
-double map_matrix[3][3];
-*/
-//------------ map pupil coordinates to screen coordinates ---------/
-tV2f map_point (tHomo* phomo, tV2f p)
-{
-  tV2f p2;
-  double z = phomo->map_matrix[2][0]*p.x + phomo->map_matrix[2][1]*p.y + phomo->map_matrix[2][2];
-  p2.x = (int)((phomo->map_matrix[0][0]*p.x + phomo->map_matrix[0][1]*p.y + phomo->map_matrix[0][2])/z);
-  p2.y = (int)((phomo->map_matrix[1][0]*p.x + phomo->map_matrix[1][1]*p.y + phomo->map_matrix[1][2])/z);
-  return p2;
-}
-
-
-// r is result matrix
-void affine_matrix_inverse(double a[][3], double r[][3])
-{
-  double det22 = a[0][0]*a[1][1] - a[0][1]*a[1][0];
-  r[0][0] = a[1][1]/det22;
-  r[0][1] = -a[0][1]/det22;
-  r[1][0] = -a[1][0]/det22;
-  r[1][1] = a[0][0]/det22;
-
-  r[2][0] = r[2][1] = 0;
-  r[2][2] = 1/a[2][2];
-
-  r[0][2] = -r[2][2] * (r[0][0]*a[0][2] + r[0][1]*a[1][2]);
-  r[1][2] = -r[2][2] * (r[1][0]*a[0][2] + r[1][1]*a[1][2]);
-}
-
-// r is result matrix
-void matrix_multiply33(double a[][3], double b[][3], double r[][3])
-{
-  int i, j;
-  double result[9];
-  double v = 0;
-  for (j = 0; j < 3; j++) {
-    for (i = 0; i < 3; i++) {
-      v = a[j][0]*b[0][i];
-      v += a[j][1]*b[1][i];
-      v += a[j][2]*b[2][i];
-      result[j*3+i] = v;
-    }
-  }
-  for (i = 0; i < 3; i++) {
-    r[i][0] = result[i*3];
-    r[i][1] = result[i*3+1];
-    r[i][2] = result[i*3+2];
-  }
-}
-
-void CalculateCalibration(tHomo* phomo)
-{
-	Homo_PreCalPrint (phomo);
-  int i, j;
-  tV2d cal_scene[CALIBRATIONPOINTS], cal_eye[CALIBRATIONPOINTS];
-  tV2d scene_center, eye_center, *eye_nor, *scene_nor;
-  double dis_scale_scene, dis_scale_eye;  
-
-  for (i = 0; i < CALIBRATIONPOINTS; i++) {
-    cal_scene[i].x = phomo->scenecalipoints[i].x;  
-    cal_scene[i].y = phomo->scenecalipoints[i].y;
-    cal_eye[i].x = phomo->vectors[i].x;
-    cal_eye[i].y = phomo->vectors[i].y;
-  }
-
-  scene_nor = normalize_point_set(cal_scene, &dis_scale_scene, &scene_center, CALIBRATIONPOINTS);
-  eye_nor = normalize_point_set(cal_eye, &dis_scale_eye, &eye_center, CALIBRATIONPOINTS);
-
-  printf("normalize_point_set end\n");
-  printf("scene scale:%lf  center (%lf, %lf)\n", dis_scale_scene, scene_center.x, scene_center.y);
-  printf("eye scale:%lf  center (%lf, %lf)\n", dis_scale_eye, eye_center.x, eye_center.y);
-
-  const int homo_row=18, homo_col=9;
-  double A[homo_row][homo_col];
-  int M = homo_row, N = homo_col; //M is row; N is column
-  double **ppa = (double**)malloc(sizeof(double*)*M);
-  double **ppu = (double**)malloc(sizeof(double*)*M);
-  double **ppv = (double**)malloc(sizeof(double*)*N);
-  double pd[homo_col];
-  for (i = 0; i < M; i++) {
-    ppa[i] = A[i];
-    ppu[i] = (double*)malloc(sizeof(double)*N);
-  }
-  for (i = 0; i < N; i++) {
-    ppv[i] = (double*)malloc(sizeof(double)*N);
-  }
-
-  for (j = 0;  j< M; j++) {
-    if (j%2 == 0) {
-      A[j][0] = A[j][1] = A[j][2] = 0;
-      A[j][3] = -eye_nor[j/2].x;
-      A[j][4] = -eye_nor[j/2].y;
-      A[j][5] = -1;
-      A[j][6] = scene_nor[j/2].y * eye_nor[j/2].x;
-      A[j][7] = scene_nor[j/2].y * eye_nor[j/2].y;
-      A[j][8] = scene_nor[j/2].y;
-    } else {
-      A[j][0] = eye_nor[j/2].x;
-      A[j][1] = eye_nor[j/2].y;
-      A[j][2] = 1;
-      A[j][3] = A[j][4] = A[j][5] = 0;
-      A[j][6] = -scene_nor[j/2].x * eye_nor[j/2].x;
-      A[j][7] = -scene_nor[j/2].x * eye_nor[j/2].y;
-      A[j][8] = -scene_nor[j/2].x;
-    }
-  }
-
-  printf("normalize_point_set end\n");
-
-  svd(M, N, ppa, ppu, pd, ppv);
-  int min_d_index = 0;
-  for (i = 1; i < N; i++) {
-    if (pd[i] < pd[min_d_index])
-      min_d_index = i;
-  }
-
-  for (i = 0; i < N; i++) {
-      phomo->map_matrix[i/3][i%3] = ppv[i][min_d_index];  //the column of v that corresponds to the smallest singular value,
-                                                //which is the solution of the equations
-  }
-
-  double T[3][3] = {0}, T1[3][3] = {0};
-  printf("\nT1: \n");
-  for (j = 0; j < 3; j++) {
-    for (i = 0; i < 3; i++) {
-      printf("%8lf ", T1[j][i]);
-    }
-    printf("\n");
-  }  
-
-  T[0][0] = T[1][1] = dis_scale_eye;
-  T[0][2] = -dis_scale_eye*eye_center.x;
-  T[1][2] = -dis_scale_eye*eye_center.y;
-  T[2][2] = 1;
-
-  printf("\nmap_matrix: \n");
-  for (j = 0; j < 3; j++) {
-    for (i = 0; i < 3; i++) {
-      printf("%8lf ", phomo->map_matrix[j][i]);
-    }
-    printf("\n");
-  }   
-  printf("\nT: \n");
-  for (j = 0; j < 3; j++) {
-    for (i = 0; i < 3; i++) {
-      printf("%8lf ", T[j][i]);
-    }
-    printf("\n");
-  }  
-
-  matrix_multiply33(phomo->map_matrix, T, phomo->map_matrix); 
-
-  T[0][0] = T[1][1] = dis_scale_scene;
-  T[0][2] = -dis_scale_scene*scene_center.x;
-  T[1][2] = -dis_scale_scene*scene_center.y;
-  T[2][2] = 1;
-
-  printf("\nmap_matrix: \n");
-  for (j = 0; j < 3; j++) {
-    for (i = 0; i < 3; i++) {
-      printf("%8lf ", phomo->map_matrix[j][i]);
-    }
-    printf("\n");
-  } 
-  printf("\nT: \n");
-  for (j = 0; j < 3; j++) {
-    for (i = 0; i < 3; i++) {
-      printf("%8lf ", T[j][i]);
-    }
-    printf("\n");
-  }   
-
-  affine_matrix_inverse(T, T1);
-  matrix_multiply33(T1, phomo->map_matrix, phomo->map_matrix);
-
-  printf("\nmap_matrix: \n");
-  for (j = 0; j < 3; j++) {
-    for (i = 0; i < 3; i++) {
-      printf("%8lf ", phomo->map_matrix[j][i]);
-    }
-    printf("\n");
-  }   
-
-  for (i = 0; i < M; i++) {
-    free(ppu[i]);
-  }
-  for (i = 0; i < N; i++) {
-    free(ppv[i]);
-  }
-  free(ppu);
-  free(ppv);
-  free(ppa);
-      
-  free(eye_nor);
-  free(scene_nor);
-  printf("\nfinish calculate calibration\n");
-}
-
-//{
-#endif
-
-
 tV2f	point_clip	(tV2f* ppoint)
 {
 	if (ppoint->x < 0)
@@ -2130,3574 +1559,6 @@ float	NN_Sphere	(tV2si* ppos, float ir, float or, u08 dark, u08 bright)
 
 
 
-void	Eye_Init	(tEye* peye)
-{
-	printf ("INIT  %lx\n", peye);
-	peye->Point_N = 0;
-	peye->Point_Max = 0;
-	peye->paPoint = 0;
-	
-	peye->InHead.Line_N = 0;
-	memset (peye->InHead.aLine, 0, sizeof(peye->InHead.aLine));
-	
-	
-	peye->FF.paMark = 0;
-	
-	
-	peye->GV_mutex = SDL_CreateMutex();
-	
-	if (!peye->GV_mutex){
-		fprintf(stderr, "Couldn't create mutex\n");
-		exit(-1);
-	}
-/*	if(SDL_mutexP(peye->GV_mutex)==-1){
-		fprintf(stderr, "Couldn't lock mutex\n");
-		exit(-1);
-	}
-	/**/
-}
-
-void	Eye_Conf	(tEye* peye)
-{
-	printf ("CONF  %lx\n", peye);
-	peye->FF.paMark = realloc (peye->FF.paMark, dpow2(peye->FF.Max_R) * sizeof(peye->FF.paMark[0]));
-	
-	
-}
-
-void	Eye_CopyParam	(tEye* pdst, tEye* psrc)
-{
-	pdst->P = psrc->P;
-	pdst->Ax = psrc->Ax;
-	pdst->Ay = psrc->Ay;
-	pdst->Aa = psrc->Aa;
-}
-
-
-void	Eye_Points_InsOrd		(tEye* peye, float a, tV2f* pp)
-{
-	if (peye->Point_N >= peye->Point_Max) {
-		printf ("shit not enough points\n");
-		return;
-	}
-	si i;
-	for (i = 0; i < peye->Point_N; ++i) {
-		float x1 = peye->paPoint[i].x, y1 = peye->paPoint[i].y;
-		float t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-		
-		if (a < t1) {
-			memmove (
-				peye->paPoint + i+1,
-				peye->paPoint + i,
-				(peye->Point_N - i) * sizeof(peye->paPoint[0])
-			);
-			break;
-		}
-	}
-	peye->paPoint[i] = *pp;
-	peye->Point_N++;
-}
-void	Eye_Points_Ins		(tEye* peye, float a, tV2f* pp)
-{
-	if (peye->Point_N >= peye->Point_Max) {
-		printf ("shit not enough points\n");
-		return;
-	}
-	peye->paPoint[peye->Point_N] = *pp;
-	peye->Point_N++;
-}
-
-void	Eye_Points_Sort		(tEye* peye)
-{
-	si i;
-	for(i = 1; i < peye->Point_N; ++i)
-	{
-		float x0 = peye->paPoint[i].x, y0 = peye->paPoint[i].y;
-		float t0 = atan2(y0 - peye->P.y, x0 - peye->P.x);
-		
-		si j = i - 1;
-		while (1) {
-			float x1 = peye->paPoint[j].x, y1 = peye->paPoint[j].y;
-			float t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-			
-			if (t0 >= t1 || j < 0)
-				break;
-			
-			peye->paPoint[j+1] = peye->paPoint[j];
-			--j;
-		}
-		peye->paPoint[j+1].x = x0;
-		peye->paPoint[j+1].y = y0;
-	}
-}
-
-si	Eye_Points_FindRot	(tEye* peye, si idx, float ang)
-{
-	#if 0
-	float x0 = peye->paPoint[idx].x, y0 = peye->paPoint[idx].y;
-	float t0 = atan2(y0 - peye->P.y, x0 - peye->P.x);
-	
-	struct {
-		si idx;
-		float diff_t;
-	}min = {-1, 4*deg2rad};
-//	printf ("Eye_S4_Fit_FindRot\n");
-	si i;
-	for (i = 0; i < peye->Point_N; ++i) {
-		float x1 = peye->paPoint[i].x, y1 = peye->paPoint[i].y;
-		float t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-	//	printf ("%ld\t%f\n", i, t1);
-		
-		float diff_t = fabsf(angle_diff_norm_pi_pi(t1, t0) - ang);
-		if (diff_t < min.diff_t) {
-			min.idx = i;
-			min.diff_t = diff_t;
-		}
-	}
-	return min.idx;
-	#else
-	si i;
-	float x0 = peye->paPoint[idx].x, y0 = peye->paPoint[idx].y;
-	float t0 = atan2(y0 - peye->P.y, x0 - peye->P.x);
-	float tgt = angle_norm_pi_pi(t0 + ang);
-	
-	struct {
-		si idx;
-		float diff_t;
-	}min = {-1, 4*deg2rad};
-	
-//	printf ("Eye_Points_FindRot tgt %f\n", tgt);
-	
-	float x1, y1, t1;
-	si l = 0, r = peye->Point_N-1;
-	while (r-l > 1) {
-		i = (l+r) / 2;
-	//	printf ("l %ld\ti %ld\tr %ld\n", l, i, r);
-		
-		x1 = peye->paPoint[i].x;
-		y1 = peye->paPoint[i].y;
-		t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-		
-		if (tgt > t1) {
-			l = i;
-		}else {
-			r = i;
-		}
-	}
-	i = l;
-	x1 = peye->paPoint[i].x, y1 = peye->paPoint[i].y;
-	t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-//	printf ("got l %ld\t%f\n", l, t1);
-	float diff_t = fabsf(angle_diff_norm_pi_pi(t1, t0) - ang);
-	if (diff_t < min.diff_t) {
-		min.idx = i;
-		min.diff_t = diff_t;
-	}
-	i = r;
-	x1 = peye->paPoint[i].x, y1 = peye->paPoint[i].y;
-	t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-//	printf ("got r %ld\t%f\n", r, t1);
-	diff_t = fabsf(angle_diff_norm_pi_pi(t1, t0) - ang);
-	if (diff_t < min.diff_t) {
-		min.idx = i;
-		min.diff_t = diff_t;
-	}
-//	printf ("finish %ld\n", min.idx);
-	return min.idx;
-	#endif
-}
-
-float	Eye_Points_Fit2		(tEye* peye)
-{
-	si i;
-	for (i = 0; i < peye->Point_N; ++i) {
-		float x0 = peye->paPoint[i].x, y0 = peye->paPoint[i].y;
-		float t0, dx, dy, ox0, oy0;
-		dx = x0 - peye->P.x;
-		dy = y0 - peye->P.y;
-		t0 = atan2(dy,dx);
-		
-		ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-		oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-		
-		{
-			si idx = Eye_Points_FindRot (peye, i, M_PI);
-			if (idx >= 0) {
-				float x1 = peye->paPoint[idx].x, y1 = peye->paPoint[idx].y;
-				float t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-				
-				dnpix(x0,y0)->Y = 0xFF;
-				dnpix(x0,y0)->U = 0x0;
-				dnpix(x0,y0)->V = 0x0;
-			//	dnpix(x1,y1)->Y = 0xFF;
-			//	dnpix(x1,y1)->U = 0x0;
-			//	dnpix(x1,y1)->V = 0x0;
-				
-				
-			//	float ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-			//	float oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-				
-				float oy1 = (peye->Ax * cos(t1) * sin(peye->Aa) + peye->Ay * sin(t1) * cos(peye->Aa));
-				float ox1 = (peye->Ax * cos(t1) * cos(peye->Aa) - peye->Ay * sin(t1) * sin(peye->Aa));
-				
-			//	printf ("Heee? pic %f %f   %f %f\n", x0 - peye->P.x, y0 - peye->P.y, x1 - peye->P.x, y1 - peye->P.y);
-			//	printf ("Heee? eli %f %f   %f %f\n", ox0, oy0, ox1, oy1);
-				
-				float sdx = fabsf(x1 - x0) - fabsf(ox1 - ox0);
-				float sdy = fabsf(y1 - y0) - fabsf(oy1 - oy0);
-				
-			//	ax += fabsf((x1 - x0)*cos(t0));
-			//	ay += fabsf((y1 - y0)*sin(t0));
-			//	++n;
-				
-				float pdx = (x0+x1)*0.5f - (2.0f*peye->P.x + ox0+ox1)*0.5f;
-				float pdy = (y0+y1)*0.5f - (2.0f*peye->P.y + oy0+oy1)*0.5f;
-				
-				Eye_Xset (peye, peye->P.x + 0.10f * pdx );// *cos(t));
-				Eye_Yset (peye, peye->P.y + 0.10f * pdy );// *sin(t));
-				
-				peye->Ax += 0.10f*sdx*fabs(cos(t0));
-				peye->Ay += 0.10f*sdy*fabs(sin(t0));
-			}else {
-				dnpix(x0,y0)->Y = 0xFF;
-				dnpix(x0,y0)->U = 0xF;
-				dnpix(x0,y0)->V = 0xF;
-				float diff = sqrt(dx*dx+dy*dy) - sqrt(ox0*ox0+oy0*oy0);
-				if (fabs(diff) >= 0.01f) {
-				//	printf ("f1\n");
-					peye->Ax += peye->Fit_Scale*diff*fabs(cos(t0));
-					peye->Ay += peye->Fit_Scale*diff*fabs(sin(t0));
-					
-					Eye_Xset (peye, peye->P.x + peye->Fit_Trans*(diff )*cos(t0));
-					Eye_Yset (peye, peye->P.y + peye->Fit_Trans*(diff )*sin(t0));
-				}
-			}
-		}
-	}/**/
-	float avgerr = 0;
-	for (i = 0; i < peye->Point_N; ++i) {
-		float x = peye->paPoint[i].x, y = peye->paPoint[i].y;
-		float t, dx, dy, xx, yy;
-		dx = x - peye->P.x;
-		dy = y - peye->P.y;
-		t = atan2(dy,dx);
-		
-		xx = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
-		yy = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
-		
-		float diff = sqrt(dx*dx+dy*dy) - sqrt(xx*xx+yy*yy);
-	//	avgerr += fabsf(diff);
-		avgerr += dpow2(diff);
-	}/**/
-	return avgerr / peye->Point_N;
-}
-
-float	Eye_Points_Fit_Tri	(tEye* peye)
-{
-	si i;
-	for (i = 0; i < peye->Point_N; ++i) {
-		float x0 = peye->paPoint[i].x, y0 = peye->paPoint[i].y;
-		float t0, dx, dy, ox0, oy0;
-		dx = x0 - peye->P.x;
-		dy = y0 - peye->P.y;
-		t0 = atan2(dy,dx);
-		
-		ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-		oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-		
-		tV2f p0 = {x0, y0}, op0 = {ox0, oy0};
-		{
-			si i1 = Eye_Points_FindRot (peye, i, M_PI_4/2);
-			si i2 = Eye_Points_FindRot (peye, i, -M_PI_4/2);
-			
-			if (i1 >= 0 && i2 >= 0) {
-				float x1 = peye->paPoint[i1].x, y1 = peye->paPoint[i1].y;
-				float t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-				
-				float x2 = peye->paPoint[i2].x, y2 = peye->paPoint[i2].y;
-				float t2 = atan2(y2 - peye->P.y, x2 - peye->P.x);
-				
-				
-				float oy1 = (peye->Ax * cos(t1) * sin(peye->Aa) + peye->Ay * sin(t1) * cos(peye->Aa));
-				float ox1 = (peye->Ax * cos(t1) * cos(peye->Aa) - peye->Ay * sin(t1) * sin(peye->Aa));
-				
-				float oy2 = (peye->Ax * cos(t2) * sin(peye->Aa) + peye->Ay * sin(t2) * cos(peye->Aa));
-				float ox2 = (peye->Ax * cos(t2) * cos(peye->Aa) - peye->Ay * sin(t2) * sin(peye->Aa));
-				
-				tV2f p1 = {x1, y1}, op1 = {ox1, oy1};
-				tV2f p2 = {x2, y2}, op2 = {ox2, oy2};
-				
-				tV2f v1 = p1;	V2f_sub_V2f (&v1, &p0);
-				tV2f v2 = p2;	V2f_sub_V2f (&v2, &p0);
-				
-				tV2f ov1 = op1;	V2f_sub_V2f (&ov1, &op0);
-				tV2f ov2 = op2;	V2f_sub_V2f (&ov2, &op0);
-				
-				float dot = V2f_dot_V2f (&v1, &v2);
-				float odot = V2f_dot_V2f (&ov1, &ov2);
-				
-				float diff = odot-dot;
-				peye->Ax += +0.01f*diff*fabsf(sin(t0))	-0.01f*diff*fabsf(cos(t0));
-				peye->Ay += -0.01f*diff*fabsf(sin(t0))	+0.01f*diff*fabsf(cos(t0));
-				
-				
-			/*	float sdx = fabsf(x1 - x0) - fabsf(ox1 - ox0);
-				float sdy = fabsf(y1 - y0) - fabsf(oy1 - oy0);
-				
-				float pdx = (x0+x1)*0.5f - (2.0f*peye->P.x + ox0+ox1)*0.5f;
-				float pdy = (y0+y1)*0.5f - (2.0f*peye->P.y + oy0+oy1)*0.5f;
-				
-				Eye_Xset (peye, peye->P.x + 0.10f * pdx );// *cos(t));
-				Eye_Yset (peye, peye->P.y + 0.10f * pdy );// *sin(t));
-				
-				peye->Ax += 0.10f*sdx*fabs(cos(t0));
-				peye->Ay += 0.10f*sdy*fabs(sin(t0));/**/
-				
-				dnpix(x0,y0)->Y = 0xFF;
-				dnpix(x0,y0)->U = 0x0;
-				dnpix(x0,y0)->V = 0x0;
-			}else {
-				dnpix(x0,y0)->Y = 0xFF;
-				dnpix(x0,y0)->U = 0xF;
-				dnpix(x0,y0)->V = 0xF;
-			}
-			if (1) {
-				si idx = Eye_Points_FindRot (peye, i, M_PI);
-				if (idx >= 0) {
-					float x1 = peye->paPoint[idx].x, y1 = peye->paPoint[idx].y;
-					float t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-					
-				//	dnpix(x0,y0)->Y = 0xFF;
-				//	dnpix(x0,y0)->U = 0x0;
-				//	dnpix(x0,y0)->V = 0x0;
-				//	dnpix(x1,y1)->Y = 0xFF;
-				//	dnpix(x1,y1)->U = 0x0;
-				//	dnpix(x1,y1)->V = 0x0;
-					
-					
-				//	float ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-				//	float oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-					
-					float oy1 = (peye->Ax * cos(t1) * sin(peye->Aa) + peye->Ay * sin(t1) * cos(peye->Aa));
-					float ox1 = (peye->Ax * cos(t1) * cos(peye->Aa) - peye->Ay * sin(t1) * sin(peye->Aa));
-					
-				//	printf ("Heee? pic %f %f   %f %f\n", x0 - peye->P.x, y0 - peye->P.y, x1 - peye->P.x, y1 - peye->P.y);
-				//	printf ("Heee? eli %f %f   %f %f\n", ox0, oy0, ox1, oy1);
-					
-					float sdx = fabsf(x1 - x0) - fabsf(ox1 - ox0);
-					float sdy = fabsf(y1 - y0) - fabsf(oy1 - oy0);
-					
-				//	ax += fabsf((x1 - x0)*cos(t0));
-				//	ay += fabsf((y1 - y0)*sin(t0));
-				//	++n;
-					
-					float pdx = (x0+x1)*0.5f - (2.0f*peye->P.x + ox0+ox1)*0.5f;
-					float pdy = (y0+y1)*0.5f - (2.0f*peye->P.y + oy0+oy1)*0.5f;
-					
-					Eye_Xset (peye, peye->P.x + 0.10f * pdx );// *cos(t));
-					Eye_Yset (peye, peye->P.y + 0.10f * pdy );// *sin(t));
-					
-					peye->Ax += 0.10f*sdx*fabs(cos(t0));
-					peye->Ay += 0.10f*sdy*fabs(sin(t0));
-					continue;
-				}
-			}
-			if (1) {
-				float diff = sqrt(dx*dx+dy*dy) - sqrt(ox0*ox0+oy0*oy0);
-				if (fabs(diff) >= 0.01f) {
-				//	printf ("f1\n");
-					peye->Ax += 0.1f*diff*fabs(cos(t0));
-					peye->Ay += 0.1f*diff*fabs(sin(t0));
-					
-					Eye_Xset (peye, peye->P.x + 0.1f*(diff)*cos(t0));
-					Eye_Yset (peye, peye->P.y + 0.1f*(diff)*sin(t0));
-				}
-			}
-		}
-	}/**/
-	return 0;
-}
-
-
-float	Eye_Points_Fit_Const	(tEye* peye)
-{
-	peye->Ax = peye->PFit_R/2;
-	peye->Ay = peye->PFit_R/2;
-	si i;
-	for (i = 0; i < peye->Point_N; ++i) {
-		float x0 = peye->paPoint[i].x, y0 = peye->paPoint[i].y;
-		float t0, dx, dy, ox0, oy0;
-		dx = x0 - peye->P.x;
-		dy = y0 - peye->P.y;
-		t0 = atan2(dy,dx);
-		
-		ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-		oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-		
-		tV2f p0 = {x0, y0}, op0 = {ox0, oy0};
-		{
-			if (1) {
-				si idx = Eye_Points_FindRot (peye, i, M_PI);
-				if (idx >= 0) {
-					float x1 = peye->paPoint[idx].x, y1 = peye->paPoint[idx].y;
-					float t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-					
-					dnpix(x0,y0)->Y = 0xFF;
-					dnpix(x0,y0)->U = 0x0;
-					dnpix(x0,y0)->V = 0x0;
-				//	dnpix(x1,y1)->Y = 0xFF;
-				//	dnpix(x1,y1)->U = 0x0;
-				//	dnpix(x1,y1)->V = 0x0;
-					
-					
-				//	float ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-				//	float oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-					
-					float oy1 = (peye->Ax * cos(t1) * sin(peye->Aa) + peye->Ay * sin(t1) * cos(peye->Aa));
-					float ox1 = (peye->Ax * cos(t1) * cos(peye->Aa) - peye->Ay * sin(t1) * sin(peye->Aa));
-					
-				//	printf ("Heee? pic %f %f   %f %f\n", x0 - peye->P.x, y0 - peye->P.y, x1 - peye->P.x, y1 - peye->P.y);
-				//	printf ("Heee? eli %f %f   %f %f\n", ox0, oy0, ox1, oy1);
-					
-					float sdx = fabsf(x1 - x0) - fabsf(ox1 - ox0);
-					float sdy = fabsf(y1 - y0) - fabsf(oy1 - oy0);
-					
-				//	ax += fabsf((x1 - x0)*cos(t0));
-				//	ay += fabsf((y1 - y0)*sin(t0));
-				//	++n;
-					
-					float pdx = (x0+x1)*0.5f - (2.0f*peye->P.x + ox0+ox1)*0.5f;
-					float pdy = (y0+y1)*0.5f - (2.0f*peye->P.y + oy0+oy1)*0.5f;
-					
-					Eye_Xset (peye, peye->P.x + 0.10f * pdx );// *cos(t));
-					Eye_Yset (peye, peye->P.y + 0.10f * pdy );// *sin(t));
-					
-				//	peye->Ax += 0.10f*sdx*fabs(cos(t0));
-				//	peye->Ay += 0.10f*sdy*fabs(sin(t0));
-					continue;
-				}
-			}
-			if (1) {
-				float diff = sqrt(dx*dx+dy*dy) - sqrt(ox0*ox0+oy0*oy0);
-				if (fabs(diff) >= 0.01f) {
-				//	printf ("f1\n");
-				//	peye->Ax += 0.1f*diff*fabs(cos(t0));
-				//	peye->Ay += 0.1f*diff*fabs(sin(t0));
-					
-					Eye_Xset (peye, peye->P.x + 0.1f*(diff)*cos(t0));
-					Eye_Yset (peye, peye->P.y + 0.1f*(diff)*sin(t0));
-				}
-				dnpix(x0,y0)->Y = 0xFF;
-				dnpix(x0,y0)->U = 0xF;
-				dnpix(x0,y0)->V = 0xF;
-			}
-		}
-	}/**/
-	return 0;
-}
-
-float	Eye_Points_Fit		(tEye* peye)
-{
-	switch (peye->PFit) {
-	case eEye_PFit_S1:
-	case eEye_PFit_S2:
-		Eye_Points_Fit2 (peye);
-		Eye_Points_Fit2 (peye);
-		break;
-//	case eEye_PFit_RANSAC:
-//		Eye_S4_Fit_Ransac (peye);
-//		break;
-	case eEye_PFit_S3:
-		Eye_Points_Fit_Tri (peye);
-		Eye_Points_Fit_Tri (peye);
-		break;
-	case eEye_PFit_S3const:
-		Eye_Points_Fit_Const (peye);
-		Eye_Points_Fit_Const (peye);
-		break;
-	}
-}
-
-
-si ay = 0, au = 0, av = 0, n = 0;
-
-void	Eye_crap_ff		(tEye* peye, si x, si y)
-{
-	if (x < 0 || y < 0 || x >= videoIn->width || y >= videoIn->height)
-		return;
-	
-	if (	1//dnpix(x,y)->Y == 0xFF
-		&& dnpix(x,y)->U == 0
-		&& dnpix(x,y)->V == 0
-	)
-		return;
-	
-	if (ddist2(x,y,peye->P.x,peye->P.y) >= peye->Exp_R*peye->Exp_R*2)
-		return;
-	
-	if (	dopix(x,y)->Y <= ay + 2
-		//abs(dopix(x,y)->Y - ay) <= 16
-		//	&& abs(dopix(x,y)->U - au) <= 12
-		//	&& abs(dopix(x,y)->V - av) <= 12
-	) {
-	//	dnpix(x,y)->Y = 0xFF;
-		dnpix(x,y)->U = 0x0;
-		dnpix(x,y)->V = 0x0;
-		Eye_crap_ff (peye, x-1, y);
-		Eye_crap_ff (peye, x+1, y);
-		Eye_crap_ff (peye, x, y-1);
-		Eye_crap_ff (peye, x, y+1);
-	}
-};
-
-void	Eye_OldFF		(tEye* peye)
-{
-	si x, y;
-//	si ay = 0, au = 0, av = 0, n = 0;
-	ay = 0;
-	au = 0;
-	av = 0;
-	n = 0;
-	#define dd 4
-	for (y = peye->P.y-dd; y <= peye->P.y+dd; ++y) {
-		for (x = peye->P.x-dd; x <= peye->P.x+dd; ++x) {
-			ay += dpix(x,y)->Y;
-			au += dpix(x,y)->U;
-			av += dpix(x,y)->V;
-			++n;
-		}
-	}
-	#undef dd
-	ay /= n;
-	au /= n;
-	av /= n;/**/
-	
-//	ay = dnpix(peye->P.x,peye->P.y)->Y;
-//	au = dnpix(peye->P.x,peye->P.y)->U;
-//	av = dnpix(peye->P.x,peye->P.y)->V;
-	
-//	printf ("n %d\n", n);
-	#define dd 2
-	for (y = peye->P.y-dd; y <= peye->P.y+dd; ++y) {
-		for (x = peye->P.x-dd; x <= peye->P.x+dd; ++x) {
-			Eye_crap_ff (peye, x, y);
-		}
-	}
-	#undef dd
-	
-}
-
-void	Eye_CalcAYUV	(tEye* peye, si dd)
-{
-	si x, y;
-//	si ay = 0, au = 0, av = 0, n = 0;
-	ay = 0;
-	au = 0;
-	av = 0;
-	n = 0;
-	
-	for (y = peye->P.y-dd; y <= peye->P.y+dd; ++y) {
-		for (x = peye->P.x-dd; x <= peye->P.x+dd; ++x) {
-			ay += dopix(x,y)->Y;
-			au += dopix(x,y)->U;
-			av += dopix(x,y)->V;
-			++n;
-		}
-	}
-	
-	ay /= n;
-	au /= n;
-	av /= n;
-}
-
-void	Eye_V_Pre	(tEye* peye)	//motion compensation
-{
-	return;
-	peye->OP = peye->P;
-	peye->P.x += peye->V.x;
-	peye->P.y += peye->V.y;
-}
-void	Eye_V_Post	(tEye* peye)
-{
-	return;
-//	peye->V.x = peye->P.x - oldpos.x;
-//	peye->V.y = peye->P.y - oldpos.y;
-	peye->V.x = (peye->V.x + peye->P.x - peye->OP.x) * 0.5f;
-	peye->V.y = (peye->V.y + peye->P.y - peye->OP.y) * 0.5f;
-	
-	peye->V.x *= 0.9f;
-	peye->V.y *= 0.9f;
-}
-
-
-void	Eye_GV_Calc		(tEye* peye)
-{
-	SDL_mutexP (peye->GV_mutex);
-	if (gM.Eye_GlintMode == 2) {
-		tV2f v0 = peye->P;	V2f_sub_V2f (&v0, &peye->G0);
-		tV2f v1 = peye->P;	V2f_sub_V2f (&v1, &peye->G1);
-		tV2f v01 = peye->G1;	V2f_sub_V2f (&v01, &peye->G0);
-		
-		V2f_add_V2f (&v0, &v1);
-		V2f_mul_S (&v0, 1/V2f_dist (&v01));
-		peye->GV = v0;
-	}else if (gM.Eye_GlintMode == 1) {
-		tV2f v0 = peye->P;	V2f_sub_V2f (&v0, &peye->G0);
-		
-		tV2f gtf = peye->G0;
-		gtf.x -= gM.Cam.Image_W/2;
-		gtf.y -= gM.Cam.Image_H/2;
-		
-		gtf.x *= peye->GTF.x;
-		gtf.y *= peye->GTF.y;
-		
-		V2f_sub_V2f (&v0, &gtf);
-		peye->GV = v0;
-	}
-	SDL_mutexV (peye->GV_mutex);
-}
-
-void	Eye_GV_Get	(tEye* peye, tV2f* pret)
-{
-	SDL_mutexP (peye->GV_mutex);
-	*pret = peye->GV;
-	SDL_mutexV (peye->GV_mutex);
-}
-
-
-void	Eye_GP_Calc		(tEye* peye)
-{
-	if (gM.Eye_GlintMode != 2)
-		return;
-	
-	SDL_mutexP (peye->GV_mutex);
-	
-	tV4f g0_v, g1_v;
-	Cam_Pos2Ray (peye->G0, NULL, NULL, &g0_v);
-	Cam_Pos2Ray (peye->G1, NULL, NULL, &g1_v);
-	V4f_norm (&g0_v);
-	V4f_norm (&g1_v);
-	float gd = V4f_dot_V4f (&g0_v, &g1_v);
-	
-	
-	tV2f ag = peye->G0;	V2f_add_V2f (&ag, &peye->G1);
-	ag.x /= 2;	ag.y /= 2;
-	tV4f sr_p0, sr_norm, sr_p1;
-	Cam_Pos2Ray (ag, &sr_p0, &sr_p1, &sr_norm);
-	V4f_norm (&sr_norm);
-	
-	float z = 16;
-	si i;
-	for (i = 0; i < 200; ++i) {
-		peye->GP = sr_norm;
-		V4f_mul_S (&peye->GP, z);
-		
-		tV4f l0_v, l1_v;
-		Sphere_Reflect (&l0_v, &peye->GP, peye->LR, &gM.aLight[0].P);
-		Sphere_Reflect (&l1_v, &peye->GP, peye->LR, &gM.aLight[1].P);
-		V4f_norm (&l0_v);
-		V4f_norm (&l1_v);
-		
-		float ld = V4f_dot_V4f (&l0_v, &l1_v);
-	//	printf ("z %f	gd ld	%f %f\n", z, gd, ld);
-		
-		z += 1000*(gd - ld);
-		
-	/*	if (ld > gd) {
-			z -= 0.1;
-		}else {
-			z += 0.1;
-		}/**/
-	//	printf ("g0_v "); V4f_Print (&g0_v);
-	//	printf ("l0_v "); V4f_Print (&l0_v);
-	//	printf ("g1_v "); V4f_Print (&g1_v);
-	//	printf ("l1_v "); V4f_Print (&l1_v);
-	}
-	
-	
-	SDL_mutexV (peye->GV_mutex);
-}
-
-void	Eye_GP_GazeVector	(tEye* peye, tV4f* pr0, tV4f* pr1, tV4f* prv)
-{
-	tV4f p0, p1, v, l0, l1;
-	p0 = peye->GP;
-	
-	Cam_Retina_Ray (peye, &l0, &l1, 0);
-	
-	V4f_Intersect_Sphere0R_Line01	(
-		&p1,
-		&p0, peye->LR,
-		&l0, &l1
-	);
-	if (pr0)
-		*pr0 = p0;
-	if (pr1)
-		*pr1 = p1;
-	if (prv) {
-		*prv = p1;	V4f_sub_V4f (prv, &p0);
-	}
-	return;
-}
-
-
-
-void	Eye_EdgeMark	(tEye* peye)
-{
-	si x, y;
-	for (y = 0; y < videoIn->height; ++y) {
-		for (x = 0; x < videoIn->width-1; ++x) {
-			if (	1//dnpix(x,y)->Y == 0xFF
-				&& dnpix(x,y)->U == 0
-				&& dnpix(x,y)->V == 0
-			) {
-				float t, dx, dy, xx, yy;
-				dx = peye->P.x - x;
-				dy = peye->P.y - y;
-				t = atan2(dy,dx) - peye->Aa;
-				
-				xx = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
-				yy = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
-				
-				if (dx*dx+dy*dy > xx*xx+yy*yy) {
-				//	printf ("f1\n");
-				//	dnpix(x,y)->U = 0xF;
-				//	dnpix(x,y)->V = 0xF;
-				}//else
-				{
-					#if 1
-					{	float nx = x, ny = y, d = sqrt(dx*dx+dy*dy);
-					//	printf ("d %f\n", d);
-					/*	if (t >= -M_PI_4 && t < M_PI_4) {
-							nx = x-1;
-							ny = y;
-						}else if (t >= M_PI_4 && t < 3*M_PI_4) {
-							nx = x;
-							ny = y-1;
-						}else if (t >= -3*M_PI_4 && t < -M_PI_4) {
-							nx = x;
-							ny = y+1;
-						}else {
-							nx = x+1;
-							ny = y;
-						}/**/
-						while (1) {
-							float tx = x + d*cos(t);
-							float ty = y + d*sin(t);
-						//	printf ("tx %f ty %f\n", tx, ty);
-							if (	1//dnpix(nx,ny)->Y == 0xFF
-								&& dnpix(tx,ty)->U == 0
-								&& dnpix(tx,ty)->V == 0
-							//	0
-							//	|| (dnpix(tx,ny)->U != 0 && dnpix(tx,ty)->U != 0xF)
-							//	|| (dnpix(tx,ny)->V != 0 && dnpix(tx,ty)->V != 0xF)
-							) {
-							//	printf ("ehhh\n");
-								nx = tx+cos(t);
-								ny = ty+sin(t);
-							}
-							d += 1;
-							if (d >= 100) {
-								break;
-							}
-						}
-					//	dnpix(nx,ny)->U = 0xF;
-					//	dnpix(nx,ny)->V = 0xF;
-						if (	0//dnpix(nx,ny)->Y == 0xFF
-							|| (dnpix(nx,ny)->U != 0 && dnpix(nx,ny)->U != 0xF)
-							|| (dnpix(nx,ny)->V != 0 && dnpix(nx,ny)->V != 0xF)
-						) {
-							if (dpixout(nx,ny))
-								continue;
-						//	printf ("f2\n");
-						//	printf ("nx %f ny %f\n", nx, ny);
-							dnpix(nx,ny)->Y = 0xFF;
-							dnpix(nx,ny)->U = 0xF;
-							dnpix(nx,ny)->V = 0xF;
-						//	printf ("Ax %f Ay %f\n", cos(t), sin(t));
-						}
-					}
-					#endif
-				}
-			}
-		}
-	}/**/
-}
-
-void	Eye_SFit		(tEye* peye)
-{
-	si x, y;
-/*	for (y = 0; y < videoIn->height; ++y) {
-		for (x = 0; x < videoIn->width; ++x) {
-			if (	1//dnpix(x,y)->Y == 0xFF
-				&& dnpix(x,y)->U == 0xF
-				&& dnpix(x,y)->V == 0xF
-			) {
-				float t, dx, dy, xx, yy;
-				dx = peye->P.x - x;
-				dy = peye->P.y - y;
-				t = atan2(dy,dx) - peye->Aa;
-				
-				xx = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
-				yy = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
-				
-				float diff = sqrt(dx*dx+dy*dy) - sqrt(xx*xx+yy*yy);
-				if (fabs(diff) >= 0.01f) {
-				//	printf ("f1\n");
-					peye->Ax += peye->Fit_Scale*diff*fabs(cos(t));
-					peye->Ay += peye->Fit_Scale*diff*fabs(sin(t));
-					
-					Eye_Xset (peye, peye->P.x - peye->Fit_Trans*diff*cos(t));
-					Eye_Yset (peye, peye->P.y - peye->Fit_Trans*diff*sin(t));
-				}
-			}
-		}
-	}/**/
-	for (y = 0; y < videoIn->height; ++y) {
-		for (x = 0; x < videoIn->width; ++x) {
-			if (	1//dnpix(x,y)->Y == 0xFF
-				&& dnpix(x,y)->U == 0xF
-				&& dnpix(x,y)->V == 0xF
-			) {
-				float t, dx, dy, xx, yy;
-				dx = x - peye->P.x;
-				dy = y - peye->P.y;
-				t = atan2(dy,dx)/* - peye->Aa*/;
-				
-				xx = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
-				yy = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
-				
-				float diff = sqrt(dx*dx+dy*dy) - sqrt(xx*xx+yy*yy);
-				if (fabs(diff) >= 0.1f) {
-				//	printf ("f1\n");
-					peye->Ax += peye->Fit_Scale*diff*fabs(cos(t));
-					peye->Ay += peye->Fit_Scale*diff*fabs(sin(t));
-					
-					Eye_Xset (peye, peye->P.x + peye->Fit_Trans*(diff )*cos(t));
-					Eye_Yset (peye, peye->P.y + peye->Fit_Trans*(diff )*sin(t));
-				}
-			}
-		}
-	}/**/
-}
-
-#if 0
-void	Eye_CFit_EdgeGet	(tEye* peye, float reqt, si* px, si* py)
-{
-	si border = peye->Exp_R*peye->Exp_R*3;
-	struct {
-		float t;
-		si x, y;
-	}min;
-	min.t = reqt + 100;
-	si x, y;
-	for (y = peye->P.y - border; y < peye->P.y + border; ++y) {
-		for (x = peye->P.x - border; x < peye->P.x + border; ++x) {
-		/*	if (	1//dnpix(x,y)->Y == 0xFF
-				&& dnpix(x,y)->U == 0xF
-				&& dnpix(x,y)->V == 0xF
-			) {
-				float t, dx, dy, xx, yy;
-				dx = peye->P.x - x;
-				dy = peye->P.y - y;
-				t = atan2(dy,dx) - peye->Aa;
-				if (fabsf(t - reqt) < fabsf(min.t - reqt)) {
-					min.t = t;
-					min.x = x;
-					min.y = y;
-				}
-			}*/
-		}
-	}/**/
-	*px = min.x;
-	*py = min.y;
-}
-#endif
-si	Eye_S2Fit_EdgeGet	(tEye* peye, float t, si* px, si* py)
-{
-//	si border = peye->Exp_R*peye->Exp_R*3;
-	float x = peye->P.x, y = peye->P.y;
-	
-	for (; ddist2(x,y,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R*3; ) {
-		if (	1//dnpix(x,y)->Y == 0xFF
-			&& dnpix(x,y)->U == 0xF
-			&& dnpix(x,y)->V == 0xF
-		) {
-			*px = x;
-			*py = y;
-			return 1;
-		}
-		x += cos(t);
-		y += sin(t);
-	}/**/
-	return 0;
-}
-void	Eye_S2Fit		(tEye* peye)
-{
-//	Eye_SFit (peye);	return;
-	si border = 4*peye->Exp_R;
-/*	float a = 0;
-	for (a = 0; a < M_PI; a += M_PI/180.0f) {
-		si x0, y0;
-		Eye_CFit_EdgeGet (peye, a, &x0, &y0);
-	//	dnpix(x0,y0)->Y = 0x0;
-	//	dnpix(x0,y0)->U = 0xF;
-	//	dnpix(x0,y0)->V = 0xF;
-	/*	float t, dx, dy, xx, yy;
-		dx = peye->P.x - x;
-		dy = peye->P.y - y;
-		t = atan2(dy,dx) - peye->Aa;
-		
-		xx = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
-		yy = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
-		
-		float diff = sqrt(dx*dx+dy*dy) - sqrt(xx*xx+yy*yy);
-		if (fabs(diff) >= 0.01f) {
-		//	printf ("f1\n");
-			peye->Ax += peye->Fit_Scale*diff*fabs(cos(t));
-			peye->Ay += peye->Fit_Scale*diff*fabs(sin(t));
-			
-			Eye_Xset (peye, peye->P.x - peye->Fit_Trans*diff*cos(t));
-			Eye_Yset (peye, peye->P.y - peye->Fit_Trans*diff*sin(t));
-		}*/
-//	}
-	float ax = 0, ay = 0;
-	si n = 0;
-	
-	si x0, y0;
-	for (y0 = peye->P.y - border; y0 < peye->P.y + border; ++y0) {		//will have to stop this crap soon
-//	for (y0 = peye->P.y + border; y0 > peye->P.y - border; --y0) {
-		for (x0 = peye->P.x - border; x0 < peye->P.x + border; ++x0) {
-			if (	1//dnpix(x0,y0)->Y == 0xFF
-				&& dnpix(x0,y0)->U == 0xF
-				&& dnpix(x0,y0)->V == 0xF
-			) {
-				float t0, dx0, dy0;
-				dx0 = x0 - peye->P.x;
-				dy0 = y0 - peye->P.y;
-				t0 = atan2(dy0,dx0)/* - peye->Aa*/;
-				float t1 = t0 - M_PI;
-				si x1, y1;
-				
-			//	printf ("Heee? eye %f %f %f %f\n", peye->P.x, peye->P.y, dx0, dy0);
-				
-				if (Eye_S2Fit_EdgeGet (peye, t1, &x1, &y1)) {
-				//	printf ("Heee? eye %ld %ld   %ld %ld\n", x0 - (si)peye->P.x, y0 - (si)peye->P.y, x1 - (si)peye->P.x, y1 - (si)peye->P.y);
-				/*	dnpix(x0,y0)->Y = 0x0;
-					dnpix(x0,y0)->U = 0x0;
-					dnpix(x0,y0)->V = 0x0;
-					
-					dnpix(x1,y1)->Y = 0xFF;
-					dnpix(x1,y1)->U = 0xF;
-					dnpix(x1,y1)->V = 0xF;/**/
-					if (0) {
-						float dx1, dy1;
-						dx1 = x1 - peye->P.x;
-						dy1 = y1 - peye->P.y;
-						
-						float ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-						float ox1 = (peye->Ax * cos(t1) * cos(peye->Aa) - peye->Ay * sin(t1) * sin(peye->Aa));
-						
-						float oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-						float oy1 = (peye->Ax * cos(t1) * sin(peye->Aa) + peye->Ay * sin(t1) * cos(peye->Aa));
-						
-					/*	float diff = sqrt(dx0*dx0+dy0*dy0) - sqrt(ox0*ox0+oy0*oy0);
-						if (fabs(diff) >= 0.01f) {
-						//	printf ("f1\n");
-							peye->Ax += peye->Fit_Scale*diff*fabs(cos(t0));
-							peye->Ay += peye->Fit_Scale*diff*fabs(sin(t0));
-							
-							Eye_Xset (peye, peye->P.x + peye->Fit_Trans*(diff )*cos(t0));
-							Eye_Yset (peye, peye->P.y + peye->Fit_Trans*(diff )*sin(t0));
-						}/**/
-					/*	float diff = sqrt(dx1*dx1+dy1*dy1) - sqrt(ox1*ox1+oy1*oy1);
-						if (fabs(diff) >= 0.01f) {
-						//	printf ("f1\n");
-							peye->Ax += peye->Fit_Scale*diff*fabs(cos(t1));
-							peye->Ay += peye->Fit_Scale*diff*fabs(sin(t1));
-							
-							Eye_Xset (peye, peye->P.x + peye->Fit_Trans*(diff )*cos(t1));
-							Eye_Yset (peye, peye->P.y + peye->Fit_Trans*(diff )*sin(t1));
-						}/**/
-					}else {
-						float ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-						float ox1 = (peye->Ax * cos(t1) * cos(peye->Aa) - peye->Ay * sin(t1) * sin(peye->Aa));
-						
-						float oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-						float oy1 = (peye->Ax * cos(t1) * sin(peye->Aa) + peye->Ay * sin(t1) * cos(peye->Aa));
-						
-					//	printf ("Heee? pic %f %f   %f %f\n", x0 - peye->P.x, y0 - peye->P.y, x1 - peye->P.x, y1 - peye->P.y);
-					//	printf ("Heee? eli %f %f   %f %f\n", ox0, oy0, ox1, oy1);
-						
-						float sdx = fabsf(x1 - x0) - fabsf(ox1 - ox0);
-						float sdy = fabsf(y1 - y0) - fabsf(oy1 - oy0);
-						
-						ax += fabsf((x1 - x0)*cos(t0));
-						ay += fabsf((y1 - y0)*sin(t0));
-						++n;
-						
-						float pdx = 0.2f + (x0+x1)*0.5f - (2*peye->P.x + ox0+ox1)*0.5f;
-						float pdy = -0.1f + (y0+y1)*0.5f - (2*peye->P.y + oy0+oy1)*0.5f;
-						
-						Eye_Xset (peye, peye->P.x + peye->S2Fit_Trans * pdx );// *cos(t));
-						Eye_Yset (peye, peye->P.y + peye->S2Fit_Trans * pdy );// *sin(t));
-						
-					//	peye->Ax += sdx;
-					//	peye->Ay += sdy;
-						
-					//	peye->Ax += 0.5f*sdx*fabs(cos(t0));
-					//	peye->Ay += 0.5f*sdy*fabs(sin(t0));
-						
-					//	peye->Ax += peye->Fit_Scale * sdx;
-					//	peye->Ay += peye->Fit_Scale * sdy;
-						
-					//	peye->Ax += peye->Fit_Scale * ( sdx*fabs(cos(t0)) );
-					//	peye->Ay += peye->Fit_Scale * ( sdy*fabs(sin(t0)) );
-						
-					//	peye->Ax += peye->Fit_Scale * ( sdx* (fabs(cos(t0))*fabs(cos(t0))) );
-					//	peye->Ay += peye->Fit_Scale * ( sdy* (fabs(sin(t0))*fabs(sin(t0))) );
-						
-					//	peye->Ax += peye->Fit_Scale * ( sdx* (fabs(cos(t0))+fabs(sin(t0))) );
-					//	peye->Ay += peye->Fit_Scale * ( sdy* (fabs(cos(t0))+fabs(sin(t0))) );
-						/*
-						float pdx = (x0+x1)*0.5f - (ox0+ox1)*0.5f;
-						float pdy = (y0+y1)*0.5f - (oy0+oy1)*0.5f;
-						
-						Eye_Xset (peye, peye->P.x + peye->Fit_Trans * pdx );// *cos(t));
-						Eye_Yset (peye, peye->P.y + peye->Fit_Trans * pdy );// *sin(t));
-						/**/
-						
-					//	Eye_Xset (peye, peye->P.x + peye->Fit_Trans * ( (x0+x1)*0.5f - peye->P.x-(ox0+ox1)*0.5f ) );// *cos(t));
-					//	Eye_Yset (peye, peye->P.y + peye->Fit_Trans * ( (y0+y1)*0.5f - peye->P.y-(oy0+oy1)*0.5f ) );// *sin(t));
-						
-					/*	dnpix(ox0, oy0)->Y = 0x0;
-						dnpix(ox0, oy0)->U = 0x0;
-						dnpix(ox0, oy0)->V = 0x0;
-						
-						dnpix(ox1, oy1)->Y = 0xFF;
-						dnpix(ox1, oy1)->U = 0xF;
-						dnpix(ox1, oy1)->V = 0xF;/**/
-					}
-				}else {
-				//	printf ("Heee? eye %f %f %ld %ld\n", peye->P.x, peye->P.y, x0, y0);
-				//	printf ("Heee? %f %f\n", dx0, dy0);
-				}
-			}
-		}
-	}/**/
-	if (n > 0) {
-		peye->Ax -= peye->S2Fit_Scale*(peye->Ax - (ax / (float)n));
-		peye->Ay -= peye->S2Fit_Scale*(peye->Ay - (ay / (float)n));
-	}
-}
-
-
-
-si	Eye_S0_EdgeMark	(tEye* peye, si i, float t, float* px, float* py)
-{
-//	si border = peye->Exp_R*peye->Exp_R*3;
-	u08 wrote = 0;
-	float x = peye->P.x, y = peye->P.y;
-	si n = 0;
-	
-	for (; ddist2(x,y,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R; ) {
-		if (peye->LinView.x != 0)
-			dspix(peye->LinView.x+n, peye->LinView.y+i) = dnpix(x,y)->Y | dnpix(x,y)->Y<<8 | dnpix(x,y)->Y<<16;
-		
-		if (	dopix(x,y)->Y > ay + 50
-		) {
-		//	return 1;
-			float x1 = x, y1 = y;
-			for (; ddist2(x1,y1,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R*4; ) {
-				if (	dopix(x1,y1)->Y <= ay + 8) {
-					break;
-				}
-				x1 += cos(t);
-				y1 += sin(t);
-			}
-			if (ddist2(x1,y1,x,y) >= 2*2) {
-				if (!wrote) {
-					wrote = 1;
-					*px = x+0.000000000001f;
-					*py = y+0.000000000001f;
-					dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
-				}
-				dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
-			}
-		}/**/
-		
-		x += cos(t);
-		y += sin(t);
-		++n;
-	}/**/
-	return wrote;
-	return 0;
-}
-
-void	Eye_S0_Fit		(tEye* peye)
-{
-	SDL_LockSurface (gM.pScreen);
-//	Eye_SFit (peye);	return;
-	si border = 4*peye->Exp_R;
-//	float ax = 0, ay = 0;
-//	si n = 0;
-	si i = 0;
-	
-	si	(*edge)	(tEye* peye, si i, float t, float* px, float* py);
-	edge = Eye_S0_EdgeMark;
-	
-	float ao, a;
-//	for (a = 0; a < M_PI; a += M_PI/100.0f) {
-//	for (a = -M_PI_2; a < M_PI_2; a += M_PI/100.0f) {
-//	for (a = -M_PI_4; a < M_PI_4; a += M_PI/100.0f) {
-	for (ao = 0; ao < M_PI_2; ao += M_PI/100.0f) {
-	for (a = ao; a <= ao+M_PI_2+M_PI_4; a += M_PI_2) {
-//	{
-	//	printf ("mino ");
-		u08 skip;
-		float x0, y0, x1, y1;
-		float t0 = a, t1 = t0 - M_PI;
-		
-	//	skip = edge (peye, i, t0, &x0, &y0);
-		skip = edge (peye, a/(M_PI/100.0f), t0, &x0, &y0);
-		
-		if (skip == 0) {
-			t0 = t1;
-		//	skip = edge (peye, 110 + i, t0, &x0, &y0);
-			skip = edge (peye, 110 + a/(M_PI/100.0f), t0, &x0, &y0);
-		}else {
-		//	skip += edge (peye, 110 + i, t1, &x1, &y1);
-			skip += edge (peye, 110 + a/(M_PI/100.0f), t1, &x1, &y1);
-		}
-		++i;
-		
-		if (skip == 0)
-			continue;
-		
-		if (skip == 1) {
-		//	printf ("fuuu\n");
-			if (!dpixout(x0,y0)) {
-				dnpix(x0,y0)->Y = 0xFF;
-				dnpix(x0,y0)->U = 0xF;
-				dnpix(x0,y0)->V = 0xF;
-			}
-			float t, dx, dy, xx, yy;
-			dx = x0 - peye->P.x;
-			dy = y0 - peye->P.y;
-			t = atan2(dy,dx)/* - peye->Aa*/;
-			
-			xx = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
-			yy = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
-			
-			float diff = sqrt(dx*dx+dy*dy) - sqrt(xx*xx+yy*yy);
-			if (fabs(diff) >= 0.1f) {
-			//	printf ("f1\n");
-			//	peye->Ax += peye->Fit_Scale*diff*fabs(cos(t));
-			//	peye->Ay += peye->Fit_Scale*diff*fabs(sin(t));
-				
-				Eye_Xset (peye, peye->P.x + 1*peye->Fit_Trans*(diff )*cos(t));
-				Eye_Yset (peye, peye->P.y + 1*peye->Fit_Trans*(diff )*sin(t));
-			}
-			continue;
-		}
-		if (!dpixout(x0,y0)) {
-			dnpix(x0,y0)->Y = 0xFF;
-			dnpix(x0,y0)->U = 0x0;
-			dnpix(x0,y0)->V = 0x0;
-		}
-		if (!dpixout(x1,y1)) {
-			dnpix(x1,y1)->Y = 0xFF;
-			dnpix(x1,y1)->U = 0x0;
-			dnpix(x1,y1)->V = 0x0;
-		}
-	//	printf ("Heee? eye %ld %ld   %ld %ld\n", x0 - (si)peye->P.x, y0 - (si)peye->P.y, x1 - (si)peye->P.x, y1 - (si)peye->P.y);
-	/*	dnpix(x0,y0)->Y = 0x0;
-		dnpix(x0,y0)->U = 0x0;
-		dnpix(x0,y0)->V = 0x0;
-		
-		dnpix(x1,y1)->Y = 0xFF;
-		dnpix(x1,y1)->U = 0xF;
-		dnpix(x1,y1)->V = 0xF;/**/
-		if (0) {
-			float dx1, dy1;
-			dx1 = x1 - peye->P.x;
-			dy1 = y1 - peye->P.y;
-			
-			float ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-			float oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-			
-			float ox1 = (peye->Ax * cos(t1) * cos(peye->Aa) - peye->Ay * sin(t1) * sin(peye->Aa));
-			float oy1 = (peye->Ax * cos(t1) * sin(peye->Aa) + peye->Ay * sin(t1) * cos(peye->Aa));
-			
-		/*	float diff = sqrt(dx0*dx0+dy0*dy0) - sqrt(ox0*ox0+oy0*oy0);
-			if (fabs(diff) >= 0.01f) {
-			//	printf ("f1\n");
-				peye->Ax += peye->Fit_Scale*diff*fabs(cos(t0));
-				peye->Ay += peye->Fit_Scale*diff*fabs(sin(t0));
-				
-				Eye_Xset (peye, peye->P.x + peye->Fit_Trans*(diff )*cos(t0));
-				Eye_Yset (peye, peye->P.y + peye->Fit_Trans*(diff )*sin(t0));
-			}/**/
-		/*	float diff = sqrt(dx1*dx1+dy1*dy1) - sqrt(ox1*ox1+oy1*oy1);
-			if (fabs(diff) >= 0.01f) {
-			//	printf ("f1\n");
-				peye->Ax += peye->Fit_Scale*diff*fabs(cos(t1));
-				peye->Ay += peye->Fit_Scale*diff*fabs(sin(t1));
-				
-				Eye_Xset (peye, peye->P.x + peye->Fit_Trans*(diff )*cos(t1));
-				Eye_Yset (peye, peye->P.y + peye->Fit_Trans*(diff )*sin(t1));
-			}/**/
-		}else {
-			float ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-			float ox1 = (peye->Ax * cos(t1) * cos(peye->Aa) - peye->Ay * sin(t1) * sin(peye->Aa));
-			
-			float oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-			float oy1 = (peye->Ax * cos(t1) * sin(peye->Aa) + peye->Ay * sin(t1) * cos(peye->Aa));
-			
-		//	printf ("Heee? pic %f %f   %f %f\n", x0 - peye->P.x, y0 - peye->P.y, x1 - peye->P.x, y1 - peye->P.y);
-		//	printf ("Heee? eli %f %f   %f %f\n", ox0, oy0, ox1, oy1);
-			
-			float sdx = fabsf(x1 - x0) - fabsf(ox1 - ox0);
-			float sdy = fabsf(y1 - y0) - fabsf(oy1 - oy0);
-			
-		//	ax += fabsf((x1 - x0)*cos(t0));
-		//	ay += fabsf((y1 - y0)*sin(t0));
-		//	++n;
-			
-			float pdx = (x0+x1)*0.5f - (2.0f*peye->P.x + ox0+ox1)*0.5f;
-			float pdy = (y0+y1)*0.5f - (2.0f*peye->P.y + oy0+oy1)*0.5f;
-			
-			Eye_Xset (peye, peye->P.x + 0.10f * pdx );// *cos(t));
-			Eye_Yset (peye, peye->P.y + 0.10f * pdy );// *sin(t));
-			
-			peye->Ax += 0.10f*sdx*fabs(cos(t0));
-			peye->Ay += 0.10f*sdy*fabs(sin(t0));
-			
-		//	peye->Ax += 0.5f*sdx*fabs(cos(t0));
-		//	peye->Ay += 0.5f*sdy*fabs(sin(t0));
-			
-		//	peye->Ax += peye->Fit_Scale * sdx;
-		//	peye->Ay += peye->Fit_Scale * sdy;
-			
-		//	peye->Ax += peye->Fit_Scale * ( sdx*fabs(cos(t0)) );
-		//	peye->Ay += peye->Fit_Scale * ( sdy*fabs(sin(t0)) );
-			
-		//	peye->Ax += peye->Fit_Scale * ( sdx* (fabs(cos(t0))*fabs(cos(t0))) );
-		//	peye->Ay += peye->Fit_Scale * ( sdy* (fabs(sin(t0))*fabs(sin(t0))) );
-			
-		//	peye->Ax += peye->Fit_Scale * ( sdx* (fabs(cos(t0))+fabs(sin(t0))) );
-		//	peye->Ay += peye->Fit_Scale * ( sdy* (fabs(cos(t0))+fabs(sin(t0))) );
-			/*
-			float pdx = (x0+x1)*0.5f - (ox0+ox1)*0.5f;
-			float pdy = (y0+y1)*0.5f - (oy0+oy1)*0.5f;
-			
-			Eye_Xset (peye, peye->P.x + peye->Fit_Trans * pdx );// *cos(t));
-			Eye_Yset (peye, peye->P.y + peye->Fit_Trans * pdy );// *sin(t));
-			/**/
-			
-		//	Eye_Xset (peye, peye->P.x + peye->Fit_Trans * ( (x0+x1)*0.5f - peye->P.x-(ox0+ox1)*0.5f ) );// *cos(t));
-		//	Eye_Yset (peye, peye->P.y + peye->Fit_Trans * ( (y0+y1)*0.5f - peye->P.y-(oy0+oy1)*0.5f ) );// *sin(t));
-			
-		/*	dnpix(ox0, oy0)->Y = 0x0;
-			dnpix(ox0, oy0)->U = 0x0;
-			dnpix(ox0, oy0)->V = 0x0;
-			
-			dnpix(ox1, oy1)->Y = 0xFF;
-			dnpix(ox1, oy1)->U = 0xF;
-			dnpix(ox1, oy1)->V = 0xF;/**/
-		}
-	}
-	}
-/*	if (n > 0) {
-		peye->Ax -= peye->S2Fit_Scale*(peye->Ax - (ax / (float)n));
-		peye->Ay -= peye->S2Fit_Scale*(peye->Ay - (ay / (float)n));
-	}/**/
-	SDL_UnlockSurface (gM.pScreen);
-	return;
-}
-
-void	Eye_S0		(tEye* peye)
-{
-//	Eye_V_Pre (peye);
-	
-	Eye_S0_Fit (peye);
-	
-//	Eye_V_Post (peye);
-}
-
-
-#define dmap_pix_ad(a,d)	dspix(peye->LinView.x+ 2*(d), peye->LinView.y+ (si)(angle_norm_0_2pi(a)/(peye->AngRes*deg2rad)))
-
-void	Eye_Ellipse2LinDraw	(tEye* peye)
-{
-//	return;
-	if (peye->LinView.x == 0)
-		return;
-//	si border = peye->Exp_R*peye->Exp_R*3;
-	si i = 0;
-	
-	float a;
-	for (a = 0; a < 2*M_PI; a += peye->AngRes*deg2rad) {
-		si n = 0;
-		float x = peye->P.x, y = peye->P.y;
-		tPix prevpix = *dopix(x,y);
-		for (; ddist2(x,y,peye->P.x,peye->P.y) < dpow2(peye->Exp_R*2); ) {
-			dspix(peye->LinView.x+n, peye->LinView.y+i) = dmono2rgb(dopix(x,y)->Y);
-			dspix(peye->LinView.x+peye->Exp_R*2*2+n, peye->LinView.y+i) = dmono2rgb(2*abs(dopix(x,y)->Y-prevpix.Y));
-			++n;
-			dspix(peye->LinView.x+n, peye->LinView.y+i) = dmono2rgb(dopix(x,y)->Y);
-			dspix(peye->LinView.x+peye->Exp_R*2*2+n, peye->LinView.y+i) = dmono2rgb(2*abs(dopix(x,y)->Y-prevpix.Y));
-			++n;
-			prevpix = *dopix(x,y);
-			
-			x += cos(a);
-			y += sin(a);
-		}
-	//	dspix(peye->LinView.x+(2*peye->Exp_R), peye->LinView.y+i) = 0xFF<<16;
-	//	dspix(peye->LinView.x+(2*peye->Exp_R+1), peye->LinView.y+i) = 0xFF<<16;
-		++i;
-	}/**/
-}
-void	Eye_Ellipse2LinDraw_Pix_ad	(tEye* peye, float a, float d, u32 col)
-{
-//	return;
-	dmap_pix_ad(a, d) = col;
-//	dmap_pix_ad(a, peye->Exp_R*2.0f + d) = col;
-}
-
-void	Eye_CirView_Point_xy		(tEye* peye, float x, float y, u32 col)
-{
-	float sx = 2.0f, sy = sx;
-	if (peye->CirView.x == 0)
-		return;
-//	printf ("CirView out	%f	%f\n", x*sx, y*sy);
-	si xx = peye->CirView.x + x*sx, yy = peye->CirView.y + y*sy;
-	if (!dsout(xx,yy))
-		dspix(xx,yy) = col;
-}
-
-
-si	Eye_S3Fit_EdgeMark	(tEye* peye, si i, float t, float* px, float* py)
-{
-//	si border = peye->Exp_R*peye->Exp_R*3;
-	u08 wrote = 0;
-	float x = peye->P.x, y = peye->P.y;
-	si n = 0;
-	
-	for (; ddist2(x,y,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R; ) {
-		if (peye->LinView.x != 0)
-			dspix(peye->LinView.x+n, peye->LinView.y+i) = dnpix(x,y)->Y | dnpix(x,y)->Y<<8 | dnpix(x,y)->Y<<16;
-		
-		if (	dopix(x,y)->Y > peye->Pix_Bright
-		) {
-		//	return 1;
-			float x1 = x, y1 = y;
-			for (; ddist2(x1,y1,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R*4; ) {
-				if (	dopix(x1,y1)->Y <= peye->Pix_Bright + 8) {
-					break;
-				}
-				x1 += cos(t);
-				y1 += sin(t);
-			}
-			if (ddist2(x1,y1,x,y) >= 2*2) {
-				if (!wrote) {
-					wrote = 1;
-					*px = x+0.000000000001f;
-					*py = y+0.000000000001f;
-					dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
-				}
-				dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
-			}
-		}/**/
-		
-		x += cos(t);
-		y += sin(t);
-		++n;
-	}/**/
-	return wrote;
-	return 0;
-}
-si	Eye_S3Fit_EdgeMark2	(tEye* peye, si i, float t, float* px, float* py)
-{
-	float border_s = peye->Min_R;
-	float border_e = peye->Max_R;
-	
-	u08 wrote = 0;
-	float x = peye->P.x, y = peye->P.y;
-	si n = 0;
-	
-	for (; ddist2(x,y,peye->P.x,peye->P.y) < dpow2(border_e); ) {
-		if (peye->LinView.x != 0)
-			dspix(peye->LinView.x+n, peye->LinView.y+i) = dnpix(x,y)->Y | dnpix(x,y)->Y<<8 | dnpix(x,y)->Y<<16;
-		
-		if (
-		//	dopix(x,y)->Y > ay + 30
-			dopix(x,y)->Y >= peye->Pix_Bright
-		//	&& ddist2(x,y,peye->P.x,peye->P.y) >= 14*14
-			&& ddist2(x,y,peye->P.x,peye->P.y) >= dpow2(border_s)
-		) {
-		//	return 1;
-			float x1 = x, y1 = y;
-			for (; ddist2(x1,y1,peye->P.x,peye->P.y) < dpow2(peye->Exp_R*2); ) {
-				if (	dopix(x1,y1)->Y <= peye->Pix_Bright + 8) {
-					break;
-				}
-				x1 += cos(t);
-				y1 += sin(t);
-			}
-			if (ddist2(x1,y1,x,y) >= 2*2) {
-				if (!wrote) {
-					wrote = 1;
-					*px = x+0.000000000001f;
-					*py = y+0.000000000001f;
-					dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
-				}
-				dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
-			}
-		}/**/
-		
-		x += cos(t);
-		y += sin(t);
-		++n;
-	}/**/
-	return wrote;
-	return 0;
-}
-si	Eye_S3Fit_EdgeMark3	(tEye* peye, si i, float t, float* px, float* py)
-{
-//	si border = peye->Exp_R*peye->Exp_R*3;
-	u08 wrote = 0;
-	float x = peye->P.x, y = peye->P.y, mindiff = peye->Exp_R*peye->Exp_R;
-	si n = 0;
-	
-	for (; ddist2(x,y,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R; ) {
-		if (peye->LinView.x != 0)
-			dspix(peye->LinView.x+n, peye->LinView.y+i) = dnpix(x,y)->Y | dnpix(x,y)->Y<<8 | dnpix(x,y)->Y<<16;
-		
-		if (	dopix(x,y)->Y > ay + 18
-		//	&& ddist2(x,y,peye->P.x,peye->P.y) >= 14*14
-		) {
-		//	return 1;
-			float x1 = x, y1 = y;
-			for (; ddist2(x1,y1,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R*4; ) {
-				if (	dopix(x1,y1)->Y <= ay + 8) {
-					break;
-				}
-				x1 += cos(t);
-				y1 += sin(t);
-			}
-			if (ddist2(x1,y1,x,y) >= 2*2) {
-			//	if (!wrote) {
-					float diff = ddist2(x,y,peye->P.x,peye->P.y) - peye->Exp_R*peye->Exp_R;
-					if (fabsf(diff) < mindiff) {
-						wrote = 1;
-						mindiff = fabsf(diff);
-						*px = x+0.000000000001f;
-						*py = y+0.000000000001f;
-					}
-					dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
-			//	}
-				dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
-				x = x1;
-				y = y1;
-				continue;
-			}
-		}/**/
-		
-		x += cos(t);
-		y += sin(t);
-		++n;
-	}/**/
-	return wrote;
-	return 0;
-}
-
-si	Eye_S3Fit_EdgeMark4	(tEye* peye, si i, float t, float* px, float* py)
-{
-	u08 wrote = 0;
-	float x = peye->P.x, y = peye->P.y;
-	si n = 0;
-	
-	for (; ddist2(x,y,peye->P.x,peye->P.y) < dpow2(peye->Max_R); ) {
-		if (peye->LinView.x != 0)
-			dspix(peye->LinView.x+n, peye->LinView.y+i) = dnpix(x,y)->Y | dnpix(x,y)->Y<<8 | dnpix(x,y)->Y<<16;
-		
-		if (	dopix(x,y)->Y > peye->Pix_Bright
-		) {
-			if (!wrote) {
-				wrote = 1;
-				float x0 = x, y0 = y, x1 = x, y1 = y;
-				x0 -= cos(t);	y0 -= sin(t);
-				x1 += cos(t);	y1 += sin(t);
-				/*
-				float a = (float)(dopix(x1,y1)->Y - dopix(x,y)->Y) / 180;
-				
-				printf ("a %f\n", a);
-				if (a < 0)		a = 0;
-				else if (a > 1)	a = 1;
-				a = 1.0f-a;
-				*px = x*a + x1*(1.0f-a) + 0.000000000001f;
-				*py = y*a + y1*(1.0f-a) + 0.000000000001f;/**/
-				
-				float a = (float)(dopix(x,y)->Y - dopix(x0,y0)->Y) / 180;
-			//	printf ("a %f\n", a);
-				
-				if (a < 0)		a = 0;
-				else if (a > 1)	a = 1;
-				a = 1.0f-a;
-				*px = x*a + x0*(1.0f-a) + 0.000000000001f;
-				*py = y*a + y0*(1.0f-a) + 0.000000000001f;/**/
-				
-			//	*px = x+0.000000000001f;	*py = y+0.000000000001f;
-				dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
-			//	return 1;
-			}
-			dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
-			
-		}/**/
-		
-		x += cos(t);
-		y += sin(t);
-		++n;
-	}/**/
-	return wrote;
-	return 0;
-}
-
-
-void	Eye_S3Fit		(tEye* peye)
-{
-	SDL_LockSurface (gM.pScreen);
-//	Eye_SFit (peye);	return;
-//	si border = 4*peye->Exp_R;
-	
-//	float ax = 0, ay = 0;
-//	si n = 0;
-	si i = 0;
-	
-	si	(*edge)	(tEye* peye, si i, float t, float* px, float* py);
-	switch (peye->Fit) {
-	case eEye_Fit_S3Fit_Point:	edge = Eye_S3Fit_EdgeMark;	break;
-	default:
-	case eEye_Fit_S3Fit_Eye:	edge = Eye_S3Fit_EdgeMark2;	break;
-	case eEye_Fit_S3Fit_Eye3:	edge = Eye_S3Fit_EdgeMark3;	break;
-	
-	case eEye_Fit_S3Fit_Point4:	edge = Eye_S3Fit_EdgeMark4;	break;	//soft thresholding
-	}
-	
-	float inc = peye->AngRes*deg2rad;
-	
-	float ao, a;
-//	for (a = 0; a < M_PI; a += inc) {
-//	for (a = -M_PI_2; a < M_PI_2; a += inc) {
-//	for (a = -M_PI_4; a < M_PI_4; a += inc) {
-	for (ao = 0; ao < M_PI_2; ao += inc) {
-	for (a = ao; a <= ao+M_PI_2+M_PI_4; a += M_PI_2) {
-//	{
-	//	printf ("mino ");
-		u08 skip;
-		float x0, y0, x1, y1;
-		float t0 = a, t1 = t0 - M_PI;
-		
-	//	skip = edge (peye, i, t0, &x0, &y0);
-		skip = edge (peye, a/(inc), t0, &x0, &y0);
-		
-		if (skip == 0) {
-			t0 = t1;
-		//	skip = edge (peye, 110 + i, t0, &x0, &y0);
-			skip = edge (peye, 110 + a/(inc), t0, &x0, &y0);
-		}else {
-		//	skip += edge (peye, 110 + i, t1, &x1, &y1);
-			skip += edge (peye, 110 + a/(inc), t1, &x1, &y1);
-		}
-		++i;
-		
-		if (skip == 0)
-			continue;
-		
-		if (skip == 1) {
-			dnpix(x0,y0)->Y = 0xFF;
-			dnpix(x0,y0)->U = 0xF;
-			dnpix(x0,y0)->V = 0xF;
-			
-			float t, dx, dy, xx, yy;
-			dx = x0 - peye->P.x;
-			dy = y0 - peye->P.y;
-			t = atan2(dy,dx)/* - peye->Aa*/;
-			
-			xx = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
-			yy = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
-			
-			float diff = sqrt(dx*dx+dy*dy) - sqrt(xx*xx+yy*yy);
-			if (fabs(diff) >= 0.1f) {
-			//	printf ("f1\n");
-				peye->Ax += peye->Fit_Scale*diff*fabs(cos(t));
-				peye->Ay += peye->Fit_Scale*diff*fabs(sin(t));
-				
-				Eye_Xset (peye, peye->P.x + peye->Fit_Trans*(diff )*cos(t));
-				Eye_Yset (peye, peye->P.y + peye->Fit_Trans*(diff )*sin(t));
-			}
-			continue;
-		}
-		dnpix(x0,y0)->Y = 0xFF;
-		dnpix(x0,y0)->U = 0x0;
-		dnpix(x0,y0)->V = 0x0;
-		
-		dnpix(x1,y1)->Y = 0xFF;
-		dnpix(x1,y1)->U = 0x0;
-		dnpix(x1,y1)->V = 0x0;
-		
-		Eye_CirView_Point_xy (peye, peye->P.x - x0, peye->P.y - y0, 0x00FF00);
-		Eye_CirView_Point_xy (peye, peye->P.x - x1, peye->P.y - y1, 0x00FF00);
-	//	printf ("Heee? eye %ld %ld   %ld %ld\n", x0 - (si)peye->P.x, y0 - (si)peye->P.y, x1 - (si)peye->P.x, y1 - (si)peye->P.y);
-	/*	dnpix(x0,y0)->Y = 0x0;
-		dnpix(x0,y0)->U = 0x0;
-		dnpix(x0,y0)->V = 0x0;
-		
-		dnpix(x1,y1)->Y = 0xFF;
-		dnpix(x1,y1)->U = 0xF;
-		dnpix(x1,y1)->V = 0xF;/**/
-		if (0) {
-			float dx1, dy1;
-			dx1 = x1 - peye->P.x;
-			dy1 = y1 - peye->P.y;
-			
-			float ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-			float oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-			
-			float ox1 = (peye->Ax * cos(t1) * cos(peye->Aa) - peye->Ay * sin(t1) * sin(peye->Aa));
-			float oy1 = (peye->Ax * cos(t1) * sin(peye->Aa) + peye->Ay * sin(t1) * cos(peye->Aa));
-			
-		/*	float diff = sqrt(dx0*dx0+dy0*dy0) - sqrt(ox0*ox0+oy0*oy0);
-			if (fabs(diff) >= 0.01f) {
-			//	printf ("f1\n");
-				peye->Ax += peye->Fit_Scale*diff*fabs(cos(t0));
-				peye->Ay += peye->Fit_Scale*diff*fabs(sin(t0));
-				
-				Eye_Xset (peye, peye->P.x + peye->Fit_Trans*(diff )*cos(t0));
-				Eye_Yset (peye, peye->P.y + peye->Fit_Trans*(diff )*sin(t0));
-			}/**/
-		/*	float diff = sqrt(dx1*dx1+dy1*dy1) - sqrt(ox1*ox1+oy1*oy1);
-			if (fabs(diff) >= 0.01f) {
-			//	printf ("f1\n");
-				peye->Ax += peye->Fit_Scale*diff*fabs(cos(t1));
-				peye->Ay += peye->Fit_Scale*diff*fabs(sin(t1));
-				
-				Eye_Xset (peye, peye->P.x + peye->Fit_Trans*(diff )*cos(t1));
-				Eye_Yset (peye, peye->P.y + peye->Fit_Trans*(diff )*sin(t1));
-			}/**/
-		}else {
-			float ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-			float ox1 = (peye->Ax * cos(t1) * cos(peye->Aa) - peye->Ay * sin(t1) * sin(peye->Aa));
-			
-			float oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-			float oy1 = (peye->Ax * cos(t1) * sin(peye->Aa) + peye->Ay * sin(t1) * cos(peye->Aa));
-			
-		//	printf ("Heee? pic %f %f   %f %f\n", x0 - peye->P.x, y0 - peye->P.y, x1 - peye->P.x, y1 - peye->P.y);
-		//	printf ("Heee? eli %f %f   %f %f\n", ox0, oy0, ox1, oy1);
-			
-			float sdx = fabsf(x1 - x0) - fabsf(ox1 - ox0);
-			float sdy = fabsf(y1 - y0) - fabsf(oy1 - oy0);
-			
-		//	ax += fabsf((x1 - x0)*cos(t0));
-		//	ay += fabsf((y1 - y0)*sin(t0));
-		//	++n;
-			
-			float pdx = (x0+x1)*0.5f - (2.0f*peye->P.x + ox0+ox1)*0.5f;
-			float pdy = (y0+y1)*0.5f - (2.0f*peye->P.y + oy0+oy1)*0.5f;
-			
-			Eye_Xset (peye, peye->P.x + 0.10f * pdx );// *cos(t));
-			Eye_Yset (peye, peye->P.y + 0.10f * pdy );// *sin(t));
-			
-			peye->Ax += 0.10f*sdx*fabs(cos(t0));
-			peye->Ay += 0.10f*sdy*fabs(sin(t0));
-			
-		//	peye->Ax += 0.5f*sdx*fabs(cos(t0));
-		//	peye->Ay += 0.5f*sdy*fabs(sin(t0));
-			
-		//	peye->Ax += peye->Fit_Scale * sdx;
-		//	peye->Ay += peye->Fit_Scale * sdy;
-			
-		//	peye->Ax += peye->Fit_Scale * ( sdx*fabs(cos(t0)) );
-		//	peye->Ay += peye->Fit_Scale * ( sdy*fabs(sin(t0)) );
-			
-		//	peye->Ax += peye->Fit_Scale * ( sdx* (fabs(cos(t0))*fabs(cos(t0))) );
-		//	peye->Ay += peye->Fit_Scale * ( sdy* (fabs(sin(t0))*fabs(sin(t0))) );
-			
-		//	peye->Ax += peye->Fit_Scale * ( sdx* (fabs(cos(t0))+fabs(sin(t0))) );
-		//	peye->Ay += peye->Fit_Scale * ( sdy* (fabs(cos(t0))+fabs(sin(t0))) );
-			/*
-			float pdx = (x0+x1)*0.5f - (ox0+ox1)*0.5f;
-			float pdy = (y0+y1)*0.5f - (oy0+oy1)*0.5f;
-			
-			Eye_Xset (peye, peye->P.x + peye->Fit_Trans * pdx );// *cos(t));
-			Eye_Yset (peye, peye->P.y + peye->Fit_Trans * pdy );// *sin(t));
-			/**/
-			
-		//	Eye_Xset (peye, peye->P.x + peye->Fit_Trans * ( (x0+x1)*0.5f - peye->P.x-(ox0+ox1)*0.5f ) );// *cos(t));
-		//	Eye_Yset (peye, peye->P.y + peye->Fit_Trans * ( (y0+y1)*0.5f - peye->P.y-(oy0+oy1)*0.5f ) );// *sin(t));
-			
-		/*	dnpix(ox0, oy0)->Y = 0x0;
-			dnpix(ox0, oy0)->U = 0x0;
-			dnpix(ox0, oy0)->V = 0x0;
-			
-			dnpix(ox1, oy1)->Y = 0xFF;
-			dnpix(ox1, oy1)->U = 0xF;
-			dnpix(ox1, oy1)->V = 0xF;/**/
-		}
-	}
-	}
-/*	if (n > 0) {
-		peye->Ax -= peye->S2Fit_Scale*(peye->Ax - (ax / (float)n));
-		peye->Ay -= peye->S2Fit_Scale*(peye->Ay - (ay / (float)n));
-	}/**/
-	SDL_UnlockSurface (gM.pScreen);
-	return;
-}
-
-
-si	Eye_S4_EdgeMark00	(tEye* peye, float t, float* px, float* py)
-{
-	float border_s = peye->Min_R;
-	float border_e = peye->Max_R;
-	
-	u08 wrote = 0;
-	float x = peye->P.x, y = peye->P.y;
-	si n = 0;
-	
-	for (; ddist2(x,y,peye->P.x,peye->P.y) < dpow2(border_e); ) {
-	//	if (peye->LinView.x != 0)
-	//		dspix(peye->LinView.x+n, peye->LinView.y+i) = dnpix(x,y)->Y | dnpix(x,y)->Y<<8 | dnpix(x,y)->Y<<16;
-		
-		if (
-		//	dopix(x,y)->Y > ay + 30
-			dopix(x,y)->Y >= peye->S4_Pix_Bright
-			&& ddist2(x,y,peye->P.x,peye->P.y) >= dpow2(border_s)
-		) {
-		//	return 1;
-			float x1 = x, y1 = y;
-			for (; ddist2(x1,y1,peye->P.x,peye->P.y) < dpow2(peye->Exp_R*2); ) {
-			//	if (	dopix(x1,y1)->Y <= ay + 8) {
-				if (	dopix(x1,y1)->Y <= peye->S4_Pix_Bright + 8) {
-					break;
-				}
-				x1 += cos(t);
-				y1 += sin(t);
-			}/**/
-		//	if (ddist2(x1,y1,x,y) >= dpow2(2)) {
-				if (!wrote) {
-					wrote = 1;
-					*px = x+0.000000000001f;
-					*py = y+0.000000000001f;
-				//	dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
-				}
-			//	dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
-		//	}
-		}/**/
-		
-		x += cos(t);
-		y += sin(t);
-		++n;
-	}/**/
-	return wrote;
-}
-si	Eye_S4_EdgeMark0	(tEye* peye, float t, float* px, float* py)
-{
-//	si border = peye->Exp_R*peye->Exp_R*3;
-	u08 wrote = 0;
-	float x = peye->P.x, y = peye->P.y, mindiff = peye->Exp_R*peye->Exp_R;
-	si n = 0, minn = 0;
-	
-	for (; ddist2(x,y,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R; ) {
-		
-		if (	dopix(x,y)->Y > ay + 36
-		//	&& ddist2(x,y,peye->P.x,peye->P.y) >= 14*14
-		) {
-		//	return 1;
-			float x1 = x, y1 = y;
-			for (; ddist2(x1,y1,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R*4; ) {
-				if (	dopix(x1,y1)->Y <= ay + 32) {
-					break;
-				}
-				x1 += cos(t);
-				y1 += sin(t);
-			}
-			if (ddist2(x1,y1,x,y) >= 3*2) {
-			//	if (!wrote) {
-					float diff = ddist2(x,y,peye->P.x,peye->P.y) - peye->Exp_R*peye->Exp_R;
-					if (fabsf(diff) < mindiff) {
-						wrote = 1;
-						mindiff = fabsf(diff);
-						minn = n;
-						*px = x+0.000000000001f;
-						*py = y+0.000000000001f;
-					}
-				//	dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
-			//	}
-			//	dspix(peye->LinView.x+n, peye->LinView.y+i) = 0xFF<<8;
-				x = x1;
-				y = y1;
-				continue;
-			}
-		}/**/
-		x += cos(t);
-		y += sin(t);
-		++n;
-	}/**/
-	if (wrote) {
-	//	dspix(peye->LinView.x+peye->Exp_R, peye->LinView.y+ (si)(angle_norm_0_2pi(t)/(M_PI/100.0f))) = 0xFF<<16;
-		Eye_Ellipse2LinDraw_Pix_ad (peye, t,peye->Exp_R, 0xFF<<16);
-	//	dspix(peye->LinView.x+minn, peye->LinView.y+ (si)(angle_norm_0_2pi(t)/(M_PI/100.0f))) = 0xFF<<8;
-		Eye_Ellipse2LinDraw_Pix_ad (peye, t,minn, 0xFF<<8);
-	}
-	return wrote;
-	return 0;
-}
-si	Eye_S4_EdgeMark1	(tEye* peye, float t, float* px, float* py)
-{
-//	si border = peye->Exp_R*peye->Exp_R*3;
-	u08 wrote = 0;
-	float x = peye->P.x, y = peye->P.y, mindiff = peye->Exp_R*peye->Exp_R;
-	si n = 0, minn = 0;
-	
-	tPix prev = *dopix(x,y);
-	
-	for (; ddist2(x,y,peye->P.x,peye->P.y) < peye->Exp_R*peye->Exp_R; )
-	{
-		if (	dopix(x,y)->Y - prev.Y >= 0x20
-			&& ddist(x,y,peye->P.x,peye->P.y) > peye->Exp_R*0.6f
-		) {
-		//	Eye_Ellipse2LinDraw_Pix_ad (peye, t, n, 0xFF<<0);
-			
-			float diff = ddist2(x,y,peye->P.x,peye->P.y) - peye->Exp_R*peye->Exp_R;
-			if (fabsf(diff) < mindiff) {
-				wrote = 1;
-				mindiff = fabsf(diff);
-				minn = n;
-				*px = x+0.000000000001f;
-				*py = y+0.000000000001f;
-			}
-		}
-		prev = *dopix(x,y);
-		x += cos(t);
-		y += sin(t);
-		++n;
-	}/**/
-	if (wrote) {
-		Eye_Ellipse2LinDraw_Pix_ad (peye, t,peye->Exp_R*0.6f, 0xFF<<16);
-		Eye_Ellipse2LinDraw_Pix_ad (peye, t,peye->Exp_R, 0xFF<<16);
-		Eye_Ellipse2LinDraw_Pix_ad (peye, t,minn, 0xFF<<8);
-	}
-	return wrote;
-	return 0;
-}
-si	Eye_S4_EdgeMark2	(tEye* peye, float t, float* px, float* py)
-{
-	float border_s = peye->Min_R;
-	float border_e = peye->Max_R;
-	
-	u08 wrote = 0;
-	float x = peye->P.x, y = peye->P.y;
-	si n = 0;
-	struct {
-		float x, y;
-		tPix pix;
-	}min, max;
-	
-	tPix prev = *dopix(x,y);
-	
-	n = border_s;
-	x += border_s * cos(t);
-	y += border_s * sin(t);
-	
-	min.x = max.x = x;
-	min.y = max.y = y;
-	min.pix = max.pix = *dopix(x,y);
-	
-	for (; ddist2(x,y,peye->P.x,peye->P.y) < border_e*border_e; )
-	{
-		if (	dopix(x,y)->Y < min.pix.Y
-		//	&& ddist(x,y,peye->P.x,peye->P.y) > peye->Exp_R*0.6f
-		) {
-			min.x = x;
-			min.y = y;
-			min.pix = *dopix(x,y);
-		}
-		if (	dopix(x,y)->Y > max.pix.Y
-		//	&& ddist(x,y,peye->P.x,peye->P.y) > peye->Exp_R*0.6f
-		) {
-			max.x = x;
-			max.y = y;
-			max.pix = *dopix(x,y);
-		}
-		prev = *dopix(x,y);
-		x += cos(t);
-		y += sin(t);
-		++n;
-	}/**/
-	Eye_Ellipse2LinDraw_Pix_ad (peye, t,border_s, 0xFF<<0);
-	Eye_Ellipse2LinDraw_Pix_ad (peye, t,peye->Exp_R, 0xFF<<16);
-	Eye_Ellipse2LinDraw_Pix_ad (peye, t,border_e, 0xFF<<0);
-	
-	if (ddist(min.x,min.y, peye->P.x,peye->P.y) < ddist(max.x,max.y, peye->P.x,peye->P.y)) {
-		if (max.pix.Y - min.pix.Y < 0x30)
-			return 0;
-		
-		*px = min.x + max.x;	*px /= 2.0f;
-		*py = min.y + max.y;	*py /= 2.0f;
-		Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(*px,*py, peye->P.x,peye->P.y), 0xFF<<8);
-		return 1;
-	}
-//	if (wrote) {
-		
-	//	Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(min.x,min.y, peye->P.x,peye->P.y), 0xFF<<0);
-	//	Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(max.x,max.y, peye->P.x,peye->P.y), 0xFF<<8);
-//	}
-//	return wrote;
-	return 0;
-}
-si	Eye_S4_EdgeMark3	(tEye* peye, float t, float* px, float* py)
-{
-	float border_s = peye->Min_R;
-	float border_e = peye->Max_R;
-	
-	si ret = Eye_S4_EdgeMark00 (peye, t, px, py);
-	if (!ret) {
-		return ret;
-	}
-	
-	Eye_Ellipse2LinDraw_Pix_ad (peye, t,border_s, 0xFF<<0);
-//	Eye_Ellipse2LinDraw_Pix_ad (peye, t,peye->Exp_R, 0xFF<<16);
-	Eye_Ellipse2LinDraw_Pix_ad (peye, t,border_e, 0xFF<<0);
-	
-	if (!gM.bEye_S4_EdgeMark3_Micro) {
-		Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(*px,*py, peye->P.x,peye->P.y), 0xFF<<8);
-		return ret;
-	}
-	float x0 = *px, y0 = *py;
-	float x2 = *px, y2 = *py;
-	
-	x0 -= 1*cos(t);	y0 -= 1*sin(t);
-	x2 += 1*cos(t);	y2 += 1*sin(t);
-	if (*px == x0 && *py == y0) {
-		printf ("crap 0\n");
-	}
-	if (*px == x2 && *py == y2) {
-		printf ("crap 2\n");
-	}
-	
-	float d10 = dopix(*px,*py)->Y - dopix(x0,y0)->Y;
-	float d21 = dopix(x2,y2)->Y - dopix(*px,*py)->Y;
-	
-	if (d10 < 0)
-		d10 = 0;
-	if (d21 < 0)
-		d21 = 0;
-	
-	float sd = (d21 - d10) / 100.0f;
-//	printf ("sd %f\n", sd);
-	*px += sd * cos(t);
-	*py += sd * sin(t);
-	
-	Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(*px,*py, peye->P.x,peye->P.y), 0xFF<<8);
-	return ret;
-	
-	
-	u08 wrote = 0;
-	float x = peye->P.x, y = peye->P.y;
-	si n = 0;
-	struct {
-		float x, y;
-		tPix pix;
-	}min, max;
-	
-	tPix prev = *dopix(x,y);
-	
-	n = border_s;
-	x += border_s * cos(t);
-	y += border_s * sin(t);
-	
-	min.x = max.x = x;
-	min.y = max.y = y;
-	min.pix = max.pix = *dopix(x,y);
-	
-	for (; ddist2(x,y,peye->P.x,peye->P.y) < border_e*border_e; )
-	{
-		if (	dopix(x,y)->Y < min.pix.Y
-		//	&& ddist(x,y,peye->P.x,peye->P.y) > peye->Exp_R*0.6f
-		) {
-			min.x = x;
-			min.y = y;
-			min.pix = *dopix(x,y);
-		}
-		if (	dopix(x,y)->Y > max.pix.Y
-		//	&& ddist(x,y,peye->P.x,peye->P.y) > peye->Exp_R*0.6f
-		) {
-			max.x = x;
-			max.y = y;
-			max.pix = *dopix(x,y);
-		}
-		prev = *dopix(x,y);
-		x += cos(t);
-		y += sin(t);
-		++n;
-	}/**/
-	Eye_Ellipse2LinDraw_Pix_ad (peye, t,border_s, 0xFF<<0);
-	Eye_Ellipse2LinDraw_Pix_ad (peye, t,peye->Exp_R, 0xFF<<16);
-	Eye_Ellipse2LinDraw_Pix_ad (peye, t,border_e, 0xFF<<0);
-	
-	if (ddist(min.x,min.y, peye->P.x,peye->P.y) < ddist(max.x,max.y, peye->P.x,peye->P.y)) {
-		if (max.pix.Y - min.pix.Y < 0x10)
-			return 0;
-		
-		*px = min.x + max.x;	*px /= 2.0f;
-		*py = min.y + max.y;	*py /= 2.0f;
-		Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(*px,*py, peye->P.x,peye->P.y), 0xFF<<8);
-		return 1;
-	}
-//	if (wrote) {
-		
-	//	Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(min.x,min.y, peye->P.x,peye->P.y), 0xFF<<0);
-	//	Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(max.x,max.y, peye->P.x,peye->P.y), 0xFF<<8);
-//	}
-//	return wrote;
-	return 0;
-}
-
-#if 0
-si	Eye_S4_Edge_Line	(tEye* peye, float as, float inc, float* pae, float* pr)
-{
-	si	(*edgemark)	(tEye* peye, float t, float* px, float* py);
-	
-	switch (peye->Fit) {
-	default:
-	case eEye_Fit_S4Fit_Edge0:	edgemark = Eye_S4_EdgeMark0;	break;
-	case eEye_Fit_S4Fit_Edge1:	edgemark = Eye_S4_EdgeMark1;	break;
-	case eEye_Fit_S4Fit_Edge2:	edgemark = Eye_S4_EdgeMark2;	break;
-	}
-	
-	
-	float a;//, inc = M_PI/100.0f;
-	*pr = 0;
-	si num = 0;
-	for (a = as; ; a += inc) {
-		if (inc > 0) {
-			if (a > as+2*M_PI)
-				break;
-		}else if (a < as-2*M_PI)
-			break;
-		
-		u08 skip;
-		float x0, y0, x1, y1;
-		float t0 = a, t1 = t0 + inc;
-		
-		if (!edgemark (peye, t0, &x0, &y0))
-			continue;
-		
-		si tries = 11;
-		do {
-			skip = edgemark (peye, t1, &x1, &y1);
-		}while (--tries && (!skip || x1 != x0 && y1 != y0));
-	//	if (n == 0)
-	//		break;
-		if (!skip)
-			continue;
-		
-		if (ddist2(x0,y0,x1,y1) < 2*2) {
-		//	dnpix(x0,y0)->Y = 0xFF;
-		//	dnpix(x0,y0)->U = 0x0;
-		//	dnpix(x0,y0)->V = 0x0;
-			
-			if (peye->Point_N < peye->Point_Max) {
-				peye->paPoint[peye->Point_N].x = x0;
-				peye->paPoint[peye->Point_N].y = y0;
-				peye->Point_N++;
-				*pr += ddist(peye->P.x, peye->P.y, x0, y0);
-				++num;
-			}else {
-				printf ("Well shit... i guess it's not enough\n");
-			}
-			
-		//	dnpix(x1,y1)->Y = 0xFF;
-		//	dnpix(x1,y1)->U = 0x0;
-		//	dnpix(x1,y1)->V = 0x0;
-		}else
-			break;
-	}
-	*pae = a;
-	*pr /= (float)num;
-	return num;
-}
-#endif
-#if 1
-si	Eye_S4_Edge_Line	(tEye* peye, float as, float inc, float* pae, float* pr)
-{
-	si	(*edgemark)	(tEye* peye, float t, float* px, float* py);
-	
-	switch (peye->Fit) {
-	case eEye_Fit_S4Fit_Edge0:	edgemark = Eye_S4_EdgeMark00;	break;
-	case eEye_Fit_S4Fit_Edge1:	edgemark = Eye_S4_EdgeMark1;	break;
-//	case eEye_Fit_S4Fit_Edge2:	edgemark = Eye_S4_EdgeMark2;	break;
-	default:
-	case eEye_Fit_S4Fit_Edge2:	edgemark = Eye_S4_EdgeMark3;	break;
-	}
-	
-	tV2f prev = {0,0}, p;
-	float a;
-	*pr = 0;
-	si num = 0;
-	for (a = as; ; a += inc) {
-		if (inc > 0) {
-			if (a > as+2*M_PI)
-				break;
-			if (a > *pae)
-				break;
-		}else {
-			if (a < as-2*M_PI) 
-				break;
-			if (a < *pae)
-				break;
-		}
-	//	printf ("iter\n");
-		
-		if (!edgemark (peye, a, &p.x, &p.y))
-			continue;
-		if (prev.x == 0) {
-			prev = p;
-			continue;
-		}
-		if (p.x == prev.x && p.y == prev.y) {
-			continue;
-		}
-		
-		{
-			si du = dopix(prev.x,prev.y)->U - dopix(p.x,p.y)->U;
-			si dv = dopix(prev.x,prev.y)->V - dopix(p.x,p.y)->V;
-		//	printf ("U %d %d\tV %d %d\n", dopix(p.x,p.y)->U, dopix(prev.x,prev.y)->U, dopix(p.x,p.y)->V, dopix(prev.x,prev.y)->V);
-		//	if (abs(du) > 14 || abs(dv) > 14)
-		//		continue;
-		//	if (abs(du) > 8 && abs(dv) > 8)
-		//		continue;
-		}/**/
-		if (fabsf(ddist(p.x,p.y, peye->P.x, peye->P.y) - ddist(prev.x,prev.y, peye->P.x, peye->P.y)) > (2.5f))
-			continue;
-		if (ddist2(p.x,p.y,prev.x,prev.y) > dpow2(3.5f))
-			continue;
-		
-		//	dnpix(x0,y0)->Y = 0xFF;
-		//	dnpix(x0,y0)->U = 0x0;
-		//	dnpix(x0,y0)->V = 0x0;
-			
-			if (peye->Point_N < peye->Point_Max) {
-				peye->paPoint[peye->Point_N].x = p.x;
-				peye->paPoint[peye->Point_N].y = p.y;
-				peye->Point_N++;
-				*pr += ddist(peye->P.x, peye->P.y, p.x, p.y);
-				++num;
-			}else {
-				printf ("Well shit... i guess it's not enough\n");
-			}
-			
-			prev = p;
-		//	dnpix(x1,y1)->Y = 0xFF;
-		//	dnpix(x1,y1)->U = 0x0;
-		//	dnpix(x1,y1)->V = 0x0;
-	//	}else
-	//		break;
-	}
-	*pae = a;
-	*pr /= (float)num;
-	return num;
-}
-#endif
-
-void	Eye_S4_Edge		(tEye* peye)
-{
-	float ae;
-	ui iter_start[4];
-	ui iter_n[4];
-	float r[4];
-	
-	peye->Point_N = 0;
-//	printf ("Eye_S4_Edge:\n");
-	si i = 0;
-	float inc = peye->AngRes*deg2rad;//REMEMBER Y IS DOWN SO THE ANGLE GOES CLOCKWISE
-	
-/*	iter_start[i] = peye->Point_N;	ae = 0 + M_PI_2;		iter_n[i] = Eye_S4_Edge_Line (peye, 0, inc, &ae, &r[i]);		++i;
-	iter_start[i] = peye->Point_N;	ae = 0 - M_PI_4;		iter_n[i] = Eye_S4_Edge_Line (peye, 0, -inc, &ae, &r[i]);		++i;
-	
-	iter_start[i] = peye->Point_N;	ae = M_PI - M_PI_2;	iter_n[i] = Eye_S4_Edge_Line (peye, M_PI, -inc, &ae, &r[i]);	++i;
-	iter_start[i] = peye->Point_N;	ae = M_PI + M_PI_4;	iter_n[i] = Eye_S4_Edge_Line (peye, M_PI, inc, &ae, &r[i]);		++i;
-	/**/
-	iter_start[i] = peye->Point_N;	ae = 0 + M_PI_2;		iter_n[i] = Eye_S4_Edge_Line (peye, M_PI_4/2, inc, &ae, &r[i]);		++i;
-	iter_start[i] = peye->Point_N;	ae = 0 - M_PI_4;		iter_n[i] = Eye_S4_Edge_Line (peye, M_PI_4/2, -inc, &ae, &r[i]);		++i;
-	
-	iter_start[i] = peye->Point_N;	ae = M_PI - M_PI_2;	iter_n[i] = Eye_S4_Edge_Line (peye, M_PI-M_PI_4/2, -inc, &ae, &r[i]);	++i;
-	iter_start[i] = peye->Point_N;	ae = M_PI + M_PI_4;	iter_n[i] = Eye_S4_Edge_Line (peye, M_PI-M_PI_4/2, inc, &ae, &r[i]);	++i;
-	/**/
-	
-//	iter_start[i] = peye->Point_N;	iter_n[i] = Eye_S4_Edge_Line (peye, -M_PI_2, inc, &ae, &r[i]);		++i;
-//	iter_start[i] = peye->Point_N;	iter_n[i] = Eye_S4_Edge_Line (peye, -M_PI_2, -inc, &ae, &r[i]);		++i;
-	
-//	iter_start[i] = peye->Point_N;	iter_n[i] = Eye_S4_Edge_Line (peye, M_PI_2, inc, &ae, &r[i]);		++i;
-//	iter_start[i] = peye->Point_N;	iter_n[i] = Eye_S4_Edge_Line (peye, M_PI_2, -inc, &ae, &r[i]);		++i;
-	
-	si num = i;
-	si n = 0;
-	float ar = 0;
-	for (i = 0; i < num; ++i) {
-	//	printf ("\t%ld: r %f\n", iter_n[i], r[i]);
-		if (iter_n[i]) {
-			ar += iter_n[i] * r[i];
-			n += iter_n[i];
-		}
-	}
-	ar /= n;
-	
-//	printf ("Eye_S4_Edge: remove from %ld:\n", peye->Point_N);
-/*	for (i = num-1; i >= 0; --i) {
-		if (iter_n[i]) {
-			if (fabsf(r[i] - ar) > 0.1f*ar
-				|| iter_n[i] < 20
-			) {
-				printf ("\t%ld: %ld r %f\n", i, iter_n[i], r[i]);
-				memmove (	peye->paPoint + iter_start[i],
-						peye->paPoint + iter_start[i] + iter_n[i],
-						(peye->Point_N - (iter_start[i] + iter_n[i])) * sizeof(float)
-				);
-				peye->Point_N -= iter_n[i];
-			}
-			++n;
-		}
-	}/**/
-	
-//	Eye_S4_Edge_Line (peye, M_PI, -M_PI/100.0f, &ae, &r);
-	
-/*	for (a = ao; a <= ao+M_PI_2+M_PI_4; a += M_PI_2) {
-//	{
-	//	printf ("mino ");
-		u08 skip;
-		float x0, y0, x1, y1;
-		float t0 = a, t1 = t0 - M_PI;
-		
-	//	skip = edge (peye, i, t0, &x0, &y0);
-		skip = edge (peye, a/(M_PI/100.0f), t0, &x0, &y0);
-		
-		if (skip == 0) {
-			t0 = t1;
-		//	skip = edge (peye, 110 + i, t0, &x0, &y0);
-			skip = edge (peye, 110 + a/(M_PI/100.0f), t0, &x0, &y0);
-		}else {
-		//	skip += edge (peye, 110 + i, t1, &x1, &y1);
-			skip += edge (peye, 110 + a/(M_PI/100.0f), t1, &x1, &y1);
-		}
-		++i;
-		
-		if (skip == 0)
-			continue;
-		
-	}
-	}/**/
-	
-	return;
-}
-
-
-si	Eye_S4_Fit_FindOposite	(tEye* peye, si idx)
-{
-	float x0 = peye->paPoint[idx].x, y0 = peye->paPoint[idx].y;
-	float t0 = atan2(y0 - peye->P.y, x0 - peye->P.x);
-	
-	struct {
-		si idx;
-		float diff_t;
-	}min = {-1, deg2rad};
-	si i;
-	for (i = 0; i < peye->Point_N; ++i) {
-		float x1 = peye->paPoint[i].x, y1 = peye->paPoint[i].y;
-		float t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-		
-		float diff_t = fabsf(fabsf(angle_norm_0_2pi(t1) - angle_norm_0_2pi(t0)) - M_PI);
-		if (diff_t < min.diff_t) {
-			min.idx = i;
-			min.diff_t = diff_t;
-		}
-	}
-	return min.idx;
-}
-
-si	Eye_S4_Fit_FindRot	(tEye* peye, si idx, float ang)
-{
-	float x0 = peye->paPoint[idx].x, y0 = peye->paPoint[idx].y;
-	float t0 = atan2(y0 - peye->P.y, x0 - peye->P.x);
-	
-	struct {
-		si idx;
-		float diff_t;
-	}min = {-1, 4*deg2rad};
-//	printf ("Eye_S4_Fit_FindRot\n");
-	si i;
-	for (i = 0; i < peye->Point_N; ++i) {
-		float x1 = peye->paPoint[i].x, y1 = peye->paPoint[i].y;
-		float t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-	//	printf ("%ld\t%f\n", i, t1);
-		
-		float diff_t = fabsf(angle_diff_norm_pi_pi(t1, t0) - ang);
-		if (diff_t < min.diff_t) {
-			min.idx = i;
-			min.diff_t = diff_t;
-		}
-	}
-	return min.idx;
-}
-
-
-float	Eye_S4_Fit		(tEye* peye)
-{
-	si i;
-/*	for (i = 0; i < peye->Point_N; ++i) {
-		float x = peye->paPoint[i].x, y = peye->paPoint[i].y;
-		float t, dx, dy, xx, yy;
-		dx = x - peye->P.x;
-		dy = y - peye->P.y;
-		t = atan2(dy,dx);
-		
-		xx = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
-		yy = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
-		
-		float diff = sqrt(dx*dx+dy*dy) - sqrt(xx*xx+yy*yy);
-		if (fabs(diff) >= 0.01f) {
-		//	printf ("f1\n");
-			peye->Ax += peye->Fit_Scale*diff*fabs(cos(t));
-			peye->Ay += peye->Fit_Scale*diff*fabs(sin(t));
-			
-			Eye_Xset (peye, peye->P.x + peye->Fit_Trans*(diff )*cos(t));
-			Eye_Yset (peye, peye->P.y + peye->Fit_Trans*(diff )*sin(t));
-		}
-		dnpix(x,y)->Y = 0xFF;
-		dnpix(x,y)->U = 0x0;
-		dnpix(x,y)->V = 0x0;
-	}/**/
-/*	for (i = peye->Point_N-1; i >= 0; --i) {
-		float x = peye->paPoint[i].x, y = peye->paPoint[i].y;
-		float t, dx, dy, xx, yy;
-		dx = x - peye->P.x;
-		dy = y - peye->P.y;
-		t = atan2(dy,dx);
-		
-		xx = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
-		yy = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
-		
-		float diff = sqrt(dx*dx+dy*dy) - sqrt(xx*xx+yy*yy);
-		if (fabs(diff) >= 0.01f) {
-		//	printf ("f1\n");
-			peye->Ax += peye->Fit_Scale*diff*fabs(cos(t));
-			peye->Ay += peye->Fit_Scale*diff*fabs(sin(t));
-			
-			Eye_Xset (peye, peye->P.x + peye->Fit_Trans*(diff )*cos(t));
-			Eye_Yset (peye, peye->P.y + peye->Fit_Trans*(diff )*sin(t));
-		}
-		dnpix(x,y)->Y = 0xFF;
-		dnpix(x,y)->U = 0x0;
-		dnpix(x,y)->V = 0x0;
-	}/**/
-	for (i = 0; i < peye->Point_N; ++i) {
-		float x0 = peye->paPoint[i].x, y0 = peye->paPoint[i].y;
-		float t0, dx, dy, ox0, oy0;
-		dx = x0 - peye->P.x;
-		dy = y0 - peye->P.y;
-		t0 = atan2(dy,dx);
-		
-		ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-		oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-		
-		{
-			si idx = Eye_S4_Fit_FindOposite (peye, i);
-			if (idx >= 0) {
-				float x1 = peye->paPoint[idx].x, y1 = peye->paPoint[idx].y;
-				float t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-				
-				dnpix(x0,y0)->Y = 0xFF;
-				dnpix(x0,y0)->U = 0x0;
-				dnpix(x0,y0)->V = 0x0;
-			//	dnpix(x1,y1)->Y = 0xFF;
-			//	dnpix(x1,y1)->U = 0x0;
-			//	dnpix(x1,y1)->V = 0x0;
-				
-				
-			//	float ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-			//	float oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-				
-				float oy1 = (peye->Ax * cos(t1) * sin(peye->Aa) + peye->Ay * sin(t1) * cos(peye->Aa));
-				float ox1 = (peye->Ax * cos(t1) * cos(peye->Aa) - peye->Ay * sin(t1) * sin(peye->Aa));
-				
-			//	printf ("Heee? pic %f %f   %f %f\n", x0 - peye->P.x, y0 - peye->P.y, x1 - peye->P.x, y1 - peye->P.y);
-			//	printf ("Heee? eli %f %f   %f %f\n", ox0, oy0, ox1, oy1);
-				
-				float sdx = fabsf(x1 - x0) - fabsf(ox1 - ox0);
-				float sdy = fabsf(y1 - y0) - fabsf(oy1 - oy0);
-				
-			//	ax += fabsf((x1 - x0)*cos(t0));
-			//	ay += fabsf((y1 - y0)*sin(t0));
-			//	++n;
-				
-				float pdx = (x0+x1)*0.5f - (2.0f*peye->P.x + ox0+ox1)*0.5f;
-				float pdy = (y0+y1)*0.5f - (2.0f*peye->P.y + oy0+oy1)*0.5f;
-				
-				Eye_Xset (peye, peye->P.x + 0.10f * pdx );// *cos(t));
-				Eye_Yset (peye, peye->P.y + 0.10f * pdy );// *sin(t));
-				
-				peye->Ax += 0.10f*sdx*fabs(cos(t0));
-				peye->Ay += 0.10f*sdy*fabs(sin(t0));
-			}else {
-				dnpix(x0,y0)->Y = 0xFF;
-				dnpix(x0,y0)->U = 0xF;
-				dnpix(x0,y0)->V = 0xF;
-				float diff = sqrt(dx*dx+dy*dy) - sqrt(ox0*ox0+oy0*oy0);
-				if (fabs(diff) >= 0.01f) {
-				//	printf ("f1\n");
-					peye->Ax += peye->Fit_Scale*diff*fabs(cos(t0));
-					peye->Ay += peye->Fit_Scale*diff*fabs(sin(t0));
-					
-					Eye_Xset (peye, peye->P.x + peye->Fit_Trans*(diff )*cos(t0));
-					Eye_Yset (peye, peye->P.y + peye->Fit_Trans*(diff )*sin(t0));
-				}
-			}
-		}
-	}/**/
-	float avgerr = 0;
-	for (i = 0; i < peye->Point_N; ++i) {
-		float x = peye->paPoint[i].x, y = peye->paPoint[i].y;
-		float t, dx, dy, xx, yy;
-		dx = x - peye->P.x;
-		dy = y - peye->P.y;
-		t = atan2(dy,dx);
-		
-		xx = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
-		yy = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
-		
-		float diff = sqrt(dx*dx+dy*dy) - sqrt(xx*xx+yy*yy);
-	//	avgerr += fabsf(diff);
-		avgerr += dpow2(diff);
-	}/**/
-	return avgerr / peye->Point_N;
-}
-
-float	Eye_S4_Fit_Ransac		(tEye* peye)
-{
-	si i;
-	gM_edge_point_N = 0;
-	for (i = 0; i < peye->Point_N; ++i) {
-		dnpix(peye->paPoint[i].x,peye->paPoint[i].y)->Y = 0xFF;
-		dnpix(peye->paPoint[i].x,peye->paPoint[i].y)->U = 0x0;
-		dnpix(peye->paPoint[i].x,peye->paPoint[i].y)->V = 0x0;
-		gM_edge_point[i].x = peye->paPoint[i].x;
-		gM_edge_point[i].y = peye->paPoint[i].y;
-	}
-	gM_edge_point_N = peye->Point_N;
-	
-	int max_inliers_num;
-	int* ret = pupil_fitting_inliers (videoIn->width, videoIn->height, &max_inliers_num);
-//	int* ret = simple_fit (videoIn->width, videoIn->height, &max_inliers_num);
-	
-	//double pupil_param[5];//parameters of an ellipse {ellipse_a, ellipse_b, cx, cy, theta}; a & b is the major or minor axis; 
-	
-//	printf ("%d: x %f y %f  Ax %f Ay %f   Aa %f\n", max_inliers_num, pupil_param[2], pupil_param[3], pupil_param[0], pupil_param[1], pupil_param[4]);
-	
-	float x = peye->P.x, y = peye->P.y, ax = peye->Ax, ay = peye->Ay, aa = peye->Aa;
-	
-	peye->P.x = pupil_param[2];
-	peye->P.y = pupil_param[3];
-	peye->Ax = pupil_param[0];
-	peye->Ay = pupil_param[1];
-	peye->Aa = pupil_param[4];
-	
-//	Eye_Draw_Ellipse (peye, 0.0f, M_PI*2);
-	
-	if (ddist(peye->P.x, peye->P.y, x, y) >= dpow2(6)) {
-		peye->P.x = x;
-		peye->P.y = y;
-		peye->Ax = ax;
-		peye->Ay = ay;
-		
-	}/**/
-	return 0;
-}
-
-float	Eye_S4_Fit_Tri		(tEye* peye)
-{
-	si i;
-	for (i = 0; i < peye->Point_N; ++i) {
-		float x0 = peye->paPoint[i].x, y0 = peye->paPoint[i].y;
-		float t0, dx, dy, ox0, oy0;
-		dx = x0 - peye->P.x;
-		dy = y0 - peye->P.y;
-		t0 = atan2(dy,dx);
-		
-		ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-		oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-		
-		tV2f p0 = {x0, y0}, op0 = {ox0, oy0};
-		{
-			si i1 = Eye_S4_Fit_FindRot (peye, i, M_PI_4/2);
-			si i2 = Eye_S4_Fit_FindRot (peye, i, -M_PI_4/2);
-			
-		//	si i1 = Eye_Points_FindRot (peye, i, M_PI_4/2);
-		//	si i2 = Eye_Points_FindRot (peye, i, -M_PI_4/2);
-			
-			if (i1 >= 0 && i2 >= 0) {
-				float x1 = peye->paPoint[i1].x, y1 = peye->paPoint[i1].y;
-				float t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-				
-				float x2 = peye->paPoint[i2].x, y2 = peye->paPoint[i2].y;
-				float t2 = atan2(y2 - peye->P.y, x2 - peye->P.x);
-				
-				
-				float oy1 = (peye->Ax * cos(t1) * sin(peye->Aa) + peye->Ay * sin(t1) * cos(peye->Aa));
-				float ox1 = (peye->Ax * cos(t1) * cos(peye->Aa) - peye->Ay * sin(t1) * sin(peye->Aa));
-				
-				float oy2 = (peye->Ax * cos(t2) * sin(peye->Aa) + peye->Ay * sin(t2) * cos(peye->Aa));
-				float ox2 = (peye->Ax * cos(t2) * cos(peye->Aa) - peye->Ay * sin(t2) * sin(peye->Aa));
-				
-				tV2f p1 = {x1, y1}, op1 = {ox1, oy1};
-				tV2f p2 = {x2, y2}, op2 = {ox2, oy2};
-				
-				tV2f v1 = p1;	V2f_sub_V2f (&v1, &p0);
-				tV2f v2 = p2;	V2f_sub_V2f (&v2, &p0);
-				
-				tV2f ov1 = op1;	V2f_sub_V2f (&ov1, &op0);
-				tV2f ov2 = op2;	V2f_sub_V2f (&ov2, &op0);
-				
-				float dot = V2f_dot_V2f (&v1, &v2);
-				float odot = V2f_dot_V2f (&ov1, &ov2);
-				
-				float diff = odot-dot;
-				peye->Ax += +0.01f*diff*fabsf(sin(t0))	-0.01f*diff*fabsf(cos(t0));
-				peye->Ay += -0.01f*diff*fabsf(sin(t0))	+0.01f*diff*fabsf(cos(t0));
-				
-				
-			/*	float sdx = fabsf(x1 - x0) - fabsf(ox1 - ox0);
-				float sdy = fabsf(y1 - y0) - fabsf(oy1 - oy0);
-				
-				float pdx = (x0+x1)*0.5f - (2.0f*peye->P.x + ox0+ox1)*0.5f;
-				float pdy = (y0+y1)*0.5f - (2.0f*peye->P.y + oy0+oy1)*0.5f;
-				
-				Eye_Xset (peye, peye->P.x + 0.10f * pdx );// *cos(t));
-				Eye_Yset (peye, peye->P.y + 0.10f * pdy );// *sin(t));
-				
-				peye->Ax += 0.10f*sdx*fabs(cos(t0));
-				peye->Ay += 0.10f*sdy*fabs(sin(t0));/**/
-				
-				dnpix(x0,y0)->Y = 0xFF;
-				dnpix(x0,y0)->U = 0x0;
-				dnpix(x0,y0)->V = 0x0;
-			}else {
-				dnpix(x0,y0)->Y = 0xFF;
-				dnpix(x0,y0)->U = 0xF;
-				dnpix(x0,y0)->V = 0xF;
-			}
-			if (1) {
-				si idx = Eye_S4_Fit_FindOposite (peye, i);
-				if (idx >= 0) {
-					float x1 = peye->paPoint[idx].x, y1 = peye->paPoint[idx].y;
-					float t1 = atan2(y1 - peye->P.y, x1 - peye->P.x);
-					
-				//	dnpix(x0,y0)->Y = 0xFF;
-				//	dnpix(x0,y0)->U = 0x0;
-				//	dnpix(x0,y0)->V = 0x0;
-				//	dnpix(x1,y1)->Y = 0xFF;
-				//	dnpix(x1,y1)->U = 0x0;
-				//	dnpix(x1,y1)->V = 0x0;
-					
-					
-				//	float ox0 = (peye->Ax * cos(t0) * cos(peye->Aa) - peye->Ay * sin(t0) * sin(peye->Aa));
-				//	float oy0 = (peye->Ax * cos(t0) * sin(peye->Aa) + peye->Ay * sin(t0) * cos(peye->Aa));
-					
-					float oy1 = (peye->Ax * cos(t1) * sin(peye->Aa) + peye->Ay * sin(t1) * cos(peye->Aa));
-					float ox1 = (peye->Ax * cos(t1) * cos(peye->Aa) - peye->Ay * sin(t1) * sin(peye->Aa));
-					
-				//	printf ("Heee? pic %f %f   %f %f\n", x0 - peye->P.x, y0 - peye->P.y, x1 - peye->P.x, y1 - peye->P.y);
-				//	printf ("Heee? eli %f %f   %f %f\n", ox0, oy0, ox1, oy1);
-					
-					float sdx = fabsf(x1 - x0) - fabsf(ox1 - ox0);
-					float sdy = fabsf(y1 - y0) - fabsf(oy1 - oy0);
-					
-				//	ax += fabsf((x1 - x0)*cos(t0));
-				//	ay += fabsf((y1 - y0)*sin(t0));
-				//	++n;
-					
-					float pdx = (x0+x1)*0.5f - (2.0f*peye->P.x + ox0+ox1)*0.5f;
-					float pdy = (y0+y1)*0.5f - (2.0f*peye->P.y + oy0+oy1)*0.5f;
-					
-					Eye_Xset (peye, peye->P.x + 0.10f * pdx );// *cos(t));
-					Eye_Yset (peye, peye->P.y + 0.10f * pdy );// *sin(t));
-					
-					peye->Ax += 0.10f*sdx*fabs(cos(t0));
-					peye->Ay += 0.10f*sdy*fabs(sin(t0));
-					continue;
-				}
-			}
-			if (1) {
-				float diff = sqrt(dx*dx+dy*dy) - sqrt(ox0*ox0+oy0*oy0);
-				if (fabs(diff) >= 0.01f) {
-				//	printf ("f1\n");
-					peye->Ax += 0.1f*diff*fabs(cos(t0));
-					peye->Ay += 0.1f*diff*fabs(sin(t0));
-					
-					Eye_Xset (peye, peye->P.x + 0.1f*(diff)*cos(t0));
-					Eye_Yset (peye, peye->P.y + 0.1f*(diff)*sin(t0));
-				}
-			}
-		}
-	}/**/
-	return 0;
-}
-
-void	Eye_S4		(tEye* peye)
-{
-	Eye_Ellipse2LinDraw (peye);
-	
-	if (!peye->Point_Max) {
-		peye->Point_Max = 2048;
-		peye->paPoint = malloc (peye->Point_Max * sizeof(tV2f));
-	}
-	
-//	Eye_S4_Edge (peye);	Eye_S4_Fit (peye);		return;
-//	Eye_S4_Edge (peye);	Eye_S4_Fit_Ransac (peye);	return;
-	Eye_S4_Edge (peye);	Eye_S4_Fit_Tri (peye);		Eye_S4_Fit_Tri (peye);	return;
-	
-	tEye mineye, teye = *peye;
-	
-	Eye_S4_Edge (&teye);
-	float minerr = Eye_S4_Fit (&teye);	//printf ("Error %f %f  e %f\n", teye.P.x, teye.P.y, minerr);
-	mineye = teye;
-	
-	float dd = 2;
-	float x, y, ox = peye->P.x, oy = peye->P.y;
-	for (y = oy - dd; y <= oy + dd; y += 1) {
-		for (x = ox - dd; x <= ox + dd; x += 1) {
-			teye = *peye;
-			teye.P.x = x;
-			teye.P.y = y;
-			Eye_S4_Edge (&teye);
-			float avgerr = Eye_S4_Fit (&teye);	//printf ("Error %f %f  e %f\n", teye.P.x, teye.P.y, avgerr);
-			if (teye.Point_N >= mineye.Point_N && avgerr < minerr) {
-			//	printf ("teye.Point_N %ld  mineye %ld\n", teye.Point_N, mineye.Point_N);
-				minerr = avgerr;
-				mineye = teye;
-			}
-		}
-	}/**/
-	Eye_CopyParam (peye, &mineye);
-	
-	return;
-}
-
-
-
-
-si	Eye_S5_Edge_Mark00	(tEye* peye, float t, si* pnum, tV2f* papoint)
-{
-	float x = peye->P.x, y = peye->P.y;
-	si n = 0;
-	u08 got_dark = 0;
-	
-	for (; ddist2(x,y,peye->P.x,peye->P.y) < dpow2(peye->Exp_R*2); ) {
-		if (!got_dark) {
-			if (
-			//	dopix(x,y)->Y < ay + 8
-				dopix(x,y)->Y <= peye->S5.Pix_Dark
-			) {
-				Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(x,y, peye->P.x,peye->P.y), 0x80<<8);
-				got_dark = 1;
-			}
-		}else if (
-		//	dopix(x,y)->Y > ay + 40
-			dopix(x,y)->Y >= peye->S5.Pix_Bright
-		//	&& ddist2(x,y,peye->P.x,peye->P.y) >= dpow2(peye->Min_R)
-		) {
-		//	return 1;
-			float x1 = x, y1 = y;
-			for (; ddist2(x1,y1,peye->P.x,peye->P.y) < dpow2(peye->Exp_R*2); ) {
-			//	if (	dopix(x1,y1)->Y <= ay + 8) {
-				if (	dopix(x1,y1)->Y <= peye->S5.Pix_Bright-2) {
-					break;
-				}
-				x1 += cos(t);
-				y1 += sin(t);
-			}/**/
-			if (
-				n < *pnum
-			//	&& ddist2(x,y, x1,y1) >= dpow2(6)
-			) {
-			//	if (ddist2(x1,y1,x,y) >= dpow2(2)) {
-			//	Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(x,y, peye->P.x,peye->P.y), 0xFF<<8);
-				papoint[n].x = x+0.000000000001f;
-				papoint[n].y = y+0.000000000001f;
-				
-				if (gM.bEye_S4_EdgeMark3_Micro) {
-					float x0 = papoint[n].x, y0 = papoint[n].y;
-					float x2 = papoint[n].x, y2 = papoint[n].y;
-					
-					x0 -= 1*cos(t);	y0 -= 1*sin(t);
-					x2 += 1*cos(t);	y2 += 1*sin(t);
-					if (papoint[n].x == x0 && papoint[n].y == y0) {
-						printf ("crap 0\n");
-					}
-					if (papoint[n].x == x2 && papoint[n].y == y2) {
-						printf ("crap 2\n");
-					}
-					
-					float d10 = dopix(papoint[n].x,papoint[n].y)->Y - dopix(x0,y0)->Y;
-					float d21 = dopix(x2,y2)->Y - dopix(papoint[n].x,papoint[n].y)->Y;
-					
-					if (d10 < 0)
-						d10 = 0;
-					if (d21 < 0)
-						d21 = 0;
-					
-					float sd = (d21 - d10) / 100.0f;
-				//	printf ("sd %f\n", sd);
-					papoint[n].x += sd * cos(t);
-					papoint[n].y += sd * sin(t);
-					
-					Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(papoint[n].x,papoint[n].y, peye->P.x,peye->P.y), 0xFF<<8);
-				}else
-					Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(papoint[n].x,papoint[n].y, peye->P.x,peye->P.y), 0xFF<<8);
-				++n;
-			}
-			x = x1;
-			y = y1;
-			got_dark = 0;
-		}/**/
-		
-		x += cos(t);
-		y += sin(t);
-	}/**/
-	*pnum = n;
-	return 0;
-}
-
-
-si	Eye_S5_Edge_Mark1		(tEye* peye, float t, si* pnum, tV2f* papoint)
-{
-	float x0 = peye->P.x, y0 = peye->P.y;
-	si n = 0;
-	u08 got_fail = 0;
-	
-	for (; ddist2(x0,y0,peye->P.x,peye->P.y) < dpow2(peye->Exp_R*2 - peye->S5.Diff_Dist); )
-	{
-		float x1 = x0 + cos(t)*peye->S5.Diff_Dist, y1 = y0 + sin(t)*peye->S5.Diff_Dist;
-		
-		if (dopix(x1,y1)->Y - dopix(x0,y0)->Y >= peye->S5.Pix_Diff_Start) {
-			float x,y;
-			x = x0; y = y0;
-			while (1) {
-				x0 = x; y0 = y;
-				x += cos(t);
-				y += sin(t);
-				if (dopix(x,y)->Y - dopix(x0,y0)->Y >= peye->S5.Pix_Diff_Min) {
-					if (got_fail < 1)
-						++got_fail;
-					else
-						break;
-				}
-			}
-			x = x1; y = y1;
-			while (1) {
-				x1 = x; y1 = y;
-				x += cos(t);
-				y += sin(t);
-				if (dopix(x,y)->Y - dopix(x1,y1)->Y < peye->S5.Pix_Diff_Min) {
-					if (got_fail < 1)
-						++got_fail;
-					else
-						break;
-				}
-			}
-			x = x0+x1;	x /= 2;
-			y = y0+y1;	y /= 2;
-			papoint[n].x = x+0.000000000001f;
-			papoint[n].y = y+0.000000000001f;
-			
-			Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(x0,y0, peye->P.x,peye->P.y), 0x80<<8);
-			Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(x1,y1, peye->P.x,peye->P.y), 0xFF<<8);
-			Eye_Ellipse2LinDraw_Pix_ad (peye, t, ddist(papoint[n].x,papoint[n].y, peye->P.x,peye->P.y), 0xFF<<16);
-			++n;
-			if (n >= *pnum)
-				break;
-			
-			x0 = x1;
-			y0 = y1;
-		}
-		x0 += cos(t);
-		y0 += sin(t);
-		
-	}/**/
-	*pnum = n;
-	return 0;
-}
-
-si	Eye_S5_Edge_Mark		(tEye* peye, float t, si* pnum, tV2f* papoint)
-{
-	switch (peye->Fit) {
-	case eEye_Fit_S5_Diff:	return Eye_S5_Edge_Mark1 (peye, t, pnum, papoint);
-	default:			return Eye_S5_Edge_Mark00 (peye, t, pnum, papoint);
-	}
-}
-
-void	Eye_S5_Edge_Scan	(tEye* peye)
-{
-	float a = 0;
-	for (a = 0; a < 2*M_PI; a += peye->AngRes*deg2rad) {
-		si n = 20;
-		tV2f point[20];
-		
-		Eye_S5_Edge_Mark (peye, a, &n, point);
-		
-	//	Eye_Ellipse2LinDraw_Pix_ad (peye, a,border_s, 0xFF<<0);
-	//	Eye_Ellipse2LinDraw_Pix_ad (peye, a,peye->Exp_R, 0xFF<<16);
-	//	Eye_Ellipse2LinDraw_Pix_ad (peye, a,border_e, 0xFF<<0);
-		si i;
-		for (i = 0; i < n; ++i) {
-			dnpix(point[i].x,point[i].y)->Y = 0xFF;
-			dnpix(point[i].x,point[i].y)->U = 0xF;
-			dnpix(point[i].x,point[i].y)->V = 0xF;
-		}
-		
-	}
-}
-
-void	Eye_S5_Edge_Trace	(tEye* peye, float as, si ns, float inc)
-{
-	tV2f prev_point;
-	float a = as;
-	{
-		si n = 20;	tV2f point[20];
-		Eye_S5_Edge_Mark (peye, a, &n, point);
-		prev_point = point[ns];
-		Eye_Points_Ins (peye, a, &prev_point);
-	//	Eye_Ellipse2LinDraw_Pix_ad (peye, a, ddist(point[ns].x,point[ns].y, peye->P.x,peye->P.y), col);
-	}
-	
-	for (; ; a += inc) {
-		if (inc >= 0) {
-			if (a >= as + M_PI)
-				break;
-		}else {
-			if (a <= as - M_PI)
-				break;
-		}
-		si n = 20;
-		tV2f point[20];
-		
-		Eye_S5_Edge_Mark (peye, a, &n, point);
-		
-		float mind = dpow2(peye->S5.Break_Dist);
-		si i, mini = -1;
-		for (i = 0; i < n; ++i) {
-			if (ddist2(point[i].x,point[i].y, prev_point.x,prev_point.y) < mind) {
-				mind = ddist2(point[i].x,point[i].y, prev_point.x,prev_point.y);
-				mini = i;
-			}
-		}
-		if (mini >= 0) {
-		//	Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R, 0xFF<<16);
-		//	Eye_Ellipse2LinDraw_Pix_ad (peye, a, ddist(point[mini].x,point[mini].y, peye->P.x,peye->P.y), 0xFF<<16);
-			prev_point = point[mini];
-			
-			Eye_Points_Ins (peye, a, &prev_point);
-		}
-	}/**/
-}
-
-void	Eye_S5_Edges	(tEye* peye)
-{
-	si i, edge_n = 0, edge_max = 10;
-	struct {
-		ui start;
-		ui num;
-		float r;
-	}edge[10];
-	peye->Point_N = 0;
-	
-	if (0) {
-		si n = 20;
-		tV2f point[20];
-	//	float a = 3*M_PI_4/2;
-		float a = M_PI_2;
-		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R, 0xFF<<8);
-		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+1, 0xFF<<8);
-		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+2, 0xFF<<8);
-		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+3, 0xFF<<8);
-		
-		Eye_S5_Edge_Mark (peye, a, &n, point);
-		return;
-	}
-//	Eye_S5_Edge_Scan (peye);	return;
-	
-//	Eye_S5_Edge_Trace (peye, 0, 0);
-	{
-		si n = 20;
-		tV2f point[20];
-	//	float a = 3*M_PI_4/2;
-		float a = M_PI_2;
-		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R, 0xFF<<8);
-		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+1, 0xFF<<8);
-		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+2, 0xFF<<8);
-		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+3, 0xFF<<8);
-		
-		Eye_S5_Edge_Mark (peye, a, &n, point);
-		
-		for (i = 0; i < n; ++i) {
-			if (edge_n >= edge_max)
-				break;
-		//	printf ("hello i %d\n", i);
-			edge[edge_n].start = peye->Point_N;
-			Eye_S5_Edge_Trace (peye, a, i, peye->AngRes*deg2rad);
-			Eye_S5_Edge_Trace (peye, a, i, -peye->AngRes*deg2rad);
-			edge[edge_n].num = peye->Point_N - edge[edge_n].start;
-			edge_n++;
-		}
-	}
-	if (0) {
-		si n = 20;
-		tV2f point[20];
-		float a = -M_PI_2;
-		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R, 0xFF<<8);
-		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+1, 0xFF<<8);
-		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+2, 0xFF<<8);
-		Eye_Ellipse2LinDraw_Pix_ad (peye, a, peye->Exp_R+3, 0xFF<<8);
-		
-		Eye_S5_Edge_Mark (peye, a, &n, point);
-		
-		for (i = 0; i < n; ++i) {
-			if (edge_n >= edge_max)
-				break;
-		//	printf ("hello i %d\n", i);
-			edge[edge_n].start = peye->Point_N;
-			Eye_S5_Edge_Trace (peye, a, i, peye->AngRes*deg2rad);
-			Eye_S5_Edge_Trace (peye, a, i, -peye->AngRes*deg2rad);
-			edge[edge_n].num = peye->Point_N - edge[edge_n].start;
-			edge_n++;
-		}
-	}
-/*	for (i = 0; i < edge_n; ++i) {
-	//	printf ("\t%ld: r %f\n", edge[i].num, r[i]);
-		si ip;
-		for (ip = edge[i].start; ip < edge[i].start+edge[i].num; ++ip) {
-			u32 col;
-			switch (i) {
-			case 0:	col = 0xFF<<16;				break;
-			case 1:	col = 0xFF<<0;				break;
-			case 2:	col = 0xFF<<16 | 0xFF<<8;		break;
-			}
-			Eye_Ellipse2LinDraw_Pix_ad (peye,
-				angle_norm_0_2pi(atan2(peye->paPoint[ip].y-peye->P.y,peye->paPoint[ip].x-peye->P.x)),
-				ddist(peye->paPoint[ip].x,peye->paPoint[ip].y, peye->P.x,peye->P.y),
-				col);
-			
-		}
-	}/**/
-	
-	for (i = 0; i < edge_n; ++i) {
-	//	printf ("\t%ld: r %f\n", edge[i].num, r[i]);
-		edge[i].r = 0;
-		si ip;
-		for (ip = edge[i].start; ip < edge[i].start+edge[i].num; ++ip) {
-			edge[i].r += ddist(peye->paPoint[ip].x,peye->paPoint[ip].y, peye->P.x,peye->P.y);
-		}
-		edge[i].r /= (float)edge[i].num;
-	}/**/
-//	printf ("Eye_S5_Edges: remove from %ld:\n", peye->Point_N);
-	for (i = edge_n-1; i >= 0; --i) {
-		if (
-			edge[i].num < peye->S5.Min_N
-			|| edge[i].r < peye->S5.Min_R
-		) {
-		//	printf ("\t%ld: %ld\n", i, edge[i].num);
-			memmove (	peye->paPoint + edge[i].start,
-					peye->paPoint + edge[i].start + edge[i].num,
-					(peye->Point_N - (edge[i].start + edge[i].num)) * sizeof(peye->paPoint[0])
-			);
-			peye->Point_N -= edge[i].num;
-		}
-		++n;
-	}/**/
-	
-//	Eye_S4_Edge_Line (peye, M_PI, -M_PI/100.0f, &ae, &r);
-	
-/*	for (a = ao; a <= ao+M_PI_2+M_PI_4; a += M_PI_2) {
-//	{
-	//	printf ("mino ");
-		u08 skip;
-		float x0, y0, x1, y1;
-		float t0 = a, t1 = t0 - M_PI;
-		
-	//	skip = edge (peye, i, t0, &x0, &y0);
-		skip = edge (peye, a/(M_PI/100.0f), t0, &x0, &y0);
-		
-		if (skip == 0) {
-			t0 = t1;
-		//	skip = edge (peye, 110 + i, t0, &x0, &y0);
-			skip = edge (peye, 110 + a/(M_PI/100.0f), t0, &x0, &y0);
-		}else {
-		//	skip += edge (peye, 110 + i, t1, &x1, &y1);
-			skip += edge (peye, 110 + a/(M_PI/100.0f), t1, &x1, &y1);
-		}
-		++i;
-		
-		if (skip == 0)
-			continue;
-		
-	}
-	}/**/
-	
-//	printf ("Eye_S5_Edges: got %ld points\n", peye->Point_N);
-	for (i = 0; i < peye->Point_N; ++i) {
-		Eye_Ellipse2LinDraw_Pix_ad (peye,
-			angle_norm_0_2pi(atan2(peye->paPoint[i].y-peye->P.y,peye->paPoint[i].x-peye->P.x)),
-			ddist(peye->paPoint[i].x,peye->paPoint[i].y, peye->P.x,peye->P.y),
-			0xFF<<16);
-	}/**/
-	return;
-}
-
-
-void	Eye_S5		(tEye* peye)
-{
-	Eye_Ellipse2LinDraw (peye);
-	
-	if (!peye->Point_Max) {
-		peye->Point_Max = 2048;
-		peye->paPoint = malloc (peye->Point_Max * sizeof(tV2f));
-	}
-	
-	Eye_S5_Edges (peye);
-	
-	Eye_Points_Sort (peye);
-	Eye_Points_Fit (peye);
-	
-	return;
-}
-
-
-//haha back to the roots
-
-#define dGlint_FID 16
-#define dGlint_Num 4
-
-#define dMarkOut(_x,_y)	((_x) < peye->FF.Mark_P.x || (_x) >= peye->FF.Mark_P.x+peye->FF.Max_R || (_y) < peye->FF.Mark_P.y || (_y) >= peye->FF.Mark_P.y+peye->FF.Max_R)
-
-#define dMarkRaw(_x,_y)	(*(peye->FF.paMark + (_x) + (_y)*(peye->FF.Max_R)))
-#define dMark(_x,_y)	dMarkRaw((_x)-peye->FF.Mark_P.x, (_y)-peye->FF.Mark_P.y)
-
-
-void	Eye_FF_Mark_Crap		(tEye* peye, si x, si y)
-{
-	if (dpixout(x,y))
-		return;
-	if (dMarkOut(x,y))
-		return;
-	if (dMark(x,y))
-		return;
-	
-	if (dopix(x,y)->Y < peye->FF.Y) {
-		dMark(x,y) = peye->FF.tmpID;
-		dnpix(x,y)->U = 0;
-		dnpix(x,y)->V = 0;
-		++peye->FF.tmpNum;
-		peye->FF.tmpP.x += x;
-		peye->FF.tmpP.y += y;
-		Eye_CirView_Point_xy (peye, x-peye->FF.Mark_P.x, y-peye->FF.Mark_P.y, gColARGB);
-		Eye_FF_Mark_Crap (peye, x-1, y);
-		Eye_FF_Mark_Crap (peye, x+1, y);
-		Eye_FF_Mark_Crap (peye, x, y-1);
-		Eye_FF_Mark_Crap (peye, x, y+1);
-	}
-}
-
-si	Eye_FF_G_Mark_Crap	(tEye* peye, si x, si y)
-{
-	if (dpixout(x,y))
-		return;
-	if (dMarkOut(x,y))
-		return;
-	if (dMark(x,y))
-		return;
-	
-	if (dopix(x,y)->Y > peye->FF.GY) {
-		dMark(x,y) = peye->FF.tmpID;
-		dnpix(x,y)->U = 0xF;
-		dnpix(x,y)->V = 0xF;
-		++peye->FF.tmpNum;
-		peye->FF.tmpP.x += x;
-		peye->FF.tmpP.y += y;
-		Eye_CirView_Point_xy (peye, x-peye->FF.Mark_P.x, y-peye->FF.Mark_P.y, gColARGB);
-		Eye_FF_G_Mark_Crap (peye, x-1, y);
-		Eye_FF_G_Mark_Crap (peye, x+1, y);
-		Eye_FF_G_Mark_Crap (peye, x, y-1);
-		Eye_FF_G_Mark_Crap (peye, x, y+1);
-	}
-}
-
-si	Eye_FF_Mark2Pos		(tEye* peye, u08 id, tV2f *pret)
-{
-	si ax = 0, ay = 0;
-	si num = 0;
-	si x, y;
-	for (y = 0; y < peye->FF.Max_R; ++y) {
-		for (x = 0; x < peye->FF.Max_R; ++x) {
-			if (	dMarkRaw(x,y) == id) {
-				ax += x;
-				ay += y;
-				Eye_CirView_Point_xy (peye, x, y, gColARGB);
-				++num;
-			}
-		}
-	}/**/
-	pret->x = (float)ax / num;
-	pret->y = (float)ay / num;
-	return num;
-}
-
-float	Eye_FF_Mark2AvgDist	(tEye* peye, float ox, float oy, u08 id)
-{
-	float adist = 0;
-	si num = 0;
-	si x, y;
-	for (y = 0; y < peye->FF.Max_R; ++y) {
-		for (x = 0; x < peye->FF.Max_R; ++x) {
-			if (dMarkRaw(x,y) == id) {
-				adist += ddist(x,y,ox,oy);
-				++num;
-			}
-		}
-	}/**/
-	return adist / num;
-}
-
-float	Eye_FF_Mark2Confidence	(tEye* peye, float ox, float oy, u08 id)
-{
-	float adist = 0;
-	si num = 0;
-	si x, y;
-	for (y = 0; y < peye->FF.Max_R; ++y) {
-		for (x = 0; x < peye->FF.Max_R; ++x) {
-			if (dMarkRaw(x,y) == id) {
-				if (ddist2(x,y,ox,oy) <= dpow2(peye->FF.Perf_R)) {
-					++adist;
-				}
-				++num;
-			}else {
-				if (ddist2(x,y,ox,oy) <= dpow2(peye->FF.Perf_R)) {
-					--adist;
-				}
-			}
-		}
-	}/**/
-	return adist / num;
-}
-
-
-void	Eye_FF		(tEye* peye)
-{
-	ay = peye->FF.Y;
-	au = 0;
-	av = 0;
-	
-	memset (peye->FF.paMark, 0, dpow2(peye->FF.Max_R) * sizeof(peye->FF.paMark[0]));
-	
-	peye->FF.Mark_P.x = (peye->P.x + 0.5f) - peye->FF.Max_R/2;
-	peye->FF.Mark_P.y = (peye->P.y + 0.5f) - peye->FF.Max_R/2;
-	
-	gColARGB = 0x00FF00;
-	peye->FF.tmpID = 1;
-	if (peye->FF.Perf_R != 0) {
-		float best_ar = NAN;
-	//	printf ("Search for main %f\n", peye->FF.Perf_R);
-		float best_x = peye->P.x, best_y = peye->P.y;
-		
-		si ox = peye->P.x, oy = peye->P.y, x, y;
-		si search_r = peye->FF.Search_R;
-		for (y = oy - search_r; y < oy + search_r; y += 10) {
-			for (x = ox - search_r; x < ox + search_r; x += 10) {
-				peye->FF.tmpNum = 0;
-				peye->FF.tmpP.x = 0;
-				peye->FF.tmpP.y = 0;
-				Eye_FF_Mark_Crap (peye, x, y);
-				peye->FF.tmpP.x /= peye->FF.tmpNum;
-				peye->FF.tmpP.y /= peye->FF.tmpNum;
-				if (peye->FF.tmpNum) {
-					#if 0
-					float ar = Eye_FF_Mark2AvgDist (peye, peye->FF.tmpP.x-peye->FF.Mark_P.x, peye->FF.tmpP.y-peye->FF.Mark_P.y, peye->FF.tmpID);
-					
-				//	printf ("AvgDist	%d	%f\n", peye->FF.tmpID, ar);
-					if (isfinite(ar)
-						&& fabsf(peye->FF.Perf_R - ar) <= peye->FF.MaxDiff_R
-						&& (!isfinite(best_ar) 
-							|| fabsf(peye->FF.Perf_R - ar) < fabsf(peye->FF.Perf_R - best_ar))
-					) {
-						best_ar = ar;
-						best_x = peye->FF.tmpP.x;
-						best_y = peye->FF.tmpP.y;
-					}
-					#else
-					float ar = Eye_FF_Mark2Confidence (peye, peye->FF.tmpP.x-peye->FF.Mark_P.x, peye->FF.tmpP.y-peye->FF.Mark_P.y, peye->FF.tmpID);
-					
-				//	printf ("Confidence	%d	%f\n", peye->FF.tmpID, ar);
-					if (ar >= peye->FF.MaxDiff_R
-						&& (!isfinite(best_ar) 
-							|| (ar > best_ar))
-					) {
-						best_ar = ar;
-						best_x = peye->FF.tmpP.x;
-						best_y = peye->FF.tmpP.y;
-					}
-					
-					#endif
-					peye->FF.tmpID++;
-				}
-			}
-		}
-	//	printf ("best_ar %f\n", best_ar);
-		peye->P.x = best_x;
-		peye->P.y = best_y;
-		
-		peye->Ax = peye->FF.Perf_R;
-		peye->Ay = peye->FF.Perf_R;
-	}else {
-		peye->FF.tmpNum = 0;
-		peye->FF.tmpP.x = 0;
-		peye->FF.tmpP.y = 0;
-		Eye_FF_Mark_Crap (peye, peye->P.x, peye->P.y);
-		
-		if (peye->FF.tmpNum > 20) {
-			peye->P.x = peye->FF.tmpP.x / peye->FF.tmpNum;
-			peye->P.y = peye->FF.tmpP.y / peye->FF.tmpNum;
-		}/**/
-	/*	tV2f pos;
-		if (Eye_FF_Mark2Pos (peye, 1, &pos) > 20) {
-			peye->P.x = pos.x + peye->FF.Mark_P.x;
-			peye->P.y = pos.y + peye->FF.Mark_P.y;
-		}/**/
-	}
-	
-	if (1) {
-		if (peye == &gM.Left)
-		/*	printf ("Glint get Left\n")/**/;
-		else if (peye == &gM.Right)
-		/*	printf ("Glint get Right\n")/**/;
-		else
-			return;
-		
-		struct {
-			si num;
-			tV2f pos;
-			u32 col;
-		}g[dGlint_Num];
-		
-		g[0].col = 0xFFFF00;
-		g[1].col = 0xFF00FF;
-		g[2].col = 0x00FFFF;
-		g[3].col = 0xFF0000;
-		
-		si glint_idx = 0;
-		si search_r = peye->FF.GSearch_R;
-		gColARGB = 0xFF;
-		si x, y;
-		for (y = peye->P.y; y < peye->P.y + search_r; ++y) {
-			for (x = peye->P.x - search_r; x < peye->P.x + search_r; ++x) {
-				gColARGB = g[glint_idx].col;
-				peye->FF.tmpNum = 0;
-				peye->FF.tmpP.x = 0;
-				peye->FF.tmpP.y = 0;
-				peye->FF.tmpID = dGlint_FID+glint_idx;
-				Eye_FF_G_Mark_Crap (peye, x, y);
-				g[glint_idx].num = peye->FF.tmpNum;
-				if (g[glint_idx].num) {
-					g[glint_idx].pos.x = peye->FF.tmpP.x / peye->FF.tmpNum;
-					g[glint_idx].pos.y = peye->FF.tmpP.y / peye->FF.tmpNum;
-					
-				//	printf ("Got Glint %d num pixs %d,   xy %f %f\n", glint_idx, g[glint_idx].num, g[glint_idx].pos.x, g[glint_idx].pos.y);
-					
-					++glint_idx;
-				}/**/
-				if (glint_idx >= dGlint_Num) {
-					goto Got_Glints;
-				}
-			}
-		}/**/
-Got_Glints:	if (gM.Eye_GlintMode == 2) {
-			si min0 = -1, min1 = -1;
-			float mind = 100;
-			si i, j;
-			for (i = 0; i < glint_idx; ++i) {
-				for (j = i+1; j < glint_idx; ++j) {
-					if (fabsf(g[i].pos.y - g[j].pos.y) <= mind) {
-						mind = fabsf(g[i].pos.y - g[j].pos.y);
-						min0 = i;
-						min1 = j;
-					}
-				}
-			}
-			if (min0 != -1) {
-				if (g[min0].pos.x <= g[min1].pos.x) {
-					peye->G0 = g[min0].pos;
-					peye->G1 = g[min1].pos;
-				}else  {
-					peye->G0 = g[min1].pos;
-					peye->G1 = g[min0].pos;
-				}
-				Eye_GV_Calc (peye);
-			//	printf ("Eye GV %f %f\n", peye->GV.x, peye->GV.y);
-				Eye_GP_Calc (peye);
-			}
-		}else if (gM.Eye_GlintMode == 1) {
-			si idx = -1;
-			si max_num = 0;
-			si i, j;
-			for (i = 0; i < glint_idx; ++i) {
-				if (g[i].num >= max_num) {
-					max_num = g[i].num;
-					idx = i;
-				}
-			}
-			if (idx != -1) {
-				peye->G0 = g[idx].pos;
-				Eye_GV_Calc (peye);
-			//	printf ("Eye GV %f %f\n", peye->GV.x, peye->GV.y);
-			}
-		}/**/
-		
-	}
-}
-
-#undef dGlint_FID
-#undef dGlint_Num
-#undef dMarkOut
-#undef dMarkRaw
-#undef dMark
-
-
-float	Eye_CFit_AvgDiff	(tEye* peye)
-{
-	si border = 4*peye->Exp_R;
-	float avgdiff = 0, diff_num = 0;
-	si x, y;
-	for (y = peye->P.y - border; y < peye->P.y + border; ++y) {
-		for (x = peye->P.x - border; x < peye->P.x + border; ++x) {
-			if (	1//dnpix(x,y)->Y == 0xFF
-				&& dnpix(x,y)->U == 0xF
-				&& dnpix(x,y)->V == 0xF
-			) {
-				float t, dx, dy, xx, yy;
-				dx = x - peye->P.x;
-				dy = y - peye->P.y;
-				t = atan2(dy,dx)/* - peye->Aa*/;
-				
-				xx = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
-				yy = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
-				
-				float diff = sqrt(dx*dx+dy*dy) - sqrt(xx*xx+yy*yy);
-				avgdiff += fabsf(diff);
-				++diff_num;
-			}
-		}
-	}/**/
-	return avgdiff /= diff_num;
-}
-
-si	Eye_CFit_Remove	(tEye* peye, float remdiff)
-{
-	si border = 4*peye->Exp_R;
-	si ret = 0, x, y;
-	for (y = peye->P.y - border; y < peye->P.y + border; ++y) {
-		for (x = peye->P.x - border; x < peye->P.x + border; ++x) {
-			if (	1//dnpix(x,y)->Y == 0xFF
-				&& dnpix(x,y)->U == 0xF
-				&& dnpix(x,y)->V == 0xF
-			) {
-				float t, dx, dy, xx, yy;
-				dx = x - peye->P.x;
-				dy = y - peye->P.y;
-				t = atan2(dy,dx)/* - peye->Aa*/;
-				
-				xx = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
-				yy = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
-				
-				float diff = sqrt(dx*dx+dy*dy) - sqrt(xx*xx+yy*yy);
-				if (fabsf(diff) >= remdiff) {
-					dnpix(x,y)->Y = 0x00;
-					dnpix(x,y)->U = 0x0;
-					dnpix(x,y)->V = 0x0;
-					++ret;
-				}
-			}
-		}
-	}/**/
-	return ret;
-}
-
-void	Eye_CFit		(tEye* peye)
-{
-//	Eye_SFit (peye);	return;
-/*	Eye_S3Fit (peye);	return;
-	
-	Eye_SFit (peye);
-	printf ("%ld  ", Eye_CFit_Remove (peye, Eye_CFit_AvgDiff (peye)*4.0f));
-	Eye_SFit (peye);
-	printf ("%ld  ", Eye_CFit_Remove (peye, Eye_CFit_AvgDiff (peye)*3.3f));
-	Eye_SFit (peye);
-	printf ("%ld  ", Eye_CFit_Remove (peye, Eye_CFit_AvgDiff (peye)*2.2f));
-	Eye_SFit (peye);
-	printf ("%ld  ", Eye_CFit_Remove (peye, Eye_CFit_AvgDiff (peye)*1.2f));
-	Eye_SFit (peye);
-	
-	printf ("\n");/**/
-	
-	Eye_CalcAYUV (peye, 15);
-	Eye_S5 (peye);
-	Eye_CalcAYUV (peye, 15);
-	Eye_S3Fit (peye);
-	
-}
-
-void	Eye_Fit		(tEye* peye)
-{
-	switch (peye->Fit) {
-	case eEye_Fit_S0:
-		Eye_CalcAYUV (peye, 12);
-		Eye_S0 (peye);
-		break;
-	case eEye_Fit_S2Fit:
-		Eye_OldFF (peye);
-		Eye_EdgeMark (peye);
-		Eye_S2Fit (peye);
-		break;
-	case eEye_Fit_S3Fit_START ... eEye_Fit_S3Fit_END:
-	//	Eye_CalcAYUV (peye, 12);
-		ay = peye->Pix_Bright;
-		Eye_S3Fit (peye);
-		break;
-	case eEye_Fit_S4Fit_START ... eEye_Fit_S4Fit_END:
-		Eye_CalcAYUV (peye, 12);
-		Eye_S4 (peye);
-		break;
-	case eEye_Fit_S5_START ... eEye_Fit_S5_END:
-		Eye_CalcAYUV (peye, 12);
-		Eye_S5 (peye);
-		break;
-	case eEye_Fit_FF_START ... eEye_Fit_FF_END:
-		Eye_FF (peye);
-		break;
-	case eEye_Fit_C:
-		Eye_CFit (peye);
-		break;
-	case eEye_Fit_SFit:
-	default:
-		Eye_OldFF (peye);
-		Eye_EdgeMark (peye);
-		Eye_SFit (peye);
-		break;
-	}
-}
-
-void	Eye_Clip		(tEye* peye)
-{
-	si x, y;
-	#define dmarg 10
-	if (peye->P.x < dmarg)
-		peye->P.x = dmarg;
-	if (peye->P.x > videoIn->width-dmarg)
-		peye->P.x = videoIn->width-dmarg;
-	if (peye->P.y < dmarg)
-		peye->P.y = dmarg;
-	if (peye->P.y > videoIn->height-dmarg)
-		peye->P.y = videoIn->height-dmarg;
-	#undef dmarg
-	if (peye->Ax > 100)
-		peye->Ax = 100;
-	if (peye->Ay > 100)
-		peye->Ay = 100;
-	if (peye->Ax < 5)
-		peye->Ax = 5;
-	if (peye->Ay < 5)
-		peye->Ay = 5;
-	
-//	if (isnan(peye->Ax))
-//		peye->Ax = peye->Exp_R*2;
-//	if (isnan(peye->Ay))
-//		peye->Ay = peye->Exp_R*2;
-	
-}
-
-
-
-void	Eye_Draw_Ellipse	(tEye* peye, float tb, float te)
-{
-	si x, y;
-	float t;
-	for (t = tb; t < te; t += M_PI/180) {
-	//	peye->Ax*x*x + peye->Ay*y*y + peye->Axy*x*y = peye->Ar
-		x = (peye->Ax * cos(t) * cos(peye->Aa) - peye->Ay * sin(t) * sin(peye->Aa));
-		y = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
-	//	printf ("x %4d  y %4d\n", x, y);
-	//	y = peye->P.y;
-		if (peye->P.x+x < 0 || peye->P.y+y < 0 || peye->P.x+x >= videoIn->width || peye->P.y+y >= videoIn->height)
-			continue;
-		dnpix(peye->P.x+x,peye->P.y+y)->Y = 0xFF;
-		dnpix(peye->P.x+x,peye->P.y+y)->U = 0xF;
-		dnpix(peye->P.x+x,peye->P.y+y)->V = 0xF;
-	}/**/
-}
-void	Eye_Draw		(tEye* peye)
-{
-	si x, y;
-	dset_c1(peye->P.x,peye->P.y);
-//	Eye_Draw_Ellipse (peye, 0, M_PI*2);	return;
-/*	Eye_Draw_Ellipse (peye, 0 - 10*M_PI/180,		0 + 10*M_PI/180);
-	Eye_Draw_Ellipse (peye, M_PI_2 - 10*M_PI/180,	M_PI_2 + 10*M_PI/180);
-	Eye_Draw_Ellipse (peye, M_PI - 10*M_PI/180,	M_PI + 10*M_PI/180);
-	Eye_Draw_Ellipse (peye, -M_PI_2 - 10*M_PI/180,	-M_PI_2 + 10*M_PI/180);
-	return;
-	/**/
-	dset_c1(peye->P.x - peye->Ax,		peye->P.y - peye->Ay);
-	dset_c1(peye->P.x - peye->Ax+1,	peye->P.y - peye->Ay);
-	dset_c1(peye->P.x - peye->Ax+2,	peye->P.y - peye->Ay);
-	dset_c1(peye->P.x - peye->Ax,		peye->P.y - peye->Ay+1);
-	dset_c1(peye->P.x - peye->Ax,		peye->P.y - peye->Ay+2);
-	
-	dset_c1(peye->P.x + peye->Ax,		peye->P.y - peye->Ay);
-	dset_c1(peye->P.x + peye->Ax-1,	peye->P.y - peye->Ay);
-	dset_c1(peye->P.x + peye->Ax-2,	peye->P.y - peye->Ay);
-	dset_c1(peye->P.x + peye->Ax,		peye->P.y - peye->Ay+1);
-	dset_c1(peye->P.x + peye->Ax,		peye->P.y - peye->Ay+2);
-	
-	dset_c1(peye->P.x - peye->Ax,		peye->P.y + peye->Ay);
-	dset_c1(peye->P.x - peye->Ax+1,	peye->P.y + peye->Ay);
-	dset_c1(peye->P.x - peye->Ax+2,	peye->P.y + peye->Ay);
-	dset_c1(peye->P.x - peye->Ax,		peye->P.y + peye->Ay-1);
-	dset_c1(peye->P.x - peye->Ax,		peye->P.y + peye->Ay-2);
-	
-	dset_c1(peye->P.x + peye->Ax,		peye->P.y + peye->Ay);
-	dset_c1(peye->P.x + peye->Ax-1,	peye->P.y + peye->Ay);
-	dset_c1(peye->P.x + peye->Ax-2,	peye->P.y + peye->Ay);
-	dset_c1(peye->P.x + peye->Ax,		peye->P.y + peye->Ay-1);
-	dset_c1(peye->P.x + peye->Ax,		peye->P.y + peye->Ay-2);
-	/**/
-	
-}
-
-
-
-tV2f	Eye_map_point	(tEye* peye, tV2f p)
-{
-	return map_point (&peye->Homo, p);
-}
-
-
-
 void	Cam_Pos2Ray	(tV2f pos, tV4f* pp0, tV4f* pp1, tV4f* pvec)
 {
 	tV4f p0 = {0, 0, 0, 1};
@@ -5785,8 +1646,414 @@ void	Cam_Param_Set	(tCam* pcam)
 
 
 
+
+
+void	Track_Point_Init		(tTrack_Point* p)
+{
+	p->P.x = 0;
+	p->P.y = 0;
+	
+	p->W = p->H = 64;
+	
+	p->pANN = 0;
+}
+
+void	Track_Point_Conf		(tTrack_Point* p)
+{
+	p->P.x = gM.Cam.Image_W/2;
+	p->P.y = gM.Cam.Image_H/2;
+	
+}
+
+
+
+#if 0
+TrainUtil_Example*	Track_Point_ExampleCreate	(tTrack_Point* p, float ox, float oy, float decision)
+{
+	TrainUtil_Example* example = (TrainUtil_Example*) malloc(sizeof *example);
+	
+	example->length = p->W*p->H;
+	example->decision = decision;
+	example->attrs = (float*)malloc(sizeof(float)*example->length);
+	
+	si idx = 0, yi, xi;
+	for (yi = oy - p->H/2; yi < oy + p->H/2; yi++) {
+		for (xi = ox - p->W/2; xi < ox + p->W/2; xi++) {
+		//	int image_idx = yi*image->widthStep + xi;
+		//	example->attrs[idx] = (unsigned char) image->imageData[image_idx];
+			example->attrs[idx] = dopix(xi,yi)->Y;
+			idx++;
+		}
+	}
+	
+	assert(example->length==idx);
+	assert(example->length==64*64);
+	
+	return example;
+}
+
+
+
+void	Track_Point_Train		(tTrack_Point* p)
+{
+	
+	TrainUtil_ExampleList *training_set = NULL;
+	
+//	for (int xi=-1; xi <= 1; xi++) {
+//		for (int yi=-1; yi <= 1; yi++) {
+			TrainUtil_Example *example = Track_Point_ExampleCreate (p, p->P.x, p->P.y, 1.0);
+			TrainUtil_ExampleList_Add (&training_set, example);
+//		}
+//	}
+	
+	si n_points = 0;
+	si margin = p->W / 2;
+	si dead_zone = 6;
+	
+	while (n_points < 16) {
+		int xi = dead_zone + rand()%margin;
+		xi *= -1 + 2 * (rand()%2);
+		
+		int yi = dead_zone + rand()%margin;
+		yi *= -1 + 2 * (rand()%2);
+		
+		//check if point lies outside dead zone
+		if (xi > -dead_zone && xi < dead_zone && xi > -dead_zone && yi < dead_zone)
+			continue;
+		
+	//	TrainUtil_ExampleParams mod_params = params;
+	//	mod_params.x1 += xi;
+	//	mod_params.x2 += xi;
+	//	mod_params.y1 += yi;
+	//	mod_params.y2 += yi;
+		
+	//	IplImage *image_sample = TrainUtil_SampleImage(gray_image, &mod_params);
+	//	TrainUtil_Example *example = TrainUtil_CreateExample(image_sample, -1.0);
+		TrainUtil_Example *example = Track_Point_ExampleCreate (p, p->P.x + xi, p->P.y + yi, -1.0);
+		TrainUtil_ExampleList_Add(&training_set, example);
+		n_points++;
+	}
+	
+	//to sort we have to convert list to array
+	int X_size = TrainUtil_ExampleList_Length(training_set);
+	TrainUtil_Example **training_arr = (TrainUtil_Example**) malloc(sizeof(TrainUtil_Example*)*X_size);
+	
+	int idx = 0;
+	while (training_set) {
+		training_arr[idx] = training_set->example;
+		training_set = training_set->next;
+		idx++;
+	}
+	
+	TrainUtil_Classifier *out_cls;
+	
+	TrainUtil_GentleBoost(
+		//input:
+		training_arr,
+		X_size,
+		training_arr,
+		X_size,
+		66,
+		//output:
+		&out_cls);
+	/**/
+	
+//	si i;
+//	for (i = 0; i < 66; ++i)
+//		printf ("Track_Point_Train	index %d	error %f	a %f	b %f	th %f\n", out_cls[i].index, out_cls[i].error, out_cls[i].a, out_cls[i].b, out_cls[i].th);
+	
+	/*
+	while (fgets(buf, 999, f)) {
+		int len = (int) strlen(buf);
+		while (len > 0 && isspace(buf[len-1]))
+			len--;
+		buf[len] = '\0';
+		
+		IplImage *image = cvLoadImage( buf, 1 );
+		
+		if (image) {
+			//convert_image to gray
+			IplImage* gray_image = cvCreateImage(cvSize(image->width,image->height), 8, 1);
+			cvCvtColor( image, gray_image, CV_BGR2GRAY );
+			cvEqualizeHist(gray_image, gray_image);
+			//free rgb image
+			cvReleaseImage(&image);
+			
+			TrainUtil_ExampleParams params;
+			
+			//open image in new window in order to select desired feature
+			cvNamedWindow("original", 1);
+			cvSetMouseCallback("original", TrainUtil_MouseHandler, &params );
+			
+			cvShowImage("original", gray_image);
+			if (cvWaitKey(0) == 'e')
+				exit(1);
+			
+			cvDestroyWindow("original");
+			
+			cvNamedWindow("test", 1);
+			//create sample from mouse-selected area
+			//mark 9 positive examples
+			for (int xi=-1; xi <= 1; xi++) {
+				for (int yi=-1; yi <= 1; yi++) {
+					TrainUtil_ExampleParams mod_params = params;
+					mod_params.x1 += xi;
+					mod_params.x2 += xi;
+					mod_params.y1 += yi;
+					mod_params.y2 += yi;
+					
+					IplImage *image_sample = TrainUtil_SampleImage(gray_image, &mod_params);
+					cvShowImage("test", image_sample);
+					cvWaitKey(0);
+				//	system("sleep 5");
+					TrainUtil_Example *example = TrainUtil_CreateExample(image_sample, 1.0);
+					TrainUtil_ExampleList_Add(&training_set, example);
+					cvReleaseImage(&image_sample);
+				}
+			}
+			cvDestroyWindow("test");
+			
+			//mark 16 negative points
+			int n_points = 0;
+			int margin = 32;
+			int dead_zone = 6;
+			
+			while (n_points < 16) {
+				int xi = dead_zone + rand() % margin;
+				xi *= -1 + 2 * (rand() % 2);
+				
+				int yi = dead_zone + rand() % margin;
+				yi *= -1 + 2 * (rand() % 2);
+				//check if point lies outside dead zone
+				if (xi > -dead_zone && xi < dead_zone
+				    && xi > -dead_zone && yi < dead_zone)
+					continue;
+					
+				TrainUtil_ExampleParams mod_params = params;
+				mod_params.x1 += xi;
+				mod_params.x2 += xi;
+				mod_params.y1 += yi;
+				mod_params.y2 += yi;
+				
+				IplImage *image_sample = TrainUtil_SampleImage(gray_image, &mod_params);
+				TrainUtil_Example *example = TrainUtil_CreateExample(image_sample, -1.0);
+				TrainUtil_ExampleList_Add(&training_set, example);
+				cvReleaseImage(&image_sample);
+				n_points++;
+			}
+			
+			cvReleaseImage(&gray_image);
+			n_lines++;
+		}
+	}
+
+	TrainUtil_Classifier *out_cls;
+	
+	//to sort we have to convert list to array
+	int X_size = TrainUtil_ExampleList_Length(training_set);
+	TrainUtil_Example **training_arr = (TrainUtil_Example**) malloc(sizeof(TrainUtil_Example*)*X_size);
+	
+	int idx = 0;
+	while (training_set) {
+		training_arr[idx] = training_set->example;
+		training_set = training_set->next;
+		idx++;
+	}
+	
+	TrainUtil_GentleBoost(
+		//input:
+		training_arr,
+		X_size,
+		training_arr,
+		X_size,
+		66,
+		//output:
+		&out_cls);
+	/**/
+	
+	
+	printf ("Track_Point_Train	END\n");
+}
+#endif
+
+
+//#if 0
+
+void	Track_Point_DataInWrite	(tTrack_Point* p, si ox, si oy, fann_type* ain)
+{
+	ox -= p->W/2;	oy -= p->H/2;
+	si x , y;
+	for (y = 0; y < p->H; y++) {
+		for (x = 0; x < p->W; x++) {
+			ain[x + y * p->W] = dopix(ox+x,oy+y)->Y;
+			ain[x + y * p->W] /= 255;
+		//	ain[x + y * p->W] -= dopix(ox+x+1,oy+y)->Y;
+		//	ain[x + y * p->W] /= 128;
+		}
+	}
+}
+
+tTrack_Point* gTrack_Point__p = 0;
+void	Track_Point_cbData	(unsigned int num, unsigned int num_in, unsigned int num_out, fann_type* ain, fann_type* aout)
+{
+	tTrack_Point* p = gTrack_Point__p;
+	
+/*	si ix = num%3;
+	si iy = num/3;
+	
+	ix -= 1;	iy -= 1;
+	ix *= 5;	iy *= 5;
+	
+	Track_Point_DataInWrite (p, p->P.x + ix, p->P.y + iy, ain);
+	
+	aout[0] = -1;
+	if (ix == 0 && iy == 0)
+		aout[0] = 1;/**/
+	
+	if (num < 9) {
+		si ix = num%3;
+		si iy = num/3;
+		ix -= 1;	iy -= 1;
+		Track_Point_DataInWrite (p, p->P.x, p->P.y, ain);
+		if (ix == 0 && iy == 0)
+			aout[0] = 1;
+		else
+			aout[0] = 0.8;
+	}else {
+		si ox, oy;
+		do {
+			ox = gM.Cam.Image_W - p->W;
+			oy = gM.Cam.Image_H - p->H;
+			ox = rand() % ox;
+			oy = rand() % oy;
+			ox += p->W/2;
+			oy += p->H/2;
+		}while (ddist2(ox, oy, p->P.x,p->P.y) <= dpow2(3));
+		
+		printf ("Track_Point_cbData	oxy	%d	%d\n", ox, oy);
+		
+		Track_Point_DataInWrite (p, ox, oy, ain);
+		
+		aout[0] = -1;
+	}/**/
+}
+
+void	Track_Point_Train		(tTrack_Point* p)
+{
+	gTrack_Point__p = p;
+	
+	const unsigned int num_input = p->W*p->H;
+	const unsigned int num_output = 1;
+	const unsigned int num_layers = 3;
+	const unsigned int num_neurons_hidden = 100;
+	const float desired_error = (const float) 0.001;
+	const unsigned int max_epochs = 100;
+	const unsigned int epochs_between_reports = 10;
+	
+	p->pANN = fann_create_standard (num_layers, num_input, num_neurons_hidden, num_output);
+	
+	fann_set_activation_function_hidden (p->pANN, FANN_SIGMOID_SYMMETRIC);
+	fann_set_activation_function_output (p->pANN, FANN_SIGMOID_SYMMETRIC);
+	
+//	fann_train_on_file (ann, "xor.data", max_epochs, epochs_between_reports, desired_error);
+	struct fann_train_data *data = fann_create_train_from_callback (
+		9 + 32,
+		num_input,
+		num_output,
+		Track_Point_cbData
+	);
+	
+	fann_train_on_data (p->pANN, data, max_epochs, epochs_between_reports, desired_error);
+	
+	
+//	fann_save(ann, "xor_float.net");
+	
+//	fann_destroy(p->pANN);
+	
+	return 0;
+}
+
+//#endif
+
+
+void	Track_Point_Step		(tTrack_Point* p)
+{
+	if (!p->pANN)
+		return;
+	
+	gTrack_Point__p = p;
+	fann_type best_out = 0.0f, *calc, input[p->W*p->H];
+	tV2si best_pos = {p->P.x, p->P.y};
+	
+	si x, y, dd = 4;
+	for (y = -dd; y <= dd; y++) {
+		for (x = -dd; x <= dd; x++) {
+			Track_Point_DataInWrite (p, p->P.x+x, p->P.y+y, input);
+			
+			calc = fann_run (p->pANN, input);
+			if (calc[0] > best_out) {
+				best_out = calc[0];
+				best_pos.x = p->P.x+x;
+				best_pos.y = p->P.y+y;
+			}
+		}
+	}
+	
+	printf ("Track_Point_Step best_out %f\n", best_out);
+	if (best_out >= 0.1f) {
+		p->P.x = dclip_lh (best_pos.x, p->W, gM.Cam.Image_W - p->W);
+		p->P.y = dclip_lh (best_pos.y, p->H, gM.Cam.Image_H - p->H);
+	}
+	
+}
+
+void	Track_Point_Draw		(tTrack_Point* p)
+{
+	
+	dset_c0(p->P.x,p->P.y);
+	
+	dset_c0(p->P.x - (p->W/2),		p->P.y - (p->H/2));
+	dset_c0(p->P.x - (p->W/2)+1,		p->P.y - (p->H/2));
+	dset_c0(p->P.x - (p->W/2)+2,		p->P.y - (p->H/2));
+	dset_c0(p->P.x - (p->W/2),		p->P.y - (p->H/2)+1);
+	dset_c0(p->P.x - (p->W/2),		p->P.y - (p->H/2)+2);
+	
+	dset_c0(p->P.x + (p->W/2),		p->P.y - (p->H/2));
+	dset_c0(p->P.x + (p->W/2)-1,		p->P.y - (p->H/2));
+	dset_c0(p->P.x + (p->W/2)-2,		p->P.y - (p->H/2));
+	dset_c0(p->P.x + (p->W/2),		p->P.y - (p->H/2)+1);
+	dset_c0(p->P.x + (p->W/2),		p->P.y - (p->H/2)+2);
+	
+	dset_c0(p->P.x - (p->W/2),		p->P.y + (p->H/2));
+	dset_c0(p->P.x - (p->W/2)+1,		p->P.y + (p->H/2));
+	dset_c0(p->P.x - (p->W/2)+2,		p->P.y + (p->H/2));
+	dset_c0(p->P.x - (p->W/2),		p->P.y + (p->H/2)-1);
+	dset_c0(p->P.x - (p->W/2),		p->P.y + (p->H/2)-2);
+	
+	dset_c0(p->P.x + (p->W/2),		p->P.y + (p->H/2));
+	dset_c0(p->P.x + (p->W/2)-1,		p->P.y + (p->H/2));
+	dset_c0(p->P.x + (p->W/2)-2,		p->P.y + (p->H/2));
+	dset_c0(p->P.x + (p->W/2),		p->P.y + (p->H/2)-1);
+	dset_c0(p->P.x + (p->W/2),		p->P.y + (p->H/2)-2);
+	
+}
+
+
+
+
+void	Head_Point_Train	(tHead* p)
+{
+	si i = 0;
+	for (; i < dHead_Point_NUM; ++i)
+		Track_Point_Train (p->aPoint + i);
+}
+
 void	Head_Init		(tHead* p)
 {
+	si i = 0;
+	for (; i < dHead_Point_NUM; ++i)
+		Track_Point_Init (p->aPoint + i);
+	
 	Eye_Init (&p->DotC);
 	Eye_Init (&p->DotL);
 	Eye_Init (&p->DotR);
@@ -5800,6 +2067,284 @@ void	Head_Init		(tHead* p)
 	M4f_Iden (&p->M4_R);
 	p->M4_T = p->M4;
 	M4f_Inv (&p->M4, &p->M4I);
+}
+
+void	Head_Conf		(tHead* p)
+{
+	Eye_Conf (&p->DotC);
+	Eye_Conf (&p->DotL);
+	Eye_Conf (&p->DotR);
+	
+	si i = 0;
+	for (; i < dHead_Point_NUM; ++i)
+		Track_Point_Conf (p->aPoint + i);
+}
+
+
+void	Head_Draw		(tHead* p)
+{
+	
+	#define dline3(x0,y0,z0,x1,y1,z1)	\
+		do {	\
+			tV4f __p0 = {x0, y0, z0, 1}, __p1 = {x1, y1, z1, 1};	\
+			V4f_mul_M4f (&__p0, &gM.Head.M4);	\
+			V4f_mul_M4f (&__p1, &gM.Head.M4);	\
+			V4f_DrawPosPos (&__p0, &__p1);	\
+		}while(0)
+	
+	#undef dpoint3
+	#define dpoint3(name,x0,y0,z0)	\
+		tV4f name = {x0,y0,z0,1}; M4f_mul_V4f (&gM.Head.M4, &name);
+	
+	gCol.Y = 0xFF;
+	gCol.U = 0x0;
+	gCol.V = 0x0;
+	
+	si i;
+	for (i = 0; i < dHead_Point_NUM; ++i)
+		Track_Point_Draw (p->aPoint + i);
+	
+	{
+		tV4f p0 = gM.Head.P; V4f_add_V4f (&p0, &gM.Head.N);
+		V4f_DrawPosPos (&gM.Head.P, &p0);
+	}
+	
+//	printf ("c:\t%f\t%f\t%f\n", gM.Head.M4.x03, gM.Head.M4.x13, gM.Head.M4.x23);
+//	printf ("c:\t%f\t%f\t%f\n", gM.Head.M4_T.x03, gM.Head.M4_T.x13, gM.Head.M4_T.x23);
+	
+	if (0) {
+		float d = 5;
+		tV4f c = {0, 0, 0, 1};
+		tV4f dx = {d, 0, 0, 1};
+		tV4f dy = {0, d, 0, 1};
+		tV4f dz = {0, 0, d, 1};
+		
+	//	V4f_mul_M4f (&c, &gM.Head.M4);
+		M4f_mul_V4f (&gM.Head.M4, &c);
+	//	printf (" c: ");	V4f_Print (&c);
+	//	printf ("dx: ");	V4f_Print (&dx);
+		
+	//	V4f_mul_M4f (&dx, &gM.Head.M4);
+	//	V4f_mul_M4f (&dy, &gM.Head.M4);
+	//	V4f_mul_M4f (&dz, &gM.Head.M4);
+		M4f_mul_V4f (&gM.Head.M4, &dx);
+		M4f_mul_V4f (&gM.Head.M4, &dy);
+		M4f_mul_V4f (&gM.Head.M4, &dz);
+		
+	//	printf ("closer\n");
+		V4f_DrawPosPos (&c, &dx);
+		V4f_DrawPosPos (&c, &dy);
+		V4f_DrawPosPos (&c, &dz);
+	}
+	if (1) {
+	/*	tV4f pc = {0,	-1,	3.5,	1};
+		tV4f pl = {-7.5,	0,	0,	1};
+		tV4f pr = {7.5,	0,	0,	1};/**/
+	/*	tV4f pc = {0,	-1.5,	0,	1};
+		tV4f pl = {-2.5,	0,	0,	1};
+		tV4f pr = {2.5,	0,	0,	1};/**/
+	/*	tV4f pc = {0,	2,	0,	1};
+		tV4f pl = {-2.7,	0,	0,	1};
+		tV4f pr = {3.5,	0,	0,	1};/**/
+		tV4f pc = gM.Head.Mod.PC;
+		tV4f pl = gM.Head.Mod.PL;
+		tV4f pr = gM.Head.Mod.PR;/**/
+	/*	printf ("pc: ");	V4f_Print (&pc);
+		printf ("pl: ");	V4f_Print (&pl);
+		printf ("pr: ");	V4f_Print (&pr);/**/
+		
+	/*	V4f_mul_M4f (&pc, &gM.Head.M4);
+		V4f_mul_M4f (&pl, &gM.Head.M4);
+		V4f_mul_M4f (&pr, &gM.Head.M4);/**/
+		M4f_mul_V4f (&gM.Head.M4, &pc);
+		M4f_mul_V4f (&gM.Head.M4, &pl);
+		M4f_mul_V4f (&gM.Head.M4, &pr);
+		
+		V4f_DrawPosPos (&pl, &pc);
+		V4f_DrawPosPos (&pr, &pc);
+		V4f_DrawPosPos (&pl, &pr);
+		if (0) {
+			tV2f ret;
+			V4f_ScreenPosNorm (&pl, &ret);	printf ("x %f y %f", ret.x, ret.y);
+			V4f_ScreenPosNorm (&pr, &ret);	printf ("    x %f y %f\n", ret.x, ret.y);
+		}
+		if (0) {
+			tV2si ret;
+			V4f_ScreenPos (&pl, &ret);	printf ("x %ld y %ld", ret.x, ret.y);
+			V4f_ScreenPos (&pr, &ret);	printf ("    x %ld y %ld\n", ret.x, ret.y);
+		}
+	}
+	if (1) {
+		float xdd = 10, ydd = 5;
+	//	float xdd = 3.25, ydd = 2.25;
+		tV4f p0 = {-xdd,	-ydd,	0,	1};
+		tV4f p1 = {xdd,	-ydd,	0,	1};
+		tV4f p2 = {xdd,	ydd,	0,	1};
+		tV4f p3 = {-xdd,	ydd,	0,	1};
+		
+		M4f_mul_V4f (&gM.Head.M4, &p0);
+		M4f_mul_V4f (&gM.Head.M4, &p1);
+		M4f_mul_V4f (&gM.Head.M4, &p2);
+		M4f_mul_V4f (&gM.Head.M4, &p3);
+		
+		V4f_DrawPosPos (&p0, &p1);
+		V4f_DrawPosPos (&p1, &p2);
+		V4f_DrawPosPos (&p2, &p3);
+		V4f_DrawPosPos (&p3, &p0);
+	}
+	
+	
+	if (gM.bHead_Eye_LineDraw) {
+		Head_Eye_LineDraw (&gM.Head, &gM.Left);
+		Head_Eye_LineDraw (&gM.Head, &gM.Right);
+	}
+	
+	if (0) {
+		tV4f eye, ret, vec, re, rr, rv;
+		Head_Eye_Vector (&gM.Head, &gM.Left, &ret);
+		Head_Eye_Vector (&gM.Head, &gM.Right, &rr);
+		
+		eye = gM.Left.InHead.P;
+		vec = ret;	V4f_sub_V4f (&vec, &gM.Left.InHead.P);
+		
+		re = gM.Right.InHead.P;
+		rv = rr;	V4f_sub_V4f (&rv, &gM.Right.InHead.P);
+		
+	//	printf ("hoho2 ");	V4f_Print (&ret);
+		
+		M4f_mul_V4f (&gM.Head.M4, &eye);
+		M4f_mul_V4f (&gM.Head.M4, &ret);
+		
+		M4f_mul_V4f (&gM.Head.M4, &re);
+		M4f_mul_V4f (&gM.Head.M4, &rr);
+		
+	//	printf ("hoho1 ");	V4f_Print (&ret);
+		
+		gCol.U = 0x0;
+		gCol.V = 0x0;
+	///	V4f_DrawPosPos (&eye, &ret);
+		
+	//	printf ("vec ");	V4f_Print (&vec);
+		
+		ret = vec;
+		
+		float ax, ay;
+		{
+			M4f_mul_V4f (&gM.Head.M4_R, &vec);
+			ax = atan2 (vec.z, vec.x);
+			ay = atan2 (vec.z, vec.y);
+			
+			gM.L_Vec.x = ax;		gM.L_Vec.y = ay;
+		//	printf ("axy  %f\t%f\n", ax, ay);
+		}
+		
+		vec = ret;
+		{
+			M4f_mul_V4f (&gM.Head.M4I_R, &vec);
+			ax = atan2 (vec.z, vec.x);
+			ay = atan2 (vec.z, vec.y);
+			
+		//	gM.L_Vec.x = ax;		gM.L_Vec.y = ay;
+		//	printf ("axyI %f\t%f\n", ax, ay);
+		}
+	//	gM.GazeL = Eye_map_point(&gM.Left, gM.L_Vec);
+		
+		
+	}
+	
+	if (gM.GazeMode == 0) {
+		Head_Dbg_Print (&gM.Head);
+	}else if (gM.GazeMode == 1) {
+		Glint_Dbg_Print ();
+	}else if (gM.GazeMode == 2) {
+		Glint_Dbg_Print ();
+	}
+	
+	
+	if (0) {//hihihi couldn't resist
+		dpoint3(pbl, -1.8,	3.7,		3.0);
+		dpoint3(pbr, 1.8,		3.7,		3.0);
+		
+		dpoint3(pt, 0,		-1.0,		2.2);
+		
+		dpoint3(pc, 0,		3.0,		6.0);
+		
+		V4f_DrawPosPos (&pbl, &pbr);
+		V4f_DrawPosPos (&pbl, &pt);
+		V4f_DrawPosPos (&pbr, &pt);
+		
+		V4f_DrawPosPos (&pbl, &pc);
+		V4f_DrawPosPos (&pbr, &pc);
+		V4f_DrawPosPos (&pt, &pc);
+	}
+	
+	if (1) {//ehhh gotta check this
+		#define drect(www,hhh,ddd)	\
+			do {	\
+				float ww = www/2.0f;	\
+				float hh = hhh/2.0f;	\
+				float dd = ddd/2.0f;	\
+				dpoint3(p00, pos.x-ww,	pos.y+hh,		pos.z-dd);	\
+				dpoint3(p01, pos.x+ww,	pos.y+hh,		pos.z-dd);	\
+				dpoint3(p02, pos.x+ww,	pos.y-hh,		pos.z-dd);	\
+				dpoint3(p03, pos.x-ww,	pos.y-hh,		pos.z-dd);	\
+					\
+				dpoint3(p10, pos.x-ww,	pos.y+hh,		pos.z+dd);	\
+				dpoint3(p11, pos.x+ww,	pos.y+hh,		pos.z+dd);	\
+				dpoint3(p12, pos.x+ww,	pos.y-hh,		pos.z+dd);	\
+				dpoint3(p13, pos.x-ww,	pos.y-hh,		pos.z+dd);	\
+					\
+				V4f_DrawPosPos (&p00, &p01);	\
+				V4f_DrawPosPos (&p01, &p02);	\
+				V4f_DrawPosPos (&p02, &p03);	\
+				V4f_DrawPosPos (&p03, &p00);	\
+					\
+				V4f_DrawPosPos (&p10, &p11);	\
+				V4f_DrawPosPos (&p11, &p12);	\
+				V4f_DrawPosPos (&p12, &p13);	\
+				V4f_DrawPosPos (&p13, &p10);	\
+					\
+				V4f_DrawPosPos (&p00, &p10);	\
+				V4f_DrawPosPos (&p01, &p11);	\
+				V4f_DrawPosPos (&p02, &p12);	\
+				V4f_DrawPosPos (&p03, &p13);	\
+			}while(0)
+		
+		float ehh_y = -1.6, ehh_z = 3.2;
+		tV4f pos;
+		pos.x = 0; pos.y = ehh_y+0.15;	pos.z = ehh_z-0.75;
+		drect (16, 0.3f, 1.5f);
+		
+		pos.x = 0; pos.y = ehh_y + 0.3f + 0.9f/2.0f;	pos.z = ehh_z - 0.75f/2;
+		drect (8, 0.9f, 0.75f);
+		
+		pos.x = 0; pos.y = ehh_y + 1.2f + 0.9f/2.0f;	pos.z = ehh_z - 0.75f/2;
+		drect (1.6f, 0.9f, 0.75f);
+		
+		pos.x = -8; pos.y = ehh_y+0.3+0.15;	pos.z = ehh_z-1.5f;
+		drect (1.5f, 0.3f, 4.8f);
+		
+		pos.x = 8;
+		drect (1.5f, 0.3f, 4.8f);
+		
+	/*	tV4f pos;
+		pos.x = 0; pos.y = gM.Head.Mod.PC.y+0.15;	pos.z = gM.Head.Mod.PC.z-0.75;
+		drect (16, 0.3f, 1.5f);
+		
+		pos.x = 0; pos.y = gM.Head.Mod.PC.y + 0.3f + 0.9f/2.0f;	pos.z = gM.Head.Mod.PC.z - 0.75f/2;
+		drect (8, 0.9f, 0.75f);
+		
+		pos.x = 0; pos.y = gM.Head.Mod.PC.y + 1.2f + 0.9f/2.0f;	pos.z = gM.Head.Mod.PC.z - 0.75f/2;
+		drect (1.6f, 0.9f, 0.75f);
+		
+		pos.x = gM.Head.Mod.PL.x; pos.y = gM.Head.Mod.PC.y+0.3+0.15;	pos.z = gM.Head.Mod.PC.z-1.5f;
+		drect (1.5f, 0.3f, 4.8f);
+		
+		pos.x = gM.Head.Mod.PR.x;
+		drect (1.5f, 0.3f, 4.8f);/**/
+		
+		#undef drect
+	}
 }
 
 float	Head_Calc_a3	(tHead* p, float* pa)
@@ -6518,6 +3063,16 @@ void	Head_Eye_Vector	(tHead* p, tEye* peye, tV4f* pret)	//Point of retina in hea
 		pret->y = 0;
 		pret->z = 0;
 		pret->w = 1;
+		
+		tV4f pos = peye->InHead.P;
+		M4f_mul_V4f (&gM.Head.M4, &pos);
+		
+		tV2si screen_pos;
+		V4f_ScreenPos (&pos, &screen_pos);
+		
+		peye->P.x = screen_pos.x;
+		peye->P.y = screen_pos.y;
+	//	printf ("eye failed"
 		return;
 	}
 //	printf ("d %f\n", d);
@@ -7128,6 +3683,7 @@ void	Screen_ReInterp		(tScreen* p)
 
 void	Screen_Cal_Save_Eye	(tScreen* p, tEye* peye, float z)
 {
+	printf ("Screen_Cal_Save_Eye Z %f\n", z);
 //	peye->aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].SX = p->Cal.sx;
 //	peye->aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].SY = p->Cal.sy;
 	
@@ -7189,6 +3745,69 @@ void	Screen_Cal_Save		(tScreen* p)
 	Screen_Cal_Next (p);
 	Screen_Cal_Prep (p);
 }
+
+
+
+void	Screen_Cal_Record		(tScreen* p, tEye* peye, float z)
+{
+//	printf ("Screen_Cal_Record Z %f\n", z);
+	
+	tV4f leye, lret, lvec;
+	
+	Head_Eye_VectorGlob (&gM.Head, peye, &leye, &lret, &lvec);
+	
+	tV4f pos = (tV4f){0, 0, z, 1};
+	tV4f norm = (tV4f){0, 0, 1, 1};		V4f_rotx (&norm, -30*deg2rad);
+	tV4f ret;
+	
+	
+	V4f_Intersect_Line01_Plane0N (
+		&ret,
+		&leye, &lret,
+		&pos, &norm
+	);
+//	printf ("Screen_Cal_Record Z %f	ret\n", ret.z);
+	
+	V4f_add_V4f (&peye->aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P, &ret);
+}
+void	Screen_Cal_RecordStart	(tScreen* p)
+{
+	gM.Cal_Record_Num = 0;
+	
+	gM.Left.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.x = 0;
+	gM.Left.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.y = 0;
+	gM.Left.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.z = 0;
+	gM.Left.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.w = 1;
+	
+	gM.Right.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.x = 0;
+	gM.Right.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.y = 0;
+	gM.Right.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.z = 0;
+	gM.Right.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.w = 1;
+	
+}
+void	Screen_Cal_RecordEnd	(tScreen* p)
+{
+	gM.Left.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.x /= (float)gM.Cal_Record_Num;
+	gM.Left.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.y /= (float)gM.Cal_Record_Num;
+	gM.Left.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.z /= (float)gM.Cal_Record_Num;
+	gM.Left.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.w = 1;
+	
+	gM.Right.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.x /= (float)gM.Cal_Record_Num;
+	gM.Right.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.y /= (float)gM.Cal_Record_Num;
+	gM.Right.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.z /= (float)gM.Cal_Record_Num;
+	gM.Right.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].P.w = 1;
+	
+	gM.Left.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].State = dEye_Screen_Cal_Set;
+	gM.Right.aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].State = dEye_Screen_Cal_Set;
+	
+	Screen_ReInterp (p);
+	
+	Screen_Cal_Next (p);
+	Screen_Cal_Prep (p);
+}
+
+
+
 
 void	Screen_Cal_PointDel	(tScreen* p)
 {
@@ -7476,9 +4095,11 @@ void	Screen_Print	(tScreen* p)
 	
 	if (p == gM.aScreen + 0) {
 		tEye* peye = &gM.Left;
-	//	printf ("width top %f\n", V4f_dist_V4f (&dcal(0,0).P, &dcal(dEye_Screen_Cal_LAST,0).P));
-	//	printf ("width bot %f\n", V4f_dist_V4f (&dcal(0,dEye_Screen_Cal_LAST).P, &dcal(dEye_Screen_Cal_LAST,dEye_Screen_Cal_LAST).P));
+		printf ("width top %f\n", V4f_dist_V4f (&dcal(0,0).P, &dcal(dEye_Screen_Cal_LAST,0).P));
+		printf ("width bot %f\n", V4f_dist_V4f (&dcal(0,dEye_Screen_Cal_LAST).P, &dcal(dEye_Screen_Cal_LAST,dEye_Screen_Cal_LAST).P));
 		
+		printf ("heigh lef %f\n", V4f_dist_V4f (&dcal(0,0).P, &dcal(0,dEye_Screen_Cal_LAST).P));
+		printf ("heigh rig %f\n", V4f_dist_V4f (&dcal(dEye_Screen_Cal_LAST,0).P, &dcal(dEye_Screen_Cal_LAST,dEye_Screen_Cal_LAST).P));
 		
 	}
 	
@@ -8073,7 +4694,10 @@ void	muhaha_Init	()
 	gM.Draw_W = 800;
 	gM.Draw_H = 600;
 	
-	gM.Main_mutex = SDL_CreateMutex();
+	gM.Cal_bRecord = 0;
+	
+	gM.mutMainIsOut = SDL_CreateMutex();
+	gM.mutMainIsIn = SDL_CreateMutex();
 	
 	Head_Init (&gM.Head);
 	
@@ -8303,7 +4927,9 @@ void	muhaha_Cross	(tV2f* ppoint, tPix col)
 si fps = 0, tfps = 0;
 void	muhaha	()
 {
-	SDL_mutexP (gM.Main_mutex);
+	SDL_mutexV (gM.mutMainIsIn);
+	
+	SDL_mutexP (gM.mutMainIsOut);
 	
 	++tfps;
 	
@@ -8386,6 +5012,10 @@ void	muhaha	()
 	for (y = 0; y < 600; ++y)
 		for (x = 800; x < 800+640; ++x)
 			dspix(x, y) = 0;
+	
+	
+	Track_Point_Step (gM.Head.aPoint + 0);
+	
 	
 	if (1) {
 	//	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
@@ -8611,272 +5241,29 @@ void	muhaha	()
 			dspix(x, y) = 0;
 	/**/
 	
+	Head_Calc_M4_Rel (&gM.Head, &gM.HeadC);
 	
-	if (1) {
-		#define dline3(x0,y0,z0,x1,y1,z1)	\
-			do {	\
-				tV4f __p0 = {x0, y0, z0, 1}, __p1 = {x1, y1, z1, 1};	\
-				V4f_mul_M4f (&__p0, &gM.Head.M4);	\
-				V4f_mul_M4f (&__p1, &gM.Head.M4);	\
-				V4f_DrawPosPos (&__p0, &__p1);	\
-			}while(0)
-		
-		#undef dpoint3
-		#define dpoint3(name,x0,y0,z0)	\
-			tV4f name = {x0,y0,z0,1}; M4f_mul_V4f (&gM.Head.M4, &name);
-		
-		Head_Calc_M4_Rel (&gM.Head, &gM.HeadC);
-		
-	/*	gM.GazeL = Head_Diff4_Eye (&gM.Head, &gM.Left);
-		gM.GazeR = Head_Diff4_Eye (&gM.Head, &gM.Right);
-		
-		gM.L_Vec = gM.GazeL;
-		gM.R_Vec = gM.GazeR;
-		
-		gM.GazeL = Eye_map_point(&gM.Left, gM.GazeL);
-		gM.GazeR = Eye_map_point(&gM.Right, gM.GazeR);
-		
-		gM.Gaze.x = (gM.GazeL.x+gM.GazeR.x)/2.0f;
-		gM.Gaze.y = (gM.GazeL.y+gM.GazeR.y)/2.0f;
-		
-		
-		gM.GazeL = Head_Diff_Eye (&gM.Head, &gM.Left);
-		gM.GazeR = Head_Diff_Eye (&gM.Head, &gM.Right);
-		
-		gM.Gaze.x = (gM.GazeL.x+gM.GazeR.x)/2.0f;
-		gM.Gaze.y = (gM.GazeL.y+gM.GazeR.y)/2.0f;/**/
-		
-		
-		gCol.Y = 0xFF;
-		gCol.U = 0x0;
-		gCol.V = 0x0;
-		
-		{
-			tV4f p0 = gM.Head.P; V4f_add_V4f (&p0, &gM.Head.N);
-			V4f_DrawPosPos (&gM.Head.P, &p0);
-		}
-		
-	//	printf ("c:\t%f\t%f\t%f\n", gM.Head.M4.x03, gM.Head.M4.x13, gM.Head.M4.x23);
-	//	printf ("c:\t%f\t%f\t%f\n", gM.Head.M4_T.x03, gM.Head.M4_T.x13, gM.Head.M4_T.x23);
-		
-		if (0) {
-			float d = 5;
-			tV4f c = {0, 0, 0, 1};
-			tV4f dx = {d, 0, 0, 1};
-			tV4f dy = {0, d, 0, 1};
-			tV4f dz = {0, 0, d, 1};
-			
-		//	V4f_mul_M4f (&c, &gM.Head.M4);
-			M4f_mul_V4f (&gM.Head.M4, &c);
-		//	printf (" c: ");	V4f_Print (&c);
-		//	printf ("dx: ");	V4f_Print (&dx);
-			
-		//	V4f_mul_M4f (&dx, &gM.Head.M4);
-		//	V4f_mul_M4f (&dy, &gM.Head.M4);
-		//	V4f_mul_M4f (&dz, &gM.Head.M4);
-			M4f_mul_V4f (&gM.Head.M4, &dx);
-			M4f_mul_V4f (&gM.Head.M4, &dy);
-			M4f_mul_V4f (&gM.Head.M4, &dz);
-			
-		//	printf ("closer\n");
-			V4f_DrawPosPos (&c, &dx);
-			V4f_DrawPosPos (&c, &dy);
-			V4f_DrawPosPos (&c, &dz);
-		}
-		if (1) {
-		/*	tV4f pc = {0,	-1,	3.5,	1};
-			tV4f pl = {-7.5,	0,	0,	1};
-			tV4f pr = {7.5,	0,	0,	1};/**/
-		/*	tV4f pc = {0,	-1.5,	0,	1};
-			tV4f pl = {-2.5,	0,	0,	1};
-			tV4f pr = {2.5,	0,	0,	1};/**/
-		/*	tV4f pc = {0,	2,	0,	1};
-			tV4f pl = {-2.7,	0,	0,	1};
-			tV4f pr = {3.5,	0,	0,	1};/**/
-			tV4f pc = gM.Head.Mod.PC;
-			tV4f pl = gM.Head.Mod.PL;
-			tV4f pr = gM.Head.Mod.PR;/**/
-		/*	printf ("pc: ");	V4f_Print (&pc);
-			printf ("pl: ");	V4f_Print (&pl);
-			printf ("pr: ");	V4f_Print (&pr);/**/
-			
-		/*	V4f_mul_M4f (&pc, &gM.Head.M4);
-			V4f_mul_M4f (&pl, &gM.Head.M4);
-			V4f_mul_M4f (&pr, &gM.Head.M4);/**/
-			M4f_mul_V4f (&gM.Head.M4, &pc);
-			M4f_mul_V4f (&gM.Head.M4, &pl);
-			M4f_mul_V4f (&gM.Head.M4, &pr);
-			
-			V4f_DrawPosPos (&pl, &pc);
-			V4f_DrawPosPos (&pr, &pc);
-			V4f_DrawPosPos (&pl, &pr);
-			if (0) {
-				tV2f ret;
-				V4f_ScreenPosNorm (&pl, &ret);	printf ("x %f y %f", ret.x, ret.y);
-				V4f_ScreenPosNorm (&pr, &ret);	printf ("    x %f y %f\n", ret.x, ret.y);
-			}
-			if (0) {
-				tV2si ret;
-				V4f_ScreenPos (&pl, &ret);	printf ("x %ld y %ld", ret.x, ret.y);
-				V4f_ScreenPos (&pr, &ret);	printf ("    x %ld y %ld\n", ret.x, ret.y);
-			}
-		}
-		if (1) {
-			float xdd = 10, ydd = 5;
-		//	float xdd = 3.25, ydd = 2.25;
-			tV4f p0 = {-xdd,	-ydd,	0,	1};
-			tV4f p1 = {xdd,	-ydd,	0,	1};
-			tV4f p2 = {xdd,	ydd,	0,	1};
-			tV4f p3 = {-xdd,	ydd,	0,	1};
-			
-			M4f_mul_V4f (&gM.Head.M4, &p0);
-			M4f_mul_V4f (&gM.Head.M4, &p1);
-			M4f_mul_V4f (&gM.Head.M4, &p2);
-			M4f_mul_V4f (&gM.Head.M4, &p3);
-			
-			V4f_DrawPosPos (&p0, &p1);
-			V4f_DrawPosPos (&p1, &p2);
-			V4f_DrawPosPos (&p2, &p3);
-			V4f_DrawPosPos (&p3, &p0);
-		}
-		
-		
-		if (gM.bHead_Eye_LineDraw) {
-			Head_Eye_LineDraw (&gM.Head, &gM.Left);
-			Head_Eye_LineDraw (&gM.Head, &gM.Right);
-		}
-		
-		if (0) {
-			tV4f eye, ret, vec, re, rr, rv;
-			Head_Eye_Vector (&gM.Head, &gM.Left, &ret);
-			Head_Eye_Vector (&gM.Head, &gM.Right, &rr);
-			
-			eye = gM.Left.InHead.P;
-			vec = ret;	V4f_sub_V4f (&vec, &gM.Left.InHead.P);
-			
-			re = gM.Right.InHead.P;
-			rv = rr;	V4f_sub_V4f (&rv, &gM.Right.InHead.P);
-			
-		//	printf ("hoho2 ");	V4f_Print (&ret);
-			
-			M4f_mul_V4f (&gM.Head.M4, &eye);
-			M4f_mul_V4f (&gM.Head.M4, &ret);
-			
-			M4f_mul_V4f (&gM.Head.M4, &re);
-			M4f_mul_V4f (&gM.Head.M4, &rr);
-			
-		//	printf ("hoho1 ");	V4f_Print (&ret);
-			
-			gCol.U = 0x0;
-			gCol.V = 0x0;
-		///	V4f_DrawPosPos (&eye, &ret);
-			
-		//	printf ("vec ");	V4f_Print (&vec);
-			
-			ret = vec;
-			
-			float ax, ay;
-			{
-				M4f_mul_V4f (&gM.Head.M4_R, &vec);
-				ax = atan2 (vec.z, vec.x);
-				ay = atan2 (vec.z, vec.y);
-				
-				gM.L_Vec.x = ax;		gM.L_Vec.y = ay;
-			//	printf ("axy  %f\t%f\n", ax, ay);
-			}
-			
-			vec = ret;
-			{
-				M4f_mul_V4f (&gM.Head.M4I_R, &vec);
-				ax = atan2 (vec.z, vec.x);
-				ay = atan2 (vec.z, vec.y);
-				
-			//	gM.L_Vec.x = ax;		gM.L_Vec.y = ay;
-			//	printf ("axyI %f\t%f\n", ax, ay);
-			}
-		//	gM.GazeL = Eye_map_point(&gM.Left, gM.L_Vec);
-			
-			
-		}
-		
-		if (gM.GazeMode == 0) {
-			Head_Dbg_Print (&gM.Head);
-		}else if (gM.GazeMode == 1) {
-			Glint_Dbg_Print ();
-		}else if (gM.GazeMode == 2) {
-			Glint_Dbg_Print ();
-		}
-		
-		
-		if (0) {//hihihi couldn't resist
-			dpoint3(pbl, -1.8,	3.7,		3.0);
-			dpoint3(pbr, 1.8,		3.7,		3.0);
-			
-			dpoint3(pt, 0,		-1.0,		2.2);
-			
-			dpoint3(pc, 0,		3.0,		6.0);
-			
-			V4f_DrawPosPos (&pbl, &pbr);
-			V4f_DrawPosPos (&pbl, &pt);
-			V4f_DrawPosPos (&pbr, &pt);
-			
-			V4f_DrawPosPos (&pbl, &pc);
-			V4f_DrawPosPos (&pbr, &pc);
-			V4f_DrawPosPos (&pt, &pc);
-		}
-		
-		if (1) {//ehhh gotta check this
-			#define drect(www,hhh,ddd)	\
-				do {	\
-					float ww = www/2.0f;	\
-					float hh = hhh/2.0f;	\
-					float dd = ddd/2.0f;	\
-					dpoint3(p00, pos.x-ww,	pos.y+hh,		pos.z-dd);	\
-					dpoint3(p01, pos.x+ww,	pos.y+hh,		pos.z-dd);	\
-					dpoint3(p02, pos.x+ww,	pos.y-hh,		pos.z-dd);	\
-					dpoint3(p03, pos.x-ww,	pos.y-hh,		pos.z-dd);	\
-						\
-					dpoint3(p10, pos.x-ww,	pos.y+hh,		pos.z+dd);	\
-					dpoint3(p11, pos.x+ww,	pos.y+hh,		pos.z+dd);	\
-					dpoint3(p12, pos.x+ww,	pos.y-hh,		pos.z+dd);	\
-					dpoint3(p13, pos.x-ww,	pos.y-hh,		pos.z+dd);	\
-						\
-					V4f_DrawPosPos (&p00, &p01);	\
-					V4f_DrawPosPos (&p01, &p02);	\
-					V4f_DrawPosPos (&p02, &p03);	\
-					V4f_DrawPosPos (&p03, &p00);	\
-						\
-					V4f_DrawPosPos (&p10, &p11);	\
-					V4f_DrawPosPos (&p11, &p12);	\
-					V4f_DrawPosPos (&p12, &p13);	\
-					V4f_DrawPosPos (&p13, &p10);	\
-						\
-					V4f_DrawPosPos (&p00, &p10);	\
-					V4f_DrawPosPos (&p01, &p11);	\
-					V4f_DrawPosPos (&p02, &p12);	\
-					V4f_DrawPosPos (&p03, &p13);	\
-				}while(0)
-			
-			tV4f pos;
-			pos.x = 0; pos.y = gM.Head.Mod.PC.y+0.15;	pos.z = gM.Head.Mod.PC.z-0.75;
-			drect (16, 0.3f, 1.5f);
-			
-			pos.x = 0; pos.y = gM.Head.Mod.PC.y + 0.3f + 0.9f/2.0f;	pos.z = gM.Head.Mod.PC.z - 0.75f/2;
-			drect (8, 0.9f, 0.75f);
-			
-			pos.x = 0; pos.y = gM.Head.Mod.PC.y + 1.2f + 0.9f/2.0f;	pos.z = gM.Head.Mod.PC.z - 0.75f/2;
-			drect (1.6f, 0.9f, 0.75f);
-			
-			pos.x = gM.Head.Mod.PL.x; pos.y = gM.Head.Mod.PC.y+0.3+0.15;	pos.z = gM.Head.Mod.PC.z-1.5f;
-			drect (1.5f, 0.3f, 4.8f);
-			
-			pos.x = gM.Head.Mod.PR.x;
-			drect (1.5f, 0.3f, 4.8f);
-			
-			#undef drect
-		}
-		
-	}
+/*	gM.GazeL = Head_Diff4_Eye (&gM.Head, &gM.Left);
+	gM.GazeR = Head_Diff4_Eye (&gM.Head, &gM.Right);
+	
+	gM.L_Vec = gM.GazeL;
+	gM.R_Vec = gM.GazeR;
+	
+	gM.GazeL = Eye_map_point(&gM.Left, gM.GazeL);
+	gM.GazeR = Eye_map_point(&gM.Right, gM.GazeR);
+	
+	gM.Gaze.x = (gM.GazeL.x+gM.GazeR.x)/2.0f;
+	gM.Gaze.y = (gM.GazeL.y+gM.GazeR.y)/2.0f;
+	
+	
+	gM.GazeL = Head_Diff_Eye (&gM.Head, &gM.Left);
+	gM.GazeR = Head_Diff_Eye (&gM.Head, &gM.Right);
+	
+	gM.Gaze.x = (gM.GazeL.x+gM.GazeR.x)/2.0f;
+	gM.Gaze.y = (gM.GazeL.y+gM.GazeR.y)/2.0f;/**/
+	
+	
+	Head_Draw (&gM.Head);
 	
 	if (0) {
 		tM4f bproj = gM.Proj;
@@ -9291,13 +5678,43 @@ void	muhaha	()
 		}
 		}
 	}
+	
+	if (gM.Cal_bRecord) {
+		float z = gM.aScreen[gM.Screen_CalIdx].C.z;
+		if (0) {
+			tV4f e00, e01, e10, e11;
+			tV4f p0, p1;
+			
+			Head_Eye_VectorGlob (&gM.Head, &gM.Left, &e00, &e01, NULL);
+			Head_Eye_VectorGlob (&gM.Head, &gM.Right, &e10, &e11, NULL);
+			
+			V4f_Intersect_Line01_Line01 (
+				&p0, &p1,
+				&e00, &e01,
+				&e10, &e11
+			);
+			z = (p0.z + p1.z) / 2;
+			printf ("Screen_Cal_Save Z %f\n", z);
+		}
+		
+		Screen_Cal_Record (gM.aScreen + gM.Screen_CalIdx, &gM.Left, z);
+		Screen_Cal_Record (gM.aScreen + gM.Screen_CalIdx, &gM.Right, z);
+		
+		++gM.Cal_Record_Num;
+	}
 /*	{
 		printf ("crap\n");
 		XEvent e;
 		XNextEvent(gM.X.pDisp, &e);
 		printf ("yeah\n");
 	}/**/
-	SDL_mutexV (gM.Main_mutex);
+	SDL_mutexV (gM.mutMainIsOut);
+	
+	
+//	SDL_mutexP (gM.mutMainIsIn);
+//	printf ("muhahaha		mutMainIsIn	E\n");
+	
+	SDL_mutexP (gM.mutMainIsIn);
 }
 
 
@@ -9369,6 +5786,10 @@ int muhaha_eventThread(void *data)
 				case SDLK_j:
 					gM.Right.P.x = x;
 					gM.Right.P.y = y;
+					break;
+				case SDLK_y:
+					gM.Head.aPoint[0].P.x = x;
+					gM.Head.aPoint[0].P.y = y;
 					break;
 			//	case SDLK_SPACE:
 			//		gM.HeadC = gM.Head;

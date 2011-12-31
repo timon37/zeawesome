@@ -42,6 +42,10 @@
 #include <X11/extensions/shape.h>
 #include <X11/cursorfont.h>
 
+#include <fann.h>
+
+#include "gab.h"
+
 //#include "xdo.h"
 
 typedef unsigned char u08;
@@ -104,6 +108,13 @@ typedef struct {
 	};
 }tM4f;
 
+typedef struct {//YUV 4:2:2
+	u08 Y;
+	u08 U:4;
+	u08 V:4;
+}__attribute__((packed)) tPix;
+
+
 #define CALIBRATIONPOINTS    9
 typedef struct {
 	u08 aPoint_State[CALIBRATIONPOINTS];  //0 not set, 1 set
@@ -143,6 +154,7 @@ enum {
 	eEye_Fit_S5_Diff,
 	eEye_Fit_S5_END,
 	eEye_Fit_FF_START,
+	eEye_Fit_FF_Diode,
 	eEye_Fit_FF_END,
 	eEye_Fit_C,
 };
@@ -160,6 +172,8 @@ enum {
 	dScreen_MAX = 6,
 	dEye_Screen_Cal_NUM = 3,
 	dEye_Screen_Cal_LAST = dEye_Screen_Cal_NUM-1,
+	
+	dHead_Point_NUM = 1,
 };
 
 enum {//Calibration point state
@@ -168,11 +182,6 @@ enum {//Calibration point state
 	dEye_Screen_Cal_Interp,	//interpolated between other points set by the user
 	dEye_Screen_Cal_Extra,	//guess
 };
-
-typedef struct {
-	tV2f P;
-//	float A, D;	//Angle, Distance
-}tEye_Point;
 
 typedef struct {
 	tV2f P, OP, V; // Position, OldPosition, Velocity
@@ -238,7 +247,6 @@ typedef struct {
 	}InHead;
 	
 	struct {
-		
 		struct {
 			u08 State;
 			si SX, SY;
@@ -256,9 +264,21 @@ typedef struct {
 }tEye;
 
 
+
+typedef struct {
+	tV2f P;
+	si W, H;	//in Pixels
+	
+	struct fann* pANN;
+	
+	
+}tTrack_Point;
+
+
 typedef struct {
 	tV4f P, N, R;	//Position, Normal, Rotation about axes
 	
+	tTrack_Point aPoint[dHead_Point_NUM];
 	tEye DotC, DotL, DotR;
 	tM3f M, MI;
 	
@@ -312,6 +332,11 @@ typedef struct {
 	si Focus, Exposure, Zoom;
 }tCam;
 
+typedef struct {
+	tV4f P;
+	
+}tLight;
+
 
 typedef struct {
 	u08 Type, Dirty;
@@ -320,15 +345,6 @@ typedef struct {
 	u32 Col;
 }tMarker;
 
-typedef struct {
-	tV4f P;
-	
-}tLight;
-
-typedef struct {
-	
-	
-}tREvDev;
 
 enum {
 	dM_X_Queue_M_Down,
@@ -345,7 +361,7 @@ typedef struct {
 	
 	u08 bGazeHold, bHead_Eye_LineDraw, bEye_S4_EdgeMark3_Micro;
 	
-	SDL_mutex *Main_mutex;
+	SDL_mutex *mutMainIsOut, *mutMainIsIn;
 	
 	int Y_Level;
 	
@@ -368,7 +384,11 @@ typedef struct {
 	
 	ui Screen_N;
 	tScreen aScreen[dScreen_MAX];
+	
 	si Screen_CalIdx;
+	u08 Cal_bRecord;
+	si Cal_Record_Num;
+	
 	
 	SDL_mutex* pGaze_Mutex;
 	tV2f GazeL, GazeR, Gaze;
@@ -413,8 +433,6 @@ typedef struct {
 		#undef dact2
 	}Action;
 	
-	tREvDev KB;
-	
 	float GazeAvg_3_MinAlpha, GazeAvg_3_MinDist, GazeAvg_3_Dist;
 	struct {
 		u08 State;
@@ -442,15 +460,54 @@ typedef struct {
 }tM;
 
 extern tM gM;
+extern tPix gCol;
+extern u32 gColARGB;
+
+extern si ay, au, av, n;
 
 extern struct vdIn *videoIn;
+
+//For blocking main thread either at start or end of "muhahaha", but not within or outside of it
+#define dSafe_Main_S()	\
+	do {	\
+		SDL_mutexP (gM.mutMainIsIn);	\
+		SDL_mutexP (gM.mutMainIsOut);	\
+	}while(0)
+
+#define dSafe_Main_E()	\
+	do {	\
+		SDL_mutexV (gM.mutMainIsIn);	\
+		SDL_mutexV (gM.mutMainIsOut);	\
+	}while(0)
+
+
+
 
 void	muhaha_Init		();
 void	muhaha_DeInit	();
 void	muhaha		();
 
+
+
 void	Eye_Init	(tEye* peye);
 void	Eye_Conf	(tEye* peye);
+
+tV2f	Eye_map_point	(tEye* peye, tV2f p);
+
+
+void	Head_Eye_CalcP	(tHead* p, tEye* peye);
+void	Screen_Eye_PreCal	(tScreen* p, tEye* peye);
+
+
+int muhaha_eventThread(void *data);
+
+
+
+
+
+
+
+
 
 struct pt_data {
 	SDL_Surface **ptscreen;
@@ -461,10 +518,11 @@ struct pt_data {
 	SDL_mutex *affmutex;
 } ptdata;
 
-int muhaha_eventThread(void *data);
 
-void	Head_Eye_CalcP	(tHead* p, tEye* peye);
-void	Screen_Eye_PreCal	(tScreen* p, tEye* peye);
+
+
+
+
 
 
 typedef struct _dyn_config_entry dyn_config_entry;

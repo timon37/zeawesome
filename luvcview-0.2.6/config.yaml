@@ -4,10 +4,10 @@ Cam:
   Full_H: 1944
   Full_FOV: 83
   #Image_Zoom:	1.05		1.125		1.2
-  Image_Zoom: 1.125
+  Image_Zoom: 1.0
   Image_W: 1920
   Image_H: 1080
-  Exposure: 500
+  Exposure: 400
   #Image_Zoom: 1.8
   #Image_W: 1280
   #Image_H: 720
@@ -15,13 +15,14 @@ Cam:
   #Image_W: 2048
   #Image_H: 1536
 #  Image_FOV: 83
-  Focus: 205
+  Image_FOV_H: 0.563599
+  Focus: 200
   #Focus:	130	120	80	0	-1
   #Exposure:	200	400	600	800
-  Zoom: 1
+  Zoom: 6
 
-View_W: 1280
-View_H: 720
+View_W: 1920
+View_H: 1080
 #View_W: 2048
 #View_H: 1536
 
@@ -48,7 +49,7 @@ Screen:
   C:
     x: 0
     y: 0
-    z: 50
+    z: 65
 
 
 Screen_N: 3
@@ -93,7 +94,7 @@ Dbg:
     T_Y: 0
     R_X: 90
     R_Y: 180
-    Scale: 0.33
+    Scale: 0.31
     Off:
       x: 1000
       y: 200
@@ -124,20 +125,20 @@ aLight[1]:
 Head:
   Mod:
     #PC:
-      #x: 0
-      #y: -1
-      #z: 3.0
+      #x: 0.0
+      #y: -1.6
+      #z: 3.2
     #PL:
-      #x: -7.5
+      #x: -8
       #y: 0
       #z: 0
     #PR:
-      #x: 7.5
+      #x: 8
       #y: 0
       #z: 0
     PC:
       x: 0.0
-      y: -1.6
+      y: -3
       z: 3.2
     PL:
       x: -8
@@ -147,18 +148,6 @@ Head:
       x: 8
       y: 0
       z: 0
-    #PC:
-      #x: 0
-      #y: -1.5
-      #z: 0.0
-    #PL:
-      #x: -2.5
-      #y: 0
-      #z: 0
-    #PR:
-      #x: 2.5
-      #y: 0
-      #z: 0
     TInc:
       x: 0.01
       y: 0.01
@@ -190,15 +179,16 @@ Head:
       Pix_Diff_Min: 2
     
     FF:
-      Max_R: 208
-      Perf_R: 32
+      Max_R: 512
+      Perf_R: 20
       MaxDiff_R: 0.4
-      Search_R: 80
+      Search_R: 200
       Y: 50
-      Y_Marg: 15
+      GY: 240
+      Y_Marg: 25
     
-    #Fit: eEye_Fit_S0	eEye_Fit_S3Fit_Eye	eEye_Fit_S3Fit_Point	eEye_Fit_S5_START		eEye_Fit_FF_START
-    Fit: eEye_Fit_FF_START
+    #Fit: eEye_Fit_S0	eEye_Fit_S3Fit_Eye	eEye_Fit_S3Fit_Point	eEye_Fit_S5_START		eEye_Fit_FF_START		eEye_Fit_FF_Diode
+    Fit: eEye_Fit_FF_Diode
     PFit: eEye_PFit_S2
     Fit_Scale: 0.2
     Fit_Trans: 0.2
@@ -214,8 +204,8 @@ Head:
       x: 800
       y: 300
     CirView:
-      x: 1000
-      y: 300
+      x: 800
+      y: 00
   
   DotR:
     LinView:
@@ -249,11 +239,11 @@ Left:
     Pix_Diff_Min: 5
   
   FF:
-    Max_R: 200
-    Perf_R: 20
+    Max_R: 256
+    Perf_R: 15
     MaxDiff_R: 0.2f
-    Search_R: 120
-    Y: 25
+    Search_R: 80
+    Y: 45
     Y_Marg: 15
     GY: 150
     GSearch_R: 60
@@ -278,15 +268,15 @@ Left:
   InHead:
     R: 1.1
     P:
-      x: -3.193304
-      y: 0.419479
-      z: -1.296950
+      x: -3.246802
+      y: 0.074058
+      z: -1.615316
 
   LinView:
     x: 00
     y: 0
   CirView:
-    x: 900
+    x: 00
     y: 0
 
 Right:
@@ -306,16 +296,16 @@ Right:
     Min_R: 30
     Break_Dist: 5
     Pix_Bright: 20
-    Pix_Dark: 15
+    Pix_Dark: 10
     Diff_Dist: 10
     Pix_Diff_Start: 30
     Pix_Diff_Min: 5
   
   FF:
-    Max_R: 200
-    Perf_R: 20
+    Max_R: 256
+    Perf_R: 15
     MaxDiff_R: 0.2f
-    Search_R: 80
+    Search_R: 80a
     Y: 20
     Y_Marg: 15
     GY: 150
@@ -340,9 +330,9 @@ Right:
   InHead:
     R: 1.1
     P:
-      x: 3.353227
-      y: 0.687697
-      z: -1.046899
+      x: 3.405655
+      y: 0.249110
+      z: -1.469640
 
   LinView:
     x: 0
@@ -353,10 +343,10 @@ bHead_Eye_LineDraw: 1
 
 GazeAvg_3_MinAlpha: 0.0
 GazeAvg_3_MinDist: 0
-GazeAvg_3_Dist: 60
+GazeAvg_3_Dist: 80
 Micro:
   SX: -600.0
-  SY: 1000.0
+  SY: 1500.0
 
 
 
@@ -364,6 +354,7 @@ Action:
   GazeHold: 57		Space
   Mode_Switch: 15		Tab
   
+  Head_Point_Train: 0x14	t
   EyeCent_CalNext: 43	BackSlash
   Back: 14			BackSpace
   CalNext: 28		Enter

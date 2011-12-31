@@ -100,6 +100,7 @@ int dyn_get_value_enum(dyn_config_entry *de, const char *path, int *val) {
 	dhack(eEye_Fit_S5_Diff)
 	dhack(eEye_Fit_S5_END)
 	dhack(eEye_Fit_FF_START)
+	dhack(eEye_Fit_FF_Diode)
 	dhack(eEye_Fit_FF_END)
 	dhack(eEye_Fit_C)
 	
@@ -266,7 +267,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 			drw_full_v4f (#name "[" #i0 "][" #i1 "]." #rest, gM.name[i0][i1].rest);	\
 		}while(0)
 	
-	SDL_mutexP (gM.Main_mutex);
+	dSafe_Main_S();
 	
 	drw_u08 (Eye_Line_Ray)
 	drw_u08 (Eye_GlintMode)
@@ -392,6 +393,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_f (Head.DotC.FF.MaxDiff_R)
 	drw_si (Head.DotC.FF.Search_R)
 	drw_si (Head.DotC.FF.Y)
+	drw_si (Head.DotC.FF.GY)
 	drw_si (Head.DotC.FF.Y_Marg)
 	
 	gM.Head.DotC.LinView.x = 0;
@@ -425,9 +427,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_f (Head.DotR.LinView.y)
 	drw_v2f (Head.DotR.CirView);
 	
-	Eye_Conf (&gM.Head.DotC);
-	Eye_Conf (&gM.Head.DotL);
-	Eye_Conf (&gM.Head.DotR);
+	Head_Conf (&gM.Head);
 	
 	#define deye(name)	\
 		drw_f (name.AngRes)	\
@@ -597,8 +597,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	printf ("W %f H %f", gM.Proj_W, gM.Proj_H);
 	printf ("   N %f F %f\n", gM.Proj_N, gM.Proj_F);
 	
-	
-	SDL_mutexV (gM.Main_mutex);
+	dSafe_Main_E();
 	
 	yaml_parser_delete(&parser);
 	
