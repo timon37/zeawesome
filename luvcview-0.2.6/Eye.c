@@ -930,7 +930,7 @@ si ay = 0, au = 0, av = 0, n = 0;
 
 void	Eye_crap_ff		(tEye* peye, si x, si y)
 {
-	if (x < 0 || y < 0 || x >= videoIn->width || y >= videoIn->height)
+	if (x < 0 || y < 0 || x >= pcam->Image_W || y >= pcam->Image_H)
 		return;
 	
 	if (	1//dnpix(x,y)->Y == 0xFF
@@ -1170,8 +1170,8 @@ void	Eye_GP_GazeVector	(tEye* peye, tV4f* pr0, tV4f* pr1, tV4f* prv)
 void	Eye_EdgeMark	(tEye* peye)
 {
 	si x, y;
-	for (y = 0; y < videoIn->height; ++y) {
-		for (x = 0; x < videoIn->width-1; ++x) {
+	for (y = 0; y < pcam->Image_H; ++y) {
+		for (x = 0; x < pcam->Image_W-1; ++x) {
 			if (	1//dnpix(x,y)->Y == 0xFF
 				&& dnpix(x,y)->U == 0
 				&& dnpix(x,y)->V == 0
@@ -1278,8 +1278,8 @@ void	Eye_SFit		(tEye* peye)
 			}
 		}
 	}/**/
-	for (y = 0; y < videoIn->height; ++y) {
-		for (x = 0; x < videoIn->width; ++x) {
+	for (y = 0; y < pcam->Image_H; ++y) {
+		for (x = 0; x < pcam->Image_W; ++x) {
 			if (	1//dnpix(x,y)->Y == 0xFF
 				&& dnpix(x,y)->U == 0xF
 				&& dnpix(x,y)->V == 0xF
@@ -2922,7 +2922,7 @@ float	Eye_S4_Fit_Ransac		(tEye* peye)
 	gM_edge_point_N = peye->Point_N;
 	
 	int max_inliers_num;
-	int* ret = pupil_fitting_inliers (videoIn->width, videoIn->height, &max_inliers_num);
+	int* ret = pupil_fitting_inliers (pcam->Image_W, pcam->Image_H, &max_inliers_num);
 //	int* ret = simple_fit (videoIn->width, videoIn->height, &max_inliers_num);
 	
 	//double pupil_param[5];//parameters of an ellipse {ellipse_a, ellipse_b, cx, cy, theta}; a & b is the major or minor axis; 
@@ -4282,12 +4282,12 @@ void	Eye_Clip		(tEye* peye)
 	#define dmarg 10
 	if (peye->P.x < dmarg)
 		peye->P.x = dmarg;
-	if (peye->P.x > videoIn->width-dmarg)
-		peye->P.x = videoIn->width-dmarg;
+	if (peye->P.x > pcam->Image_W-dmarg)
+		peye->P.x = pcam->Image_W-dmarg;
 	if (peye->P.y < dmarg)
 		peye->P.y = dmarg;
-	if (peye->P.y > videoIn->height-dmarg)
-		peye->P.y = videoIn->height-dmarg;
+	if (peye->P.y > pcam->Image_H-dmarg)
+		peye->P.y = pcam->Image_H-dmarg;
 	#undef dmarg
 	if (peye->Ax > 100)
 		peye->Ax = 100;
@@ -4317,7 +4317,7 @@ void	Eye_Draw_Ellipse	(tEye* peye, float tb, float te)
 		y = (peye->Ax * cos(t) * sin(peye->Aa) + peye->Ay * sin(t) * cos(peye->Aa));
 	//	printf ("x %4d  y %4d\n", x, y);
 	//	y = peye->P.y;
-		if (peye->P.x+x < 0 || peye->P.y+y < 0 || peye->P.x+x >= videoIn->width || peye->P.y+y >= videoIn->height)
+		if (peye->P.x+x < 0 || peye->P.y+y < 0 || peye->P.x+x >= pcam->Image_W || peye->P.y+y >= pcam->Image_H)
 			continue;
 		dnpix(peye->P.x+x,peye->P.y+y)->Y = 0xFF;
 		dnpix(peye->P.x+x,peye->P.y+y)->U = 0xF;

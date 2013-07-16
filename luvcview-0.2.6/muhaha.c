@@ -24,6 +24,8 @@ typedef struct {//YUV 4:2:2
 tPix gCol;
 u32 gColARGB;
 
+tCam* pcam;
+
 tM gM =
 {
 	.Y_Level = 128,
@@ -462,6 +464,31 @@ void	V4f_DrawPosPos	(tV4f* ppos0, tV4f* ppos1)
 	
 //	printf ("p0 %f %f  p1 %f %f\n", p0.x, p0.y, p1.x, p1.y);
 	Vec_Draw (p0.x, p0.y, p1.x, p1.y);
+	
+/*	printf ("p0 %f %f\n", p0.x, p0.y);
+	
+	CvMat* cm0 = cvCreateMatHeader(3, 1, CV_32FC1);
+	cvCreateData(cm0);
+	cvSet2D (cm0, 0, 0, cvScalarAll(ppos0->x));
+	cvSet2D (cm0, 1, 0, cvScalarAll(ppos0->y));
+	cvSet2D (cm0, 2, 0, cvScalarAll(ppos0->z));
+	
+	CvMat* cm_t = cvCreateMatHeader(3, 1, CV_32FC1);
+	cvCreateData(cm_t);
+	cvSet (cm_t, cvScalarAll(0), 0);
+	CvMat* cm_r = cvCreateMatHeader(3, 1, CV_32FC1);
+	cvCreateData(cm_r);
+	cvSet (cm_r, cvScalarAll(0), 0);
+	
+	CvMat* cmret = cvCreateMatHeader(2, 1, CV_32FC1);
+	cvCreateData(cmret);
+	
+	PrintMat (cm0);
+	
+	cvProjectPoints2(cm0, cm_r, cm_t, gM.Cam.cvCam, gM.Cam.cvDist, cmret, NULL, NULL, NULL, NULL, NULL, 1);
+	
+	printf ("c0 %f %f\n", cvGet2D(cmret, 0, 0).val[0], cvGet2D(cmret, 1, 0).val[0]);
+	/**/
 }
 
 
@@ -623,6 +650,8 @@ void	M4f_Frustrum		(tM4f* pproj, float w, float h, float n, float f)
 	pproj->x23 = (-2*f*n) / (f-n);
 	pproj->x32 = -1;
 	
+	printf ("\nM4f_Frustrum\n"); M4f_Print (pproj);
+	printf ("\n");
 }
 void	M4f_Ortho		(tM4f* pproj, float w, float h, float n, float f)
 {
@@ -658,7 +687,7 @@ void	Proj_Cam		()
 	if (gM.Cam.Image_FOV_H == 0)
 		gM.Cam.Image_FOV_H = fov*sin(a);
 	
-	printf ("Image_FOV %f  W %f H %f\n", gM.Cam.Image_FOV, gM.Cam.Image_FOV_W*rad2deg, gM.Cam.Image_FOV_H*rad2deg);
+	printf ("Image_FOV %f  W %f H %f	a %f\n", gM.Cam.Image_FOV, gM.Cam.Image_FOV_W*rad2deg, gM.Cam.Image_FOV_H*rad2deg, a);
 	
 	gM.Proj_W = gM.Proj_N*tan(gM.Cam.Image_FOV_W/2.0f);
 	gM.Proj_H = gM.Proj_N*tan(gM.Cam.Image_FOV_H/2.0f);
@@ -679,6 +708,32 @@ void	Proj_Cam		()
 	gM.Proj.x23 = (-2*gM.Proj_F*gM.Proj_N) / (gM.Proj_F - gM.Proj_N);
 	gM.Proj.x32 = -1;/**/
 	M4f_Frustrum (&gM.Proj, gM.Proj_W, gM.Proj_H, gM.Proj_N, gM.Proj_F);
+	
+	
+	gM.Cam.cvCam = cvCreateMatHeader(3, 3, CV_32FC1);
+	cvCreateData(gM.Cam.cvCam);
+	cvSet2D (gM.Cam.cvCam, 0, 0, cvScalarAll(2058.4890867164763));
+	cvSet2D (gM.Cam.cvCam, 0, 1, cvScalarAll(0));
+	cvSet2D (gM.Cam.cvCam, 0, 2, cvScalarAll(959.50000000000000));
+	cvSet2D (gM.Cam.cvCam, 1, 0, cvScalarAll(0));
+	cvSet2D (gM.Cam.cvCam, 1, 1, cvScalarAll(2058.4890867164763));
+	cvSet2D (gM.Cam.cvCam, 1, 2, cvScalarAll(539.50000000000000));
+	cvSet2D (gM.Cam.cvCam, 2, 0, cvScalarAll(0));
+	cvSet2D (gM.Cam.cvCam, 2, 1, cvScalarAll(0));
+	cvSet2D (gM.Cam.cvCam, 2, 2, cvScalarAll(1));
+	
+	gM.Cam.cvDist = cvCreateMatHeader(5, 1, CV_32FC1);
+	cvCreateData(gM.Cam.cvDist);
+	cvSet2D (gM.Cam.cvDist, 0, 0, cvScalarAll(-0.023321480666943440));
+	cvSet2D (gM.Cam.cvDist, 1, 0, cvScalarAll(0.69231202113335466));
+	cvSet2D (gM.Cam.cvDist, 2, 0, cvScalarAll(0));
+	cvSet2D (gM.Cam.cvDist, 3, 0, cvScalarAll(0));
+	cvSet2D (gM.Cam.cvDist, 4, 0, cvScalarAll(-3.5279699461953733));
+	
+	
+	PrintMat (gM.Cam.cvCam);
+	PrintMat (gM.Cam.cvDist);
+	
 }
 
 void	Dbg_Ortho	(struct sDbg_View* pv)
@@ -704,6 +759,7 @@ void	Dbg_Ortho	(struct sDbg_View* pv)
 //	M4f_trans (&gM.Dbg.World, 0, 0, -15);
 //	M4f_rotx (&gM.Dbg.World, 15*deg2rad);
 }
+
 
 void	Dbg_Ortho_Front	()
 {
@@ -1366,13 +1422,13 @@ tV2f	point_clip	(tV2f* ppoint)
 {
 	if (ppoint->x < 0)
 		ppoint->x = 0;
-	else if (ppoint->x >= videoIn->width)
-		ppoint->x = videoIn->width-1;
+	else if (ppoint->x >= pcam->Image_W)
+		ppoint->x = pcam->Image_W-1;
 		
 	if (ppoint->y < 0)
 		ppoint->y = 0;
-	else if (ppoint->y >= videoIn->height)
-		ppoint->y = videoIn->height-1;
+	else if (ppoint->y >= pcam->Image_W)
+		ppoint->y = pcam->Image_W-1;
 }
 
 
@@ -1580,6 +1636,8 @@ void	Cam_Pos2Ray	(tV2f pos, tV4f* pp0, tV4f* pp1, tV4f* pvec)
 		p1.x = gM.Proj_L + (pos.x/gM.Cam.Image_W)*gM.Proj_W;
 		p1.y = gM.Proj_B + (pos.y/gM.Cam.Image_H)*gM.Proj_H;
 	}
+	V4f_mul_S (&p1, 1.0/V4f_dist(&p1));
+//	printf ("Cam_Pos2Ray:	");	V4f_Print (&p1);
 	if (pp0)
 		*pp0 = p0;
 	if (pp1)
@@ -1604,7 +1662,7 @@ void	Cam_Param_Set	(tCam* pcam)
 			struct v4l2_control control;		\
 			control.id    = _id;		\
 			control.value = _val;		\
-			if ((value = ioctl(videoIn->fd, VIDIOC_S_CTRL, &control)) < 0)		\
+			if ((value = ioctl(pcam->UVC->fd, VIDIOC_S_CTRL, &control)) < 0)		\
 				printf("Set " #_id " error\n");		\
 		/*	else	printf(#_id " set to %d\n", control.value);/**/		\
 		}while (0)
@@ -1617,9 +1675,9 @@ void	Cam_Param_Set	(tCam* pcam)
 	else {
 		dcam_set(V4L2_CID_FOCUS_AUTO, 0);
 		
-		if ((value = v4l2SetControl(videoIn, V4L2_CID_FOCUS_ABSOLUTE, 1)) < 0)
+		if ((value = v4l2SetControl(pcam->UVC, V4L2_CID_FOCUS_ABSOLUTE, 1)) < 0)
 			printf("Set CT_FOCUS_ABSOLUTE_CONTROL to %ld error\n", value);
-		if ((value = v4l2SetControl(videoIn, V4L2_CID_FOCUS_ABSOLUTE, gM.Cam.Focus)) < 0)
+		if ((value = v4l2SetControl(pcam->UVC, V4L2_CID_FOCUS_ABSOLUTE, gM.Cam.Focus)) < 0)
 			printf("Set CT_FOCUS_ABSOLUTE_CONTROL to %ld error\n", value);
 	}
 	if (gM.Cam.Exposure == -1) {
@@ -1630,16 +1688,16 @@ void	Cam_Param_Set	(tCam* pcam)
 	//	if ((value = v4l2SetControl(videoIn, V4L2_CID_EXPOSURE_AUTO, V4L2_EXPOSURE_AUTO)) < 0)
 	//		printf("Set V4L2_CID_EXPOSURE_AUTO to %ld error\n", value);
 	}else {
-		if ((value = v4l2SetControl(videoIn, V4L2_CID_EXPOSURE_AUTO, V4L2_EXPOSURE_MANUAL)) < 0)
+		if ((value = v4l2SetControl(pcam->UVC, V4L2_CID_EXPOSURE_AUTO, V4L2_EXPOSURE_MANUAL)) < 0)
 			printf("Set V4L2_CID_EXPOSURE_AUTO to %ld error\n", value);
 	//	dcam_set(V4L2_CID_EXPOSURE_AUTO, V4L2_EXPOSURE_MANUAL);
 		
 	//	if ((value = v4l2SetControl(videoIn, V4L2_CID_EXPOSURE_ABSOLUTE, gM.Cam.Exposure-30)) < 0)
 	//		printf("Set V4L2_CID_EXPOSURE_ABSOLUTE to %ld error\n", value);
-		if ((value = v4l2SetControl(videoIn, V4L2_CID_EXPOSURE_ABSOLUTE, gM.Cam.Exposure)) < 0)
+		if ((value = v4l2SetControl(pcam->UVC, V4L2_CID_EXPOSURE_ABSOLUTE, gM.Cam.Exposure)) < 0)
 			printf("Set V4L2_CID_EXPOSURE_ABSOLUTE to %ld error\n", value);
 	}
-	if ((value = v4l2SetControl(videoIn, V4L2_CID_ZOOM_ABSOLUTE, gM.Cam.Zoom)) < 0)
+	if ((value = v4l2SetControl(pcam->UVC, V4L2_CID_ZOOM_ABSOLUTE, gM.Cam.Zoom)) < 0)
 		printf("Set V4L2_CID_ZOOM_ABSOLUTE to %ld error\n", value);
 	#undef dcam_set
 }
@@ -2110,7 +2168,7 @@ void	Head_Draw		(tHead* p)
 	}
 	
 //	printf ("c:\t%f\t%f\t%f\n", gM.Head.M4.x03, gM.Head.M4.x13, gM.Head.M4.x23);
-//	printf ("c:\t%f\t%f\t%f\n", gM.Head.M4_T.x03, gM.Head.M4_T.x13, gM.Head.M4_T.x23);
+	printf ("c:\t%f\t%f\t%f\n", gM.Head.M4_T.x03, gM.Head.M4_T.x13, gM.Head.M4_T.x23);
 	
 	if (0) {
 		float d = 5;
@@ -4525,7 +4583,7 @@ int	muhaha_chrdev_Thread	(void *data)
 int	muhaha_XEvent_Thread	(void *data)
 {
 	printf ("first\n");
-	while (videoIn->signalquit) {
+	while (pcam->UVC->signalquit) {
 		XEvent e;
 		XNextEvent(gM.X.pDisp, &e);
 		switch (e.type) {
@@ -4656,7 +4714,7 @@ void	muhaha_Keyboard_Init	()
 	XSync(gM.X.pDisp, False);
 	#endif
 }
-
+extern char** environ;
 void	muhaha_Init	()
 {
 	if (!XInitThreads()) {
@@ -4708,7 +4766,7 @@ void	muhaha_Init	()
 	
 	dyn_config_init(&gM_DC);
 	dyn_config_read(&gM_DC, "config.yaml");
-	/*mythread = */SDL_CreateThread(muhaha_Config_Thread, (void *)NULL);
+	/*mythread = */SDL_CreateThread(muhaha_Config_Thread, "muhaha_Config_Thread", (void *)NULL);
 	
 	
 	M4f_Iden (&gM.World);
@@ -4854,10 +4912,10 @@ void	muhaha_Init	()
 	muhaha_Keyboard_Init ();
 	
 	
-	/*mythread = */SDL_CreateThread(muhaha_XEvent_Thread, (void *)NULL);
+	/*mythread = */SDL_CreateThread(muhaha_XEvent_Thread, "muhaha_XEvent_Thread", (void *)NULL);
 	
 	#if dM_Actions_Mode == 2
-	/*mythread = */SDL_CreateThread(muhaha_chrdev_Thread, (void *)NULL);
+	/*mythread = */SDL_CreateThread(muhaha_chrdev_Thread, "muhaha_chrdev_Thread", (void *)NULL);
 	#endif
 }
 
@@ -4933,7 +4991,7 @@ void	muhaha	()
 	
 	++tfps;
 	
-	tPix* pin = (tPix*)videoIn->framebuffer, *pin1;
+	tPix* pin = (tPix*)pcam->UVC->framebuffer, *pin1;
 	si x, y;
 /*	for (y = 0; y < videoIn->height; ++y) {
 		for (x = 0; x < videoIn->width; ++x) {
@@ -4961,9 +5019,9 @@ void	muhaha	()
 			}
 		}/**/
 		
-		for (y = 0; y < videoIn->height; ++y) {
-			for (x = 0; x < videoIn->width-1; ++x) {
-				pin = (tPix*)videoIn->framebuffer + (y*videoIn->width + x);
+		for (y = 0; y < pcam->UVC->height; ++y) {
+			for (x = 0; x < pcam->UVC->width-1; ++x) {
+				pin = (tPix*)pcam->UVC->framebuffer + (y*pcam->UVC->width + x);
 				pin1 = pin+1;
 			//	pin->Y = 0;
 				si y = pin->Y, y1 = pin1->Y;
@@ -4980,7 +5038,7 @@ void	muhaha	()
 			//	dpix(x,y)->V = 0x8;
 			}
 		}
-		memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
+		memcpy(gM.pDst, pcam->UVC->framebuffer, pcam->UVC->width * (pcam->UVC->height) * 2);
 		/**/
 	/*	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
 		
@@ -5002,7 +5060,7 @@ void	muhaha	()
 		//	printf ("\n");
 		}/**/
 	}else {
-		memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
+		memcpy(gM.pDst, pcam->UVC->framebuffer, pcam->UVC->width * (pcam->UVC->height) * 2);
 	}
 /*	printf ("World:\n");
 	M4f_Print (&gM.World);
@@ -5100,16 +5158,22 @@ void	muhaha	()
 		gCol.Y = 0xFF;
 		gCol.U = 0x0;
 		gCol.V = 0x0;
-		static float ang = 0, zz = 13*3;
+		static float ang = 0, zz = -30;
 		
-		float d = 13, z = 3*d;
+		float d = 7.0/2.0, z = 3*d;
 		
 	//	tM4f rot2 = {cosf(ang),sinf(ang),0,0, -sinf(ang),cosf(ang),0,0, 0,0,1,0, 0,0,0,1};
-		tM4f rot = {1,0,0,0, 0,cosf(ang),sinf(ang),0, 0,-sinf(ang),cosf(ang),0, 0,0,0,1};
+	/*	tM4f rot = {1,0,0,0, 0,cosf(ang),sinf(ang),0, 0,-sinf(ang),cosf(ang),0, 0,0,0,1};
 		tM4f rot2 = {cosf(ang),0,sinf(ang),0, 0,1,0,0, -sinf(ang),0,cosf(ang),0, 0,0,0,1};
 		M4f_mul_M4f (&rot, &rot2);
 		
-		tM4f trans = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,zz,1};
+		tM4f trans = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,zz,1};*/
+		
+		tM4f trans, rot;
+		M4f_Iden (&trans);
+		M4f_trans (&trans, 0, -3, zz);
+		M4f_roty (&trans, -45*deg2rad);
+		M4f_rotx (&trans, 45*deg2rad);
 		
 		tV4f p00 = {-d, -d, -d, 1};
 		tV4f p01 = {+d, -d, -d, 1};
@@ -5121,7 +5185,7 @@ void	muhaha	()
 		tV4f p12 = {+d, +d,  d, 1};
 		tV4f p13 = {-d, +d,  d, 1};
 		
-		V4f_mul_M4f (&p00, &rot);
+	/*	V4f_mul_M4f (&p00, &rot);
 		V4f_mul_M4f (&p01, &rot);
 		V4f_mul_M4f (&p02, &rot);
 		V4f_mul_M4f (&p03, &rot);
@@ -5130,14 +5194,32 @@ void	muhaha	()
 		V4f_mul_M4f (&p12, &rot);
 		V4f_mul_M4f (&p13, &rot);/**/
 		
-		V4f_mul_M4f (&p00, &trans);
+	/*	V4f_mul_M4f (&p00, &trans);
 		V4f_mul_M4f (&p01, &trans);
 		V4f_mul_M4f (&p02, &trans);
 		V4f_mul_M4f (&p03, &trans);
 		V4f_mul_M4f (&p10, &trans);
 		V4f_mul_M4f (&p11, &trans);
 		V4f_mul_M4f (&p12, &trans);
-		V4f_mul_M4f (&p13, &trans);
+		V4f_mul_M4f (&p13, &trans);/**/
+		
+	/*	M4f_mul_V4f (&rot, &p00);
+		M4f_mul_V4f (&rot, &p01);
+		M4f_mul_V4f (&rot, &p02);
+		M4f_mul_V4f (&rot, &p03);
+		M4f_mul_V4f (&rot, &p10);
+		M4f_mul_V4f (&rot, &p11);
+		M4f_mul_V4f (&rot, &p12);
+		M4f_mul_V4f (&rot, &p13);/**/
+		
+		M4f_mul_V4f (&trans, &p00);
+		M4f_mul_V4f (&trans, &p01);
+		M4f_mul_V4f (&trans, &p02);
+		M4f_mul_V4f (&trans, &p03);
+		M4f_mul_V4f (&trans, &p10);
+		M4f_mul_V4f (&trans, &p11);
+		M4f_mul_V4f (&trans, &p12);
+		M4f_mul_V4f (&trans, &p13);
 		
 	//	V4f_Print (&p00);
 	//	printf ("closer\n");
@@ -5159,9 +5241,9 @@ void	muhaha	()
 		V4f_DrawPosPos (&p13, &p10);
 		
 		ang += 10*M_PI/180.0f;
-		zz += 1.0f;
-		if (zz >= z*2)
-			zz = z/2;
+		//zz += 1.0f;
+		//if (zz >= z*2)
+			//zz = z/2;
 	}/**/
 	
 	if (0) {
@@ -5723,7 +5805,7 @@ int muhaha_eventThread(void *data)
 	struct pt_data *gdata = (struct pt_data *) data;
 	struct v4l2_control control;
 	SDL_Surface *pscreen = *gdata->ptscreen;
-	struct vdIn *videoIn = gdata->ptvideoIn;
+	//struct vdIn *videoIn = gdata->ptvideoIn;
 	SDL_Event *sdlevent = gdata->ptsdlevent;
 	SDL_Rect *drect = gdata->drect;
 	SDL_mutex *affmutex = gdata->affmutex;
@@ -5739,12 +5821,12 @@ int muhaha_eventThread(void *data)
 	
 	si last_ms = SDL_GetTicks();
 //	action_gui curr_action = A_VIDEO;
-	while (videoIn->signalquit) {
+	while (pcam->UVC->signalquit) {
 		SDL_LockMutex(affmutex);
 		
 		SDL_GetMouseState(&x, &y);
-		x = x*gM.pOverlay->w / 800;
-		y = y*gM.pOverlay->h / 600;
+		//x = x*gM.pOverlay->w / 800;
+		//y = y*gM.pOverlay->h / 600;
 		
 		float frmrate = gdata->frmrate;
 		
@@ -5839,7 +5921,7 @@ int muhaha_eventThread(void *data)
 				}/**/
 				
 				case SDLK_ESCAPE: {
-					videoIn->signalquit = 0;
+					pcam->UVC->signalquit = 0;
 					break;
 				}
 				}
@@ -5923,7 +6005,7 @@ int muhaha_eventThread(void *data)
 			case SDL_MOUSEMOTION:
 			//	curr_action = GUI_whichbutton(x, y, pscreen, videoIn);
 				break;
-			case SDL_VIDEORESIZE:
+		/*	case SDL_VIDEORESIZE:
 			/*	pscreen =
 				      SDL_SetVideoMode(sdlevent->resize.w,
 				                       sdlevent->resize.h, 0,
@@ -5933,7 +6015,7 @@ int muhaha_eventThread(void *data)
 				break;
 			case SDL_QUIT:
 				printf("\nQuit signal received.\n");
-				videoIn->signalquit = 0;
+				pcam->UVC->signalquit = 0;
 				break;
 			}
 		}			//end if poll
@@ -5957,15 +6039,15 @@ int muhaha_eventThread(void *data)
 	}
 	
 	/* Close the stream capture file */
-	if (videoIn->captureFile) {
-		fclose(videoIn->captureFile);
+	if (pcam->UVC->captureFile) {
+		fclose(pcam->UVC->captureFile);
 		printf("Stopped raw stream capturing to stream.raw. %u bytes written for %u frames.\n",
-		       videoIn->bytesWritten, videoIn->framesWritten);
+		       pcam->UVC->bytesWritten, pcam->UVC->framesWritten);
 	}
 	/* Display stats for raw frame stream capturing */
-	if (videoIn->rawFrameCapture == 2) {
+	if (pcam->UVC->rawFrameCapture == 2) {
 		printf("Stopped raw frame stream capturing. %u bytes written for %u frames.\n",
-		       videoIn->rfsBytesWritten, videoIn->rfsFramesWritten);
+		       pcam->UVC->rfsBytesWritten, pcam->UVC->rfsFramesWritten);
 	}
 }
 
@@ -6293,8 +6375,8 @@ void	Ehh_Draw_Line_2d	(si x0, si y0, si x1, si y1)
 	si dx = x1 - x0;
 	si dy = y1 - y0;
 	
-	ui dst_w = videoIn->width;
-	ui dst_h = videoIn->height;
+	ui dst_w = pcam->UVC->width;
+	ui dst_h = pcam->UVC->height;
 	tPix *pdst = (tPix*)gM.pDst;
 	
 	tPix col = gCol;

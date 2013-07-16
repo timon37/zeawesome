@@ -20,8 +20,8 @@
 
 #define ddist(x0,y0,x1,y1) sqrt(ddist2(x0,y0,x1,y1))
 
-#define dopix(_x,_y) ((tPix*)videoIn->framebuffer + ((si)(_x) + (si)(_y)*videoIn->width))
-#define dnpix(_x,_y) ((tPix*)gM.pDst + ((si)(_x) + (si)(_y)*videoIn->width))
+#define dopix(_x,_y) ((tPix*)pcam->UVC->framebuffer + ((si)(_x) + (si)(_y)*pcam->Image_W))
+#define dnpix(_x,_y) ((tPix*)gM.pDst + ((si)(_x) + (si)(_y)*pcam->Image_W))
 #define dpix(_x,_y) dnpix(_x,_y)
 
 
@@ -31,7 +31,7 @@
 #define dmono2rgb(_g) ((u32)(_g) | (u32)(_g)<<8 | (u32)(_g)<<16)
 
 
-#define dpixout(_x,_y) ((_x) < 0 || (_y) < 0 || (_x) >= videoIn->width || (_y) >= videoIn->height)
+#define dpixout(_x,_y) ((_x) < 0 || (_y) < 0 || (_x) >= pcam->Image_W || (_y) >= pcam->Image_W)
 
 
 #define dset_cyuv(_x,_y,y,u,v)	\
@@ -156,16 +156,16 @@ static inline void	Eye_Xset	(tEye* peye, float x)
 {
 	if (x < 20)
 		x = 20;
-	else if (x > videoIn->width-20)
-		x = videoIn->width-20;
+	else if (x > pcam->Image_W-20)
+		x = pcam->Image_W-20;
 	peye->P.x = x;
 }
 static inline void	Eye_Yset	(tEye* peye, float y)
 {
 	if (y < 20)
 		y = 20;
-	else if (y > videoIn->height-20)
-		y = videoIn->height-20;
+	else if (y > pcam->Image_H-20)
+		y = pcam->Image_H-20;
 	peye->P.y = y;
 }
 static inline void	Eye_XYset	(tEye* peye, float x, float y)

@@ -11,10 +11,10 @@
 #include <sys/file.h>
 #include <string.h>
 #include <pthread.h>
-#include <SDL/SDL.h>
-#include <SDL/SDL_thread.h>
-#include <SDL/SDL_audio.h>
-#include <SDL/SDL_timer.h>
+#include <SDL.h>
+#include <SDL_thread.h>
+#include <SDL_audio.h>
+#include <SDL_timer.h>
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -24,7 +24,7 @@
 #include <sys/time.h>
 #include <signal.h>
 #include <X11/Xlib.h>
-#include <SDL/SDL_syswm.h>
+#include <SDL_syswm.h>
 #include "v4l2uvc.h"
 #include "gui.h"
 #include "utils.h"
@@ -323,6 +323,11 @@ typedef struct {
 
 
 typedef struct {
+	struct vdIn* UVC;
+	
+	SDL_Window* SDL_Win;
+	SDL_Surface* SDL_Surf;
+	
 	ui Full_W, Full_H;
 	float Full_FOV;
 	
@@ -330,6 +335,8 @@ typedef struct {
 	float Image_Zoom, Image_FOV, Image_FOV_W, Image_FOV_H;
 	
 	si Focus, Exposure, Zoom;
+	
+	CvMat* cvCam, *cvDist;
 }tCam;
 
 typedef struct {
@@ -401,7 +408,7 @@ typedef struct {
 	u08* pDst;
 	
 	SDL_Surface* pScreen;
-	SDL_Overlay* pOverlay;
+	//SDL_Overlay* pOverlay;
 	
 	struct {
 		Display* pDisp;
@@ -462,10 +469,11 @@ typedef struct {
 extern tM gM;
 extern tPix gCol;
 extern u32 gColARGB;
+extern tCam* pcam;
 
 extern si ay, au, av, n;
 
-extern struct vdIn *videoIn;
+//extern struct vdIn *videoIn;
 
 //For blocking main thread either at start or end of "muhahaha", but not within or outside of it
 #define dSafe_Main_S()	\

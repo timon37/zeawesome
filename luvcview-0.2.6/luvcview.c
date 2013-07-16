@@ -29,10 +29,10 @@
 #include <sys/file.h>
 #include <string.h>
 #include <pthread.h>
-#include <SDL/SDL.h>
-#include <SDL/SDL_thread.h>
-#include <SDL/SDL_audio.h>
-#include <SDL/SDL_timer.h>
+#include <SDL.h>
+#include <SDL_thread.h>
+#include <SDL_audio.h>
+#include <SDL_timer.h>
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -42,7 +42,7 @@
 #include <sys/time.h>
 #include <signal.h>
 #include <X11/Xlib.h>
-#include <SDL/SDL_syswm.h>
+#include <SDL_syswm.h>
 #include "v4l2uvc.h"
 #include "gui.h"
 #include "utils.h"
@@ -109,7 +109,7 @@ typedef struct act_title {
 } act_title;
 
 typedef struct key_action_t {
-	SDLKey key;
+	SDL_Keycode key;
 	action_gui action;
 } key_action_t;
 
@@ -182,18 +182,17 @@ act_title title_act[A_LAST] = {
 	{ A_LOAD, "Restored Configuration" }
 };
 static const char version[] = VERSION;
-struct vdIn *videoIn;
+//struct vdIn *videoIn;
 
 /* Translates screen coordinates into buttons */
 action_gui
 GUI_whichbutton(int x, int y, SDL_Surface * pscreen, struct vdIn *videoIn);
 
-action_gui GUI_keytoaction(SDLKey key);
+action_gui GUI_keytoaction(SDL_Keycode key);
 
 
 static int eventThread(void *data);
-static Uint32 SDL_VIDEO_Flags =
-      SDL_ANYFORMAT | SDL_DOUBLEBUF | SDL_RESIZABLE;
+static Uint32 SDL_VIDEO_Flags = 0;
 
 
 int main(int argc, char **argv)
@@ -203,11 +202,11 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	
-	const SDL_VideoInfo *info;
+	//const SDL_VideoInfo *info;
 	char driver[128];
 	SDL_Surface *pscreen;
-	SDL_Overlay *overlay;
-	SDL_Rect drect, dclip;
+	//SDL_Overlay *overlay;
+	//SDL_Rect drect, dclip;
 	SDL_Event sdlevent;
 	SDL_Thread *mythread;
 	SDL_mutex *affmutex;
@@ -220,7 +219,7 @@ int main(int argc, char **argv)
 	const char *videodevice = NULL;
 	const char *mode = NULL;
 	int format = V4L2_PIX_FMT_MJPEG;
-	int sdl_format =  SDL_YUY2_OVERLAY;
+	//int sdl_format =  SDL_YUY2_OVERLAY;
 	int i;
 	int grabmethod = 1;
 	int width = 640;
@@ -269,7 +268,7 @@ int main(int argc, char **argv)
 				format = V4L2_PIX_FMT_YUYV;
 			} else if (strcasecmp(mode, "uyvy") == 0 || strcasecmp(mode, "UYVY") == 0) {
 				format = V4L2_PIX_FMT_UYVY;
-				sdl_format = SDL_UYVY_OVERLAY;
+				//sdl_format = SDL_UYVY_OVERLAY;
 			} else if (strcasecmp(mode, "jpg") == 0 || strcasecmp(mode, "MJPG") == 0) {
 				format = V4L2_PIX_FMT_MJPEG;
 			} else {
@@ -374,11 +373,11 @@ int main(int argc, char **argv)
 			putenv("SDL_VIDEO_YUV_HWACCEL=0");
 		}
 		
-	printf("SDL information:\n");
+/*	printf("SDL information:\n");
 	if (SDL_VideoDriverName(driver, sizeof(driver))) {
 		printf("  Video driver: %s\n", driver);
 	}
-	info = SDL_GetVideoInfo();
+/*	info = SDL_GetVideoInfo();
 	
 	if (info->wm_available) {
 		printf("  A window manager is available\n");
@@ -417,7 +416,7 @@ int main(int argc, char **argv)
 	
 	if (!(SDL_VIDEO_Flags & SDL_HWSURFACE))
 		SDL_VIDEO_Flags |= SDL_SWSURFACE;
-		
+	*/
 	if (videodevice == NULL || *videodevice == 0) {
 		videodevice = "/dev/video0";
 	}
@@ -426,39 +425,56 @@ int main(int argc, char **argv)
 		avifilename = "video.avi";
 	}
 	
-	videoIn = (struct vdIn *) calloc(1, sizeof(struct vdIn));
-	if ( queryformats ) {
-		/* if we're supposed to list the video formats, do that now and go out */
-		check_videoIn(videoIn,(char *) videodevice);
-		free(videoIn);
-		SDL_Quit();
-		exit(1);
+	char* adev[2] = { "/dev/video0", "/dev/video1" };
+	
+	tCam* apcam[2];
+	
+	for (int i = 0; i < 2; ++i) {
+		apcam[i] = malloc(sizeof *apcam[i]);
+		memset(apcam[i], 0, sizeof *apcam[i]);
+		
+		
+		apcam[i]->UVC = (struct vdIn *) calloc(1, sizeof(struct vdIn));
+		if ( queryformats ) {
+			/* if we're supposed to list the video formats, do that now and go out */
+			check_videoIn(apcam[i]->UVC, adev[i]);
+			free(apcam[i]->UVC);
+			SDL_Quit();
+			exit(1);
+		}
+		if (init_videoIn (apcam[i]->UVC, adev[i], width, height, fps, format, grabmethod, avifilename) < 0)
+			exit(1);
+		/* if we're supposed to list the controls, do that now */
+		if ( querycontrols )
+			enum_controls(apcam[i]->UVC->fd);
+		
+		/* if we're supposed to read the control settings from a configfile, do that now */
+		if ( readconfigfile )
+			load_controls(apcam[i]->UVC->fd);
+		
+		
+		apcam[i]->SDL_Win = SDL_CreateWindow(title_act[A_VIDEO].title,
+			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+			apcam[i]->UVC->width/2, apcam[i]->UVC->height/2,
+			SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
+		);
+		if (!apcam[i]->SDL_Win)
+			abort();
+
+		apcam[i]->SDL_Surf = SDL_GetWindowSurface(apcam[i]->SDL_Win);
+		if (!apcam[i]->SDL_Surf)
+			abort();
+		
 	}
-	if (init_videoIn (videoIn, (char *) videodevice, width, height, fps, format, grabmethod, avifilename) < 0)
-		exit(1);
-	/* if we're supposed to list the controls, do that now */
-	if ( querycontrols )
-		enum_controls(videoIn->fd);
+	pcam = apcam[0];
+	//= SDL_SetVideoMode(800+640, 600, 0, SDL_VIDEO_Flags);
 	
-	/* if we're supposed to read the control settings from a configfile, do that now */
-	if ( readconfigfile )
-		load_controls(videoIn->fd);
+	gM.pScreen = pscreen = apcam[0]->SDL_Surf;
 	
+	//gM.pOverlay = overlay = SDL_CreateYUVOverlay(videoIn->width, videoIn->height, sdl_format, pscreen);
+	//p = (unsigned char *) overlay->pixels[0];
 	
-	gM.pScreen = pscreen = SDL_SetVideoMode(800+640, 600, 0, SDL_VIDEO_Flags);
-	
-	gM.pOverlay = overlay = SDL_CreateYUVOverlay(videoIn->width, videoIn->height, sdl_format, pscreen);
-	p = (unsigned char *) overlay->pixels[0];
-	dclip.x = 0;
-	dclip.y = 0;
-	dclip.w = 800;
-	dclip.h = 600;
-//	drect.h = (drect.w*gM.pOverlay->h)/gM.pOverlay->w;
-	
-	drect.w = videoIn->width;
-	drect.h = videoIn->height;
-	
-	if (enableRawStreamCapture) {
+/*	if (enableRawStreamCapture) {
 		videoIn->captureFile = fopen("stream.raw", "wb");
 		if(videoIn->captureFile == NULL) {
 			perror("Unable to open file for raw stream capturing");
@@ -467,9 +483,10 @@ int main(int argc, char **argv)
 		}
 	}
 	if (enableRawFrameCapture)
-		videoIn->rawFrameCapture = enableRawFrameCapture;
+		videoIn->rawFrameCapture = enableRawFrameCapture;*/
+	
 	initLut();
-	SDL_WM_SetCaption(title_act[A_VIDEO].title, NULL);
+	//SDL_WM_SetCaption(title_act[A_VIDEO].title, NULL);
 	lasttime = SDL_GetTicks();
 //	creatButt(videoIn->width, 32);
 	
@@ -480,24 +497,25 @@ int main(int argc, char **argv)
 //	SDL_UnlockYUVOverlay(overlay);
 	
 	/* initialize thread data */
-	ptdata.ptscreen = &pscreen;
-	ptdata.ptvideoIn = videoIn;
+	//ptdata.ptscreen = &pscreen;
+	//ptdata.ptvideoIn = videoIn;
 	ptdata.ptsdlevent = &sdlevent;
-	ptdata.drect = &drect;
+	//ptdata.drect = &drect;
 	affmutex = SDL_CreateMutex();
 	ptdata.affmutex = affmutex;
 //	mythread = SDL_CreateThread(eventThread, (void *) &ptdata);
-	mythread = SDL_CreateThread(muhaha_eventThread, (void *) &ptdata);
+	mythread = SDL_CreateThread(muhaha_eventThread, "muhaha_eventThread", (void *) &ptdata);
 	
 	// Initialize frame rate calculator
 	int loop_counter = 0;
-	const int frmrate_update = videoIn->fps / 2;
+	const int frmrate_update = apcam[0]->UVC->fps / 2;
 	lasttime = SDL_GetTicks();	// [ms]
 	
 	muhaha_Init ();
 	gM.pDst = p;
+	
 	/* main big loop */
-	while (videoIn->signalquit) {
+	while (apcam[0]->UVC->signalquit) {
 		// Measure the frame rate every (fps/2) frames
 		if(loop_counter ++ % frmrate_update == 0) {
 			currtime = SDL_GetTicks();	// [ms]
@@ -507,56 +525,37 @@ int main(int argc, char **argv)
 			lasttime = currtime;
 		}
 		
-		if (uvcGrab(videoIn) < 0) {
-			printf("Error grabbing\n");
-			break;
-		}
-		
-		/* if we're grabbing video, show the frame rate */
-		if (videoIn->toggleAvi)
-			printf("\rframe rate: %g     ", frmrate);
-		
-	//	SDL_SetClipRect(pscreen, 0);
-		
-		SDL_LockYUVOverlay(overlay);
-		
-	//	memcpy(p, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
-		muhaha ();
-		
-		SDL_UnlockYUVOverlay(overlay);
-		
-	//	SDL_SetClipRect(pscreen, &dclip);
-		
-		drect.x = gM.Draw_X;
-		drect.y = gM.Draw_Y;
-		drect.w = gM.Draw_W;
-		drect.h = gM.Draw_H;
-		SDL_DisplayYUVOverlay(overlay, &drect);
-		
-		if (videoIn->getPict) {
-			switch(videoIn->formatIn) {
-			case V4L2_PIX_FMT_MJPEG:
-				get_picture(videoIn->tmpbuffer,videoIn->buf.bytesused);
-				break;
-			case V4L2_PIX_FMT_YUYV:
-				get_pictureYV2(videoIn->framebuffer,videoIn->width,videoIn->height);
-				break;
-			default:
+		for (int i = 0; i < 2; ++i) {
+			tCam* pcam = apcam[i];
+			
+			if (uvcGrab(pcam->UVC) < 0) {
+				printf("Error grabbing\n");
 				break;
 			}
-			videoIn->getPict = 0;
-			printf("get picture !\n");
+			
+			SDL_LockSurface (pcam->SDL_Surf);
+			
+			for (int y = 0; y < pcam->SDL_Surf->h; ++y) {
+				for (int x = 0; x < pcam->SDL_Surf->w; ++x) {
+					tPix* pix = (tPix*)pcam->UVC->framebuffer + x + y* apcam[i]->UVC->width;
+					uint32_t* out = (uint32_t*)pcam->SDL_Surf->pixels + x + y* pcam->SDL_Surf->w;
+					*out = (pix->Y << 8) | (pix->Y << 0) | (pix->Y << 16);
+				}
+			}
+			
+			SDL_UnlockSurface (pcam->SDL_Surf);
+			SDL_UpdateWindowSurface(pcam->SDL_Win);
 		}
 		
 		SDL_LockMutex(affmutex);
 		ptdata.frmrate = frmrate;
-		SDL_WM_SetCaption(videoIn->status, NULL);
+		//SDL_WM_SetCaption(videoIn->status, NULL);
 		SDL_UnlockMutex(affmutex);
 	//	SDL_Delay(10);
 	//	SDL_LockSurface (gM.pScreen);
 	//	memset (gM.pScreen->pixels, 0xff, 32* 1024);
 	//	SDL_UnlockSurface (gM.pScreen);
-		SDL_Flip (gM.pScreen);
+		//SDL_Flip (gM.pScreen);
 	}
 	
 	muhaha_DeInit ();
@@ -566,16 +565,9 @@ int main(int argc, char **argv)
 	
 	/* if avifile is defined, we made a video: compute the exact fps and
 	   set it in the video */
-	if (videoIn->avifile != NULL) {
-		float fps=(videoIn->framecount/(videoIn->recordtime/1000));
-		fprintf(stderr,"setting fps to %f\n",fps);
-		AVI_set_video(videoIn->avifile, videoIn->width, videoIn->height,
-		              fps, "MJPG");
-		AVI_close(videoIn->avifile);
-	}
 	
-	close_v4l2(videoIn);
-	free(videoIn);
+	//close_v4l2(videoIn);
+	//free(videoIn);
 	destroyButt();
 	freeLut();
 	printf("Cleanup done. Exiting ...\n");
@@ -599,7 +591,7 @@ GUI_whichbutton(int x, int y, SDL_Surface * pscreen, struct vdIn *videoIn)
 	return ((action_gui) retval);
 }
 
-action_gui GUI_keytoaction(SDLKey key)
+action_gui GUI_keytoaction(SDL_Keycode key)
 {
 	int i = 0;
 	while(keyaction[i].key) {
@@ -644,14 +636,14 @@ static int eventThread(void *data)
 				SDL_GetMouseState(&x, &y);
 				curr_action = GUI_whichbutton(x, y, pscreen, videoIn);
 				break;
-			case SDL_VIDEORESIZE:
+		/*	case SDL_VIDEORESIZE:
 				pscreen =
 				      SDL_SetVideoMode(sdlevent->resize.w,
 				                       sdlevent->resize.h, 0,
 				                       SDL_VIDEO_Flags);
 				drect->w = sdlevent->resize.w;
 				drect->h = sdlevent->resize.h;
-				break;
+				break;*/
 			case SDL_KEYDOWN:
 				curr_action = GUI_keytoaction(sdlevent->key.keysym.sym);
 				if (curr_action != A_VIDEO)

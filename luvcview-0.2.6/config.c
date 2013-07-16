@@ -296,7 +296,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_f (Cam.Exposure)
 	drw_f (Cam.Zoom)
 	
-	Cam_Param_Set (&gM.Cam);
+	//Cam_Param_Set (&gM.Cam);
 	
 	gM.View_W = gM.Cam.Image_W;
 	gM.View_H = gM.Cam.Image_H;
@@ -352,7 +352,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	
 	Proj_Cam ();
 	
-	Cam_Param_Set (&gM.Cam);
+	//Cam_Param_Set (&gM.Cam);
 	
 	drw_v4f (Head.Mod.PC);
 	drw_v4f (Head.Mod.PL);
