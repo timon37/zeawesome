@@ -32,7 +32,6 @@ tM gM =
 	.DeSat = 0,
 	.Head = {
 		.DotC = {
-			.P = {400, 280},
 			.Ax = 20,
 			.Ay = 20,
 			.Aa = 0,
@@ -49,7 +48,6 @@ tM gM =
 			.LinView = {950, 0},
 		},
 		.DotL = {
-			.P = {200, 300},
 			.Ax = 20,
 			.Ay = 20,
 			.Aa = 0,
@@ -66,7 +64,6 @@ tM gM =
 			.LinView = {1050, 0},
 		},
 		.DotR = {
-			.P = {600, 300},
 			.Ax = 20,
 			.Ay = 20,
 			.Aa = 0,
@@ -84,7 +81,6 @@ tM gM =
 		},
 	},
 	.Left = {
-		.P = {280, 240},
 		.Ax = 30,
 		.Ay = 30,
 		.Aa = 0,
@@ -108,7 +104,6 @@ tM gM =
 		.LinView = {640, 0},
 	},
 	.Right = {
-		.P = {360, 240},
 		.Ax = 30,
 		.Ay = 30,
 		.Aa = 0,
@@ -494,6 +489,8 @@ void	V4f_DrawPosPos	(tV4f* ppos0, tV4f* ppos1)
 
 void	V4f_ScreenPosNorm	(tV4f* ppos0, tV2f* pret)
 {
+	abort();
+	#if 0
 	tV4f p0 = *ppos0;
 	if (gM.Eye_Line_Ray) {
 	/*	float ax = M_PI_2 - gM.Cam.Image_FOV_W/2 + (peye->P.x/gM.Cam.Image_W)*gM.Cam.Image_FOV_W;
@@ -537,6 +534,7 @@ void	V4f_ScreenPosNorm	(tV4f* ppos0, tV2f* pret)
 		p0.z /= p0.w;
 	}
 	pret->x = p0.x;	pret->y = p0.y;
+	#endif
 }
 void	V4f_ScreenPosf	(tV4f* ppos0, tV2f* pret)
 {
@@ -662,77 +660,6 @@ void	M4f_Ortho		(tM4f* pproj, float w, float h, float n, float f)
 	pproj->x23 = -(f+n) / (f-n);
 	
 	pproj->x33 = 1;
-	
-}
-void	Proj_Cam		()
-{
-	if (0) {
-		float fd = dpow2(gM.Cam.Full_W) + dpow2(gM.Cam.Full_H);
-		float id = dpow2(gM.Cam.Image_Zoom*gM.Cam.Image_W) + dpow2(gM.Cam.Image_Zoom*gM.Cam.Image_H);
-	//	float id = ddist(gM.Cam.Image_W, gM.Cam.Image_H);
-		gM.Cam.Image_FOV = id/fd * gM.Cam.Full_FOV;
-	}
-	if (1) {
-		float fd = gM.Cam.Full_W;
-		float id = gM.Cam.Image_Zoom*gM.Cam.Image_W;
-	//	float id = ddist(gM.Cam.Image_W, gM.Cam.Image_H);
-		gM.Cam.Image_FOV = id/fd * gM.Cam.Full_FOV;
-	}
-	
-	float fov = gM.Cam.Image_FOV*deg2rad;
-	float a = atan2(gM.Cam.Image_H, gM.Cam.Image_W);
-	
-	if (gM.Cam.Image_FOV_W == 0)
-		gM.Cam.Image_FOV_W = fov*cos(a);
-	if (gM.Cam.Image_FOV_H == 0)
-		gM.Cam.Image_FOV_H = fov*sin(a);
-	
-	printf ("Image_FOV %f  W %f H %f	a %f\n", gM.Cam.Image_FOV, gM.Cam.Image_FOV_W*rad2deg, gM.Cam.Image_FOV_H*rad2deg, a);
-	
-	gM.Proj_W = gM.Proj_N*tan(gM.Cam.Image_FOV_W/2.0f);
-	gM.Proj_H = gM.Proj_N*tan(gM.Cam.Image_FOV_H/2.0f);
-	
-	gM.Proj_L = -gM.Proj_W;
-	gM.Proj_R = gM.Proj_W;
-	gM.Proj_B = -gM.Proj_H;
-	gM.Proj_T = gM.Proj_H;
-	
-	gM.Proj_W *= 2;
-	gM.Proj_H *= 2;
-	
-/*	gM.Proj.x00 = gM.Proj_N / (gM.Proj_W/2);
-	gM.Proj.x11 = gM.Proj_N / (gM.Proj_H/2);
-	
-	gM.Proj.x22 = -(gM.Proj_F+gM.Proj_N) / (gM.Proj_F - gM.Proj_N);
-	
-	gM.Proj.x23 = (-2*gM.Proj_F*gM.Proj_N) / (gM.Proj_F - gM.Proj_N);
-	gM.Proj.x32 = -1;/**/
-	M4f_Frustrum (&gM.Proj, gM.Proj_W, gM.Proj_H, gM.Proj_N, gM.Proj_F);
-	
-	
-	gM.Cam.cvCam = cvCreateMatHeader(3, 3, CV_32FC1);
-	cvCreateData(gM.Cam.cvCam);
-	cvSet2D (gM.Cam.cvCam, 0, 0, cvScalarAll(2058.4890867164763));
-	cvSet2D (gM.Cam.cvCam, 0, 1, cvScalarAll(0));
-	cvSet2D (gM.Cam.cvCam, 0, 2, cvScalarAll(959.50000000000000));
-	cvSet2D (gM.Cam.cvCam, 1, 0, cvScalarAll(0));
-	cvSet2D (gM.Cam.cvCam, 1, 1, cvScalarAll(2058.4890867164763));
-	cvSet2D (gM.Cam.cvCam, 1, 2, cvScalarAll(539.50000000000000));
-	cvSet2D (gM.Cam.cvCam, 2, 0, cvScalarAll(0));
-	cvSet2D (gM.Cam.cvCam, 2, 1, cvScalarAll(0));
-	cvSet2D (gM.Cam.cvCam, 2, 2, cvScalarAll(1));
-	
-	gM.Cam.cvDist = cvCreateMatHeader(5, 1, CV_32FC1);
-	cvCreateData(gM.Cam.cvDist);
-	cvSet2D (gM.Cam.cvDist, 0, 0, cvScalarAll(-0.023321480666943440));
-	cvSet2D (gM.Cam.cvDist, 1, 0, cvScalarAll(0.69231202113335466));
-	cvSet2D (gM.Cam.cvDist, 2, 0, cvScalarAll(0));
-	cvSet2D (gM.Cam.cvDist, 3, 0, cvScalarAll(0));
-	cvSet2D (gM.Cam.cvDist, 4, 0, cvScalarAll(-3.5279699461953733));
-	
-	
-	PrintMat (gM.Cam.cvCam);
-	PrintMat (gM.Cam.cvDist);
 	
 }
 
@@ -1617,6 +1544,8 @@ float	NN_Sphere	(tV2si* ppos, float ir, float or, u08 dark, u08 bright)
 
 void	Cam_Pos2Ray	(tV2f pos, tV4f* pp0, tV4f* pp1, tV4f* pvec)
 {
+	abort();
+	#if 0
 	tV4f p0 = {0, 0, 0, 1};
 	tV4f p1 = {0, 0, -1, 1};
 	
@@ -1645,12 +1574,14 @@ void	Cam_Pos2Ray	(tV2f pos, tV4f* pp0, tV4f* pp1, tV4f* pvec)
 	if (pvec) {
 		*pvec = p1;
 	}
+	#endif
 }
 
 
 void	Cam_Retina_Ray	(tEye* peye, tV4f* pp0, tV4f* pp1, tV4f* pvec)
 {
-	Cam_Pos2Ray (peye->P, pp0, pp1, pvec);
+	abort();
+	//Cam_Pos2Ray (peye->P, pp0, pp1, pvec);
 }
 
 
@@ -1670,17 +1601,19 @@ void	Cam_Param_Set	(tCam* pcam)
 	dcam_set (V4L2_CID_AUTO_WHITE_BALANCE, 1);
 	dcam_set (V4L2_CID_AUTOGAIN, 1);
 	
-	if (gM.Cam.Focus == -1)
+	if (pcam->Focus == -1)
 		dcam_set(V4L2_CID_FOCUS_AUTO, 1);
 	else {
 		dcam_set(V4L2_CID_FOCUS_AUTO, 0);
 		
 		if ((value = v4l2SetControl(pcam->UVC, V4L2_CID_FOCUS_ABSOLUTE, 1)) < 0)
 			printf("Set CT_FOCUS_ABSOLUTE_CONTROL to %ld error\n", value);
-		if ((value = v4l2SetControl(pcam->UVC, V4L2_CID_FOCUS_ABSOLUTE, gM.Cam.Focus)) < 0)
+		if ((value = v4l2SetControl(pcam->UVC, V4L2_CID_FOCUS_ABSOLUTE, pcam->Focus)) < 0)
 			printf("Set CT_FOCUS_ABSOLUTE_CONTROL to %ld error\n", value);
 	}
-	if (gM.Cam.Exposure == -1) {
+	printf ("V4L2_CID_FOCUS_ABSOLUTE %d\n", v4l2GetControl(pcam->UVC, V4L2_CID_FOCUS_ABSOLUTE));
+	
+	if (pcam->Exposure == -1) {
 		//V4L2_EXPOSURE_SHUTTER_PRIORITY	V4L2_EXPOSURE_APERTURE_PRIORITY
 		dcam_set(V4L2_CID_EXPOSURE_AUTO, V4L2_EXPOSURE_AUTO);
 		dcam_set(V4L2_CID_EXPOSURE_AUTO_PRIORITY, V4L2_EXPOSURE_APERTURE_PRIORITY);
@@ -1692,12 +1625,12 @@ void	Cam_Param_Set	(tCam* pcam)
 			printf("Set V4L2_CID_EXPOSURE_AUTO to %ld error\n", value);
 	//	dcam_set(V4L2_CID_EXPOSURE_AUTO, V4L2_EXPOSURE_MANUAL);
 		
-	//	if ((value = v4l2SetControl(videoIn, V4L2_CID_EXPOSURE_ABSOLUTE, gM.Cam.Exposure-30)) < 0)
+	//	if ((value = v4l2SetControl(videoIn, V4L2_CID_EXPOSURE_ABSOLUTE, pcam->Exposure-30)) < 0)
 	//		printf("Set V4L2_CID_EXPOSURE_ABSOLUTE to %ld error\n", value);
-		if ((value = v4l2SetControl(pcam->UVC, V4L2_CID_EXPOSURE_ABSOLUTE, gM.Cam.Exposure)) < 0)
+		if ((value = v4l2SetControl(pcam->UVC, V4L2_CID_EXPOSURE_ABSOLUTE, pcam->Exposure)) < 0)
 			printf("Set V4L2_CID_EXPOSURE_ABSOLUTE to %ld error\n", value);
 	}
-	if ((value = v4l2SetControl(pcam->UVC, V4L2_CID_ZOOM_ABSOLUTE, gM.Cam.Zoom)) < 0)
+	if ((value = v4l2SetControl(pcam->UVC, V4L2_CID_ZOOM_ABSOLUTE, pcam->Zoom)) < 0)
 		printf("Set V4L2_CID_ZOOM_ABSOLUTE to %ld error\n", value);
 	#undef dcam_set
 }
@@ -1705,7 +1638,7 @@ void	Cam_Param_Set	(tCam* pcam)
 
 
 
-
+#if 0
 void	Track_Point_Init		(tTrack_Point* p)
 {
 	p->P.x = 0;
@@ -2096,21 +2029,21 @@ void	Track_Point_Draw		(tTrack_Point* p)
 	
 }
 
-
+#endif
 
 
 void	Head_Point_Train	(tHead* p)
 {
 	si i = 0;
-	for (; i < dHead_Point_NUM; ++i)
-		Track_Point_Train (p->aPoint + i);
+	//for (; i < dHead_Point_NUM; ++i)
+		//Track_Point_Train (p->aPoint + i);
 }
 
 void	Head_Init		(tHead* p)
 {
 	si i = 0;
-	for (; i < dHead_Point_NUM; ++i)
-		Track_Point_Init (p->aPoint + i);
+	//for (; i < dHead_Point_NUM; ++i)
+		//Track_Point_Init (p->aPoint + i);
 	
 	Eye_Init (&p->DotC);
 	Eye_Init (&p->DotL);
@@ -2134,8 +2067,8 @@ void	Head_Conf		(tHead* p)
 	Eye_Conf (&p->DotR);
 	
 	si i = 0;
-	for (; i < dHead_Point_NUM; ++i)
-		Track_Point_Conf (p->aPoint + i);
+	//for (; i < dHead_Point_NUM; ++i)
+		//Track_Point_Conf (p->aPoint + i);
 }
 
 
@@ -2159,8 +2092,8 @@ void	Head_Draw		(tHead* p)
 	gCol.V = 0x0;
 	
 	si i;
-	for (i = 0; i < dHead_Point_NUM; ++i)
-		Track_Point_Draw (p->aPoint + i);
+	//for (i = 0; i < dHead_Point_NUM; ++i)
+		//Track_Point_Draw (p->aPoint + i);
 	
 	{
 		tV4f p0 = gM.Head.P; V4f_add_V4f (&p0, &gM.Head.N);
@@ -2405,6 +2338,7 @@ void	Head_Draw		(tHead* p)
 	}
 }
 
+#if 1
 float	Head_Calc_a3	(tHead* p, float* pa)
 {
 	pa[0] = atan2(p->DotR.P.y - p->DotL.P.y, p->DotR.P.x - p->DotL.P.x);
@@ -3181,6 +3115,7 @@ void	Head_Eye_VectorGlob	(tHead* p, tEye* peye, tV4f* pr0, tV4f* pr1, tV4f* prv)
 	}
 }
 
+#endif
 
 void PrintMat(CvMat *A)
 {
@@ -4379,6 +4314,8 @@ void	Glint_Sphere_Dbg_Print	(tV4f* ppos, float r)
 
 void	Eye_Glint_Dbg_Print	(tEye* peye)
 {
+	abort();
+	/*
 	Glint_Sphere_Dbg_Print (&peye->GP, peye->LR);
 	
 	Col_EyeSet (peye);
@@ -4420,7 +4357,7 @@ void	Eye_Glint_Dbg_Print	(tEye* peye)
 			Dbg_V4f_DrawPosPos (&eye, &vec);
 			Dbg_V4f_DrawPoint (&eye);
 		}
-	}
+	}*/
 }
 
 void	Glint_Dbg_Print	()
@@ -4527,6 +4464,149 @@ void	Eye_Glint_Gaze	(tEye* peye)
 
 
 
+void	Cam_Proj_Conf		(tCam* pcam)
+{
+	if (0) {
+		float fd = dpow2(pcam->Full_W) + dpow2(pcam->Full_H);
+		float id = dpow2(pcam->Image_Zoom*pcam->Image_W) + dpow2(pcam->Image_Zoom*pcam->Image_H);
+	//	float id = ddist(pcam->Image_W, pcam->Image_H);
+		pcam->Image_FOV = id/fd * pcam->Full_FOV;
+	}
+	if (1) {
+		float fd = pcam->Full_W;
+		float id = pcam->Image_Zoom*pcam->Image_W;
+	//	float id = ddist(pcam->Image_W, pcam->Image_H);
+		pcam->Image_FOV = id/fd * pcam->Full_FOV;
+	}
+	
+	float fov = pcam->Image_FOV*deg2rad;
+	float a = atan2(pcam->Image_H, pcam->Image_W);
+	
+	if (pcam->Image_FOV_W == 0)
+		pcam->Image_FOV_W = fov*cos(a);
+	if (pcam->Image_FOV_H == 0)
+		pcam->Image_FOV_H = fov*sin(a);
+	
+	printf ("Image_FOV %f  W %f H %f	a %f\n", pcam->Image_FOV, pcam->Image_FOV_W*rad2deg, pcam->Image_FOV_H*rad2deg, a);
+	
+	gM.Proj_W = gM.Proj_N*tan(pcam->Image_FOV_W/2.0f);
+	gM.Proj_H = gM.Proj_N*tan(pcam->Image_FOV_H/2.0f);
+	
+	gM.Proj_L = -gM.Proj_W;
+	gM.Proj_R = gM.Proj_W;
+	gM.Proj_B = -gM.Proj_H;
+	gM.Proj_T = gM.Proj_H;
+	
+	gM.Proj_W *= 2;
+	gM.Proj_H *= 2;
+	
+/*	gM.Proj.x00 = gM.Proj_N / (gM.Proj_W/2);
+	gM.Proj.x11 = gM.Proj_N / (gM.Proj_H/2);
+	
+	gM.Proj.x22 = -(gM.Proj_F+gM.Proj_N) / (gM.Proj_F - gM.Proj_N);
+	
+	gM.Proj.x23 = (-2*gM.Proj_F*gM.Proj_N) / (gM.Proj_F - gM.Proj_N);
+	gM.Proj.x32 = -1;/**/
+	M4f_Frustrum (&gM.Proj, gM.Proj_W, gM.Proj_H, gM.Proj_N, gM.Proj_F);
+	
+	
+	pcam->cvCam = cvCreateMatHeader(3, 3, CV_32FC1);
+	cvCreateData(pcam->cvCam);
+	cvSet2D (pcam->cvCam, 0, 0, cvScalarAll(2058.4890867164763));
+	cvSet2D (pcam->cvCam, 0, 1, cvScalarAll(0));
+	cvSet2D (pcam->cvCam, 0, 2, cvScalarAll(959.50000000000000));
+	cvSet2D (pcam->cvCam, 1, 0, cvScalarAll(0));
+	cvSet2D (pcam->cvCam, 1, 1, cvScalarAll(2058.4890867164763));
+	cvSet2D (pcam->cvCam, 1, 2, cvScalarAll(539.50000000000000));
+	cvSet2D (pcam->cvCam, 2, 0, cvScalarAll(0));
+	cvSet2D (pcam->cvCam, 2, 1, cvScalarAll(0));
+	cvSet2D (pcam->cvCam, 2, 2, cvScalarAll(1));
+	
+	pcam->cvDist = cvCreateMatHeader(5, 1, CV_32FC1);
+	cvCreateData(pcam->cvDist);
+	cvSet2D (pcam->cvDist, 0, 0, cvScalarAll(-0.023321480666943440));
+	cvSet2D (pcam->cvDist, 1, 0, cvScalarAll(0.69231202113335466));
+	cvSet2D (pcam->cvDist, 2, 0, cvScalarAll(0));
+	cvSet2D (pcam->cvDist, 3, 0, cvScalarAll(0));
+	cvSet2D (pcam->cvDist, 4, 0, cvScalarAll(-3.5279699461953733));
+	
+	
+	PrintMat (pcam->cvCam);
+	PrintMat (pcam->cvDist);
+}
+int	Cam_Loop		(tCam* pcam)
+{
+	while (gM.aCam[0].UVC->signalquit) {
+		SDL_SemWait (gM.sWaitForUpdate);
+		
+	/*	for (int y = 0; y < pcam->SDL_Surf->h; ++y) {
+			for (int x = 0; x < pcam->SDL_Surf->w; ++x) {
+				tPix* pix = (tPix*)pcam->UVC->framebuffer + x + y* gM.apCam[i]->UVC->width;
+				uint32_t* out = (uint32_t*)pcam->SDL_Surf->pixels + x + y* pcam->SDL_Surf->w;
+				*out = (pix->Y << 8) | (pix->Y << 0) | (pix->Y << 16);
+			}
+		}/**/
+		//printf("cam %d write start\n", pcam->Idx);
+		SDL_LockSurface (pcam->SDL_Surf);
+		for (int y = 0; y < pcam->SDL_Surf->h; ++y) {
+			for (int x = 0; x < pcam->SDL_Surf->w; ++x) {
+				tPix* pix = (tPix*)pcam->UVC->framebuffer + x*2 + y*2 * pcam->UVC->width;
+				uint32_t* out = (uint32_t*)pcam->SDL_Surf->pixels + x + y* pcam->SDL_Surf->w;
+				uint16_t val = (pix[0].Y + pix[1].Y) / 2;
+				*out = (val << 8) | (val << 0) | (val << 16);
+			}
+		}
+		
+		Eye_V_Pre (&gM.Head.DotC, pcam);
+		Eye_Fit (&gM.Head.DotC, pcam);
+		Eye_V_Post (&gM.Head.DotC, pcam);
+		Eye_Clip (&gM.Head.DotC);
+		
+	//	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
+		
+		Eye_V_Pre (&gM.Head.DotL, pcam);
+		Eye_Fit (&gM.Head.DotL, pcam);
+		Eye_V_Post (&gM.Head.DotL, pcam);
+		Eye_Clip (&gM.Head.DotL);
+		
+	//	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
+		
+		Eye_V_Pre (&gM.Head.DotR, pcam);
+		Eye_Fit (&gM.Head.DotR, pcam);
+		Eye_V_Post (&gM.Head.DotR, pcam);
+		Eye_Clip (&gM.Head.DotR);
+		
+	//	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
+		/*
+	//	Eye_V_Pre (&gM.Right);
+		Eye_Fit (&gM.Right);
+	//	Eye_V_Post (&gM.Right);
+		Eye_Clip (&gM.Right);
+		
+	//	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
+		
+	//	Eye_V_Pre (&gM.Left);
+		Eye_Fit (&gM.Left);
+	//	Eye_V_Post (&gM.Left);
+		Eye_Clip (&gM.Left);
+		
+		Eye_Draw (&gM.Left);
+		Eye_Draw (&gM.Right);
+	//	printf ("Eye pos Left %f %f\n", gM.Left.P.x, gM.Left.P.y);
+	//	printf ("Eye pos Righ %f %f\n", gM.Right.P.x, gM.Right.P.y);
+		*/
+		
+		Eye_Draw (&gM.Head.DotC, pcam);
+		Eye_Draw (&gM.Head.DotL, pcam);
+		Eye_Draw (&gM.Head.DotR, pcam);
+		
+		SDL_UnlockSurface (pcam->SDL_Surf);
+		//printf("cam %d write start end\n", pcam->Idx);
+		//muhaha();
+		
+		SDL_SemPost (gM.sWaitForCams);
+	}
+}
 
 dyn_config gM_DC;
 int	muhaha_Config_Thread	(void *data)
@@ -4739,11 +4819,10 @@ void	muhaha_Init	()
 			exit (1);
 		}
 	}
-//	REvDev_Init (tREvDev* p);
 	
-//	XkbSetDetectableAutorepeat (gM.X.pDisp, True, NULL);
+	gM.sWaitForCams = SDL_CreateSemaphore(0);
+	gM.sWaitForUpdate = SDL_CreateSemaphore(0);
 	
-//	angle_test ();
 	gM.X.Queue_N = 0;
 	gM.X.Queue_C = 0;
 	
@@ -4767,6 +4846,15 @@ void	muhaha_Init	()
 	dyn_config_init(&gM_DC);
 	dyn_config_read(&gM_DC, "config.yaml");
 	/*mythread = */SDL_CreateThread(muhaha_Config_Thread, "muhaha_Config_Thread", (void *)NULL);
+	
+	
+	for (int i = 0; i < gM.Cam_N; ++i) {
+		tCam* pcam = &gM.aCam[i];
+		Cam_Param_Set (pcam);
+		//Cam_Param_Set (pcam);
+		
+		Cam_Proj_Conf (pcam);
+	}
 	
 	
 	M4f_Iden (&gM.World);
@@ -4917,6 +5005,8 @@ void	muhaha_Init	()
 	#if dM_Actions_Mode == 2
 	/*mythread = */SDL_CreateThread(muhaha_chrdev_Thread, "muhaha_chrdev_Thread", (void *)NULL);
 	#endif
+	
+	/*mythread =*/ SDL_CreateThread(muhaha_eventThread, "muhaha_eventThread", (void *) &ptdata);
 }
 
 
@@ -5060,21 +5150,21 @@ void	muhaha	()
 		//	printf ("\n");
 		}/**/
 	}else {
-		memcpy(gM.pDst, pcam->UVC->framebuffer, pcam->UVC->width * (pcam->UVC->height) * 2);
+		//memcpy(gM.pDst, pcam->UVC->framebuffer, pcam->UVC->width * (pcam->UVC->height) * 2);
 	}
 /*	printf ("World:\n");
 	M4f_Print (&gM.World);
 	printf ("Proj:\n");
 	M4f_Print (&gM.Proj);/**/
-	
+	/*
 	for (y = 0; y < 600; ++y)
 		for (x = 800; x < 800+640; ++x)
 			dspix(x, y) = 0;
+	*/
 	
+	//Track_Point_Step (gM.Head.aPoint + 0);
 	
-	Track_Point_Step (gM.Head.aPoint + 0);
-	
-	
+	/*
 	if (1) {
 	//	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
 		
@@ -5120,7 +5210,7 @@ void	muhaha	()
 		Eye_Draw (&gM.Head.DotL);
 		Eye_Draw (&gM.Head.DotR);
 	}
-	
+	*/
 	if (0) {
 		gCol.Y = 0xFF;
 		gCol.U = 0x0;
@@ -5554,17 +5644,17 @@ void	muhaha	()
 	Screen_Eye_Print (gM.aScreen + 2, &gM.Left);
 	Screen_Eye_Print (gM.aScreen + 2, &gM.Right);/**/
 	
-	if (0) {
+/*	if (0) {
 		tV2si pos;
 		pos.x = gM.Head.DotL.P.x;
 		pos.y = gM.Head.DotL.P.y;
 		printf ("ehh pos	%f	%f\n", gM.Head.DotL.P.x, gM.Head.DotL.P.y);
 		printf ("ehhh %f\n", NN_Sphere (&pos, 50, 55, 0, 0));
-	}
+	}*/
 	
 //	dprojline3(0, 0, 1, 400.0, 300.0, 1);
 	
-	
+	#if 0
 	if (0) {
 		Head_Calc_M_Rel (&gM.Head, &gM.HeadC);
 		
@@ -5694,7 +5784,7 @@ void	muhaha	()
 			}
 		}
 	}
-	
+	#endif
 //	point_clip (&gM.GazeL);
 //	point_clip (&gM.GazeR);
 //	point_clip (&gM.Gaze);
@@ -5799,6 +5889,63 @@ void	muhaha	()
 	SDL_mutexP (gM.mutMainIsIn);
 }
 
+void	muhaha_Loop	()
+{
+	
+	for (int i = 0; i < gM.Cam_N; ++i) {
+		tCam* pcam = &gM.aCam[i];
+		
+		//SDL_LockSurface (pcam->SDL_Surf);
+		
+		pcam->SDL_Thread = SDL_CreateThread (Cam_Loop, "Cam Thread", (void *)pcam);
+	}/**/
+	SDL_SemPostN (gM.sWaitForUpdate, gM.Cam_N);
+	/* main big loop */
+	while (gM.aCam[0].UVC->signalquit) {
+		// Measure the frame rate every (fps/2) frames
+	/*	if(loop_counter ++ % frmrate_update == 0) {
+			currtime = SDL_GetTicks();	// [ms]
+			if (currtime - lasttime > 0) {
+				frmrate = frmrate_update * (1000.0 / (currtime - lasttime));
+			}
+			lasttime = currtime;
+		}*/
+		
+	/*	for (int i = 0; i < gM.Cam_N; ++i) {
+			tCam* pcam = &gM.aCam[i];
+			
+		}*/
+		
+		//SDL_LockMutex(affmutex);
+		//ptdata.frmrate = frmrate;
+		//SDL_WM_SetCaption(videoIn->status, NULL);
+		//SDL_UnlockMutex(affmutex);
+	//	SDL_Delay(10);
+		
+		
+		SDL_SemWaitN (gM.sWaitForCams, gM.Cam_N);
+		//printf ("Main update start  ");
+		for (int i = 0; i < gM.Cam_N; ++i) {
+			tCam* pcam = &gM.aCam[i];
+			
+			SDL_UpdateWindowSurface (pcam->SDL_Win);
+		}
+		for (int i = 0; i < gM.Cam_N; ++i) {
+			tCam* pcam = &gM.aCam[i];
+			if (uvcGrab(pcam->UVC) < 0) {
+				printf("Error grabbing\n");
+				abort();
+			}
+		}
+		for (int i = 0; i < gM.Cam_N; ++i) {
+			tCam* pcam = &gM.aCam[i];
+		}
+		//printf ("end\n");
+		
+		SDL_SemPostN (gM.sWaitForUpdate, gM.Cam_N);
+		
+	}
+}
 
 int muhaha_eventThread(void *data)
 {
@@ -5810,7 +5957,8 @@ int muhaha_eventThread(void *data)
 	SDL_Rect *drect = gdata->drect;
 	SDL_mutex *affmutex = gdata->affmutex;
 	
-	int x, y;
+	static int x, y;
+	static tCam* pcam = NULL;
 	int mouseon = 0;
 	int value = 0;
 	int len = 0;
@@ -5821,13 +5969,14 @@ int muhaha_eventThread(void *data)
 	
 	si last_ms = SDL_GetTicks();
 //	action_gui curr_action = A_VIDEO;
-	while (pcam->UVC->signalquit) {
+	while (gM.aCam[0].UVC->signalquit) {
 		SDL_LockMutex(affmutex);
 		
-		SDL_GetMouseState(&x, &y);
-		//x = x*gM.pOverlay->w / 800;
-		//y = y*gM.pOverlay->h / 600;
-		
+		tV2f pos;
+		if (pcam) {
+			pos.x = x*pcam->Image_W / pcam->SDL_Surf->w;
+			pos.y = y*pcam->Image_H / pcam->SDL_Surf->h;
+		}
 		float frmrate = gdata->frmrate;
 		
 		while (SDL_PollEvent(sdlevent)) {	//scan the event queue
@@ -5844,22 +5993,25 @@ int muhaha_eventThread(void *data)
 					gM.DeSat = !gM.DeSat;
 					break;
 				case SDLK_o:
-					gM.Head.DotC.P.x = x;
-					gM.Head.DotC.P.y = y;
-					gM.Head.DotC.V.x = 0;
-					gM.Head.DotC.V.y = 0;
+					if (pcam) {
+						gM.Head.DotC.aCam[pcam->Idx].P = pos;
+						gM.Head.DotC.aCam[pcam->Idx].V.x = 0;
+						gM.Head.DotC.aCam[pcam->Idx].V.y = 0;
+					}
 					break;
 				case SDLK_a:
-					gM.Head.DotL.P.x = x;
-					gM.Head.DotL.P.y = y;
-					gM.Head.DotL.V.x = 0;
-					gM.Head.DotL.V.y = 0;
+					if (pcam) {
+						gM.Head.DotL.aCam[pcam->Idx].P = pos;
+						gM.Head.DotL.aCam[pcam->Idx].V.x = 0;
+						gM.Head.DotL.aCam[pcam->Idx].V.y = 0;
+					}
 					break;
 				case SDLK_e:
-					gM.Head.DotR.P.x = x;
-					gM.Head.DotR.P.y = y;
-					gM.Head.DotR.V.x = 0;
-					gM.Head.DotR.V.y = 0;
+					if (pcam) {
+						gM.Head.DotR.aCam[pcam->Idx].P = pos;
+						gM.Head.DotR.aCam[pcam->Idx].V.x = 0;
+						gM.Head.DotR.aCam[pcam->Idx].V.y = 0;
+					}
 					break;
 				case SDLK_SEMICOLON:
 					gM.Left.P.x = x;
@@ -5872,7 +6024,7 @@ int muhaha_eventThread(void *data)
 				case SDLK_y:
 					gM.Head.aPoint[0].P.x = x;
 					gM.Head.aPoint[0].P.y = y;
-					break;
+					break;/**/
 			//	case SDLK_SPACE:
 			//		gM.HeadC = gM.Head;
 			//		break;
@@ -6003,7 +6155,16 @@ int muhaha_eventThread(void *data)
 				}
 				break;
 			case SDL_MOUSEMOTION:
-			//	curr_action = GUI_whichbutton(x, y, pscreen, videoIn);
+				//curr_action = GUI_whichbutton(x, y, pscreen, videoIn);
+				x = sdlevent->motion.x;
+				y = sdlevent->motion.y;
+				pcam = NULL;
+				for (int i = 0; i < gM.Cam_N; ++i) {
+					if (sdlevent->motion.windowID == SDL_GetWindowID(gM.aCam[i].SDL_Win)) {
+						pcam = &gM.aCam[i];
+						break;
+					}
+				}
 				break;
 		/*	case SDL_VIDEORESIZE:
 			/*	pscreen =
@@ -6372,14 +6533,20 @@ void svd(int m, int n, double **a, double **p, double *d, double **q)
 
 void	Ehh_Draw_Line_2d	(si x0, si y0, si x1, si y1)
 {
+	x0 /= 2;
+	y0 /= 2;
+	x1 /= 2;
+	y1 /= 2;
 	si dx = x1 - x0;
 	si dy = y1 - y0;
 	
-	ui dst_w = pcam->UVC->width;
-	ui dst_h = pcam->UVC->height;
-	tPix *pdst = (tPix*)gM.pDst;
+	ui dst_w = pcam->SDL_Surf->w;
+	ui dst_h = pcam->SDL_Surf->h;
+	tRGBA *pdst = (tRGBA*)pcam->SDL_Surf->pixels;
 	
-	tPix col = gCol;
+	//tPix col = gCol;
+	tRGBA col;	col.R = 0xFF;	col.G = 0xFF;	col.B = 0xFF;	col.A = 0xFF;
+	
 	
 	if (dx == 0 && dy == 0) {
 		if ( (x0 >= 0) && (x0 < dst_w) && (y0 >= 0) && (y0 < dst_h) )

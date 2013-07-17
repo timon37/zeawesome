@@ -10,7 +10,7 @@ INSTALL=install
 APP_BINARY=luvcview
 BIN=/usr/local/bin
 MATH_LIB = -lm -lyaml
-SDLLIBS = $(shell ../SDL2_bin/bin/sdl2-config --libs) 
+SDLLIBS = $(shell ../SDL2_bin/bin/sdl2-config --libs) `pkg-config opencv --libs`
 SDLFLAGS = $(shell ../SDL2_bin/bin/sdl2-config --cflags)
 V4L2LIBS = $(shell pkg-config --libs libv4l2)
 V4L2FLAGS = $(shell pkg-config --cflags libv4l2)
@@ -26,7 +26,7 @@ VERSION = 0.2.6
 #           -Wno-unused
 #           -Wunused
 
-CFLAGS += -O2 -ggdb3 -std=gnu99 `pkg-config opencv --cflags --libs` `pkg-config fann --cflags --libs` -lX11 -lXi -lXtst  -DUSE_SDL  -DLINUX -DVERSION=\"$(VERSION)\" $(SDLFLAGS) $(V4L2FLAGS) $(WARNINGS) 
+CFLAGS += -O2 -ggdb3 -std=gnu99 `pkg-config opencv --cflags` `pkg-config fann --cflags --libs` -lX11 -lXi -lXtst  -DUSE_SDL  -DLINUX -DVERSION=\"$(VERSION)\" $(SDLFLAGS) $(V4L2FLAGS) $(WARNINGS) 
 CPPFLAGS = $(CFLAGS)
 
 OBJECTS = luvcview.o muhaha.o Eye.o muhaha_ransac_ellipse.o config.o gab.o Posit.o color.o utils.o v4l2uvc.o gui.o avilib.o

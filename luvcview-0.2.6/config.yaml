@@ -1,13 +1,13 @@
 
-Cam:
+aCam[0]:
   Full_W: 2592
   Full_H: 1944
   Full_FOV: 78
   #Image_Zoom:	1.05		1.125		1.2
   Image_Zoom: 1
-  Image_W: 1920
-  Image_H: 1080
-  Exposure: 300
+  #Image_W: 1920
+  #Image_H: 1080
+  Exposure: 100
   #Image_Zoom: 1.8
   #Image_W: 1280
   #Image_H: 720
@@ -21,6 +21,12 @@ Cam:
   #Focus:	130	120	80	0	-1
   #Exposure:	200	400	600	800
   Zoom: 5
+
+aCam[1]:
+  Exposure: 300
+  Focus: 120
+  Zoom: 5
+
 
 View_W: 1920
 View_H: 1080
@@ -170,15 +176,24 @@ Head:
       Diff_Dist: 10
       Pix_Diff_Start: 20
       Pix_Diff_Min: 2
-    
-    FF:
-      Max_R: 128
-      Perf_R: 23
-      MaxDiff_R: 0.4
-      Search_R: 200
-      Y: 60
-      Y_Marg: 10
-      GY: 240
+    aCam[0]:
+      FF:
+        Max_R: 128
+        Perf_R: 23
+        MaxDiff_R: 0.4
+        Search_R: 200
+        Y: 60
+        Y_Marg: 10
+        GY: 240
+    aCam[1]:
+      FF:
+        Max_R: 128
+        Perf_R: 23
+        MaxDiff_R: 0.4
+        Search_R: 200
+        Y: 60
+        Y_Marg: 10
+        GY: 240
     
     #Fit: eEye_Fit_S0	eEye_Fit_S3Fit_Eye	eEye_Fit_S3Fit_Point	eEye_Fit_S5_START		eEye_Fit_FF_START		eEye_Fit_FF_Diode
     Fit: eEye_Fit_FF_START

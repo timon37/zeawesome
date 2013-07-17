@@ -1,7 +1,9 @@
 
 #ifndef inc_muhaha_h
 #define inc_muhaha_h
-//}
+#if 0
+}
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -114,6 +116,10 @@ typedef struct {//YUV 4:2:2
 	u08 V:4;
 }__attribute__((packed)) tPix;
 
+typedef struct {
+	u08 R, G, B, A;
+}__attribute__((packed)) tRGBA;
+
 
 #define CALIBRATIONPOINTS    9
 typedef struct {
@@ -184,6 +190,25 @@ enum {//Calibration point state
 };
 
 typedef struct {
+	struct {
+		tV2f P, OP, V; // Position, OldPosition, Velocity
+		
+		
+		struct {
+			u08 tmpID;
+			si tmpNum;
+			tV2f tmpP;
+			ui Max_R;
+			float Perf_R, MaxDiff_R;
+			si Search_R, GSearch_R;
+			si Y, Y_Marg, GY;
+			
+			tV2si Mark_P;
+			u08* paMark;
+		}FF;
+		
+	}aCam[2];
+	
 	tV2f P, OP, V; // Position, OldPosition, Velocity
 	float Ax, Ay, Aa;
 	
@@ -209,7 +234,7 @@ typedef struct {
 		float Diff_Dist;
 	}S5;
 	
-	struct {
+/*	struct {
 		u08 tmpID;
 		si tmpNum;
 		tV2f tmpP;
@@ -220,7 +245,7 @@ typedef struct {
 		
 		tV2si Mark_P;
 		u08* paMark;
-	}FF;
+	}FF;*/
 	
 	si Point_N, Point_Max;
 	tV2f*	paPoint;
@@ -279,6 +304,7 @@ typedef struct {
 	tV4f P, N, R;	//Position, Normal, Rotation about axes
 	
 	tTrack_Point aPoint[dHead_Point_NUM];
+	
 	tEye DotC, DotL, DotR;
 	tM3f M, MI;
 	
@@ -323,10 +349,12 @@ typedef struct {
 
 
 typedef struct {
+	ui Idx;
 	struct vdIn* UVC;
 	
 	SDL_Window* SDL_Win;
 	SDL_Surface* SDL_Surf;
+	SDL_Thread* SDL_Thread;
 	
 	ui Full_W, Full_H;
 	float Full_FOV;
@@ -374,7 +402,12 @@ typedef struct {
 	
 	u08 DeSat;
 	
-	tCam Cam;
+	u08 Cam_N;
+	tCam aCam[2];
+	//tCam* apCam[2];
+	
+	SDL_sem* sWaitForCams, *sWaitForUpdate;
+	
 	tLight aLight[2];
 	
 	si Draw_X, Draw_Y, Draw_W, Draw_H;
@@ -500,6 +533,15 @@ void	muhaha		();
 void	Eye_Init	(tEye* peye);
 void	Eye_Conf	(tEye* peye);
 
+void	Eye_CalcAYUV	(tEye* peye, tCam* pcam, si dd);
+
+void	Eye_V_Pre		(tEye* peye, tCam* pcam);
+void	Eye_V_Post		(tEye* peye, tCam* pcam);
+
+void	Eye_Fit		(tEye* peye, tCam* pcam);
+
+void	Eye_Draw		(tEye* peye, tCam* pcam);
+
 tV2f	Eye_map_point	(tEye* peye, tV2f p);
 
 
@@ -511,7 +553,29 @@ int muhaha_eventThread(void *data);
 
 
 
+static inline int		SDL_SemPostN	(SDL_sem* ps, si num)
+{
+	while (num--) {
+		int ret = SDL_SemPost(ps);
+		if (ret) {
+			printf ("SDL_SemPostN: %s\n", SDL_GetError());
+			abort();
+		}
+	}
+	return 0;
+}
 
+static inline int		SDL_SemWaitN	(SDL_sem* ps, si num)
+{
+	while (num--) {
+		int ret = SDL_SemWait(ps);
+		if (ret) {
+			printf ("SDL_SemWaitN: %s\n", SDL_GetError());
+			abort();
+		}
+	}
+	return 0;
+}
 
 
 
@@ -538,11 +602,12 @@ typedef struct _dyn_config_mapping dyn_config_mapping;
 typedef struct _dyn_config dyn_config;
 typedef enum DYN_ENTRY_TYPE dyn_entry_t;
 
+enum { dyn_config_entry_name_max = 64 };
 enum { dyn_config_entry_value_max = 64 };
 struct _dyn_config_entry {
 	dyn_config_entry *next;
 	dyn_config_entry *child;
-	char name[32];
+	char name[dyn_config_entry_name_max];
 	char value[dyn_config_entry_value_max];
 //	float value;
 };

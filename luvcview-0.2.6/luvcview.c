@@ -427,49 +427,54 @@ int main(int argc, char **argv)
 	
 	char* adev[2] = { "/dev/video0", "/dev/video1" };
 	
-	tCam* apcam[2];
+	//tCam* gM.apCam[2];
+	gM.aCam[0].Image_W = width;
+	gM.aCam[0].Image_H = height;
 	
-	for (int i = 0; i < 2; ++i) {
-		apcam[i] = malloc(sizeof *apcam[i]);
-		memset(apcam[i], 0, sizeof *apcam[i]);
+	gM.Cam_N = 2;
+	for (int i = 0; i < gM.Cam_N; ++i) {
+		//gM.apCam[i] = malloc(sizeof *gM.apCam[i]);
+		memset(&gM.aCam[i], 0, sizeof gM.aCam[i]);
+		tCam* pcam = &gM.aCam[i];
 		
+		pcam->Idx = i;
+		pcam->Image_W = width;
+		pcam->Image_H = height;
 		
-		apcam[i]->UVC = (struct vdIn *) calloc(1, sizeof(struct vdIn));
+		pcam->UVC = (struct vdIn *) calloc(1, sizeof(struct vdIn));
 		if ( queryformats ) {
 			/* if we're supposed to list the video formats, do that now and go out */
-			check_videoIn(apcam[i]->UVC, adev[i]);
-			free(apcam[i]->UVC);
+			check_videoIn(pcam->UVC, adev[i]);
+			free(pcam->UVC);
 			SDL_Quit();
 			exit(1);
 		}
-		if (init_videoIn (apcam[i]->UVC, adev[i], width, height, fps, format, grabmethod, avifilename) < 0)
+		if (init_videoIn (pcam->UVC, adev[i], width, height, fps, format, grabmethod, avifilename) < 0)
 			exit(1);
 		/* if we're supposed to list the controls, do that now */
 		if ( querycontrols )
-			enum_controls(apcam[i]->UVC->fd);
+			enum_controls(pcam->UVC->fd);
 		
 		/* if we're supposed to read the control settings from a configfile, do that now */
 		if ( readconfigfile )
-			load_controls(apcam[i]->UVC->fd);
+			load_controls(pcam->UVC->fd);
 		
 		
-		apcam[i]->SDL_Win = SDL_CreateWindow(title_act[A_VIDEO].title,
+		pcam->SDL_Win = SDL_CreateWindow(title_act[A_VIDEO].title,
 			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-			apcam[i]->UVC->width/2, apcam[i]->UVC->height/2,
+			pcam->UVC->width/2, pcam->UVC->height/2,
 			SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
 		);
-		if (!apcam[i]->SDL_Win)
+		if (!pcam->SDL_Win)
 			abort();
 
-		apcam[i]->SDL_Surf = SDL_GetWindowSurface(apcam[i]->SDL_Win);
-		if (!apcam[i]->SDL_Surf)
+		pcam->SDL_Surf = SDL_GetWindowSurface(pcam->SDL_Win);
+		if (!pcam->SDL_Surf)
 			abort();
 		
 	}
-	pcam = apcam[0];
-	//= SDL_SetVideoMode(800+640, 600, 0, SDL_VIDEO_Flags);
-	
-	gM.pScreen = pscreen = apcam[0]->SDL_Surf;
+	pcam = &gM.aCam[0];
+	//gM.pScreen = pscreen = gM.aCam[0]->SDL_Surf;
 	
 	//gM.pOverlay = overlay = SDL_CreateYUVOverlay(videoIn->width, videoIn->height, sdl_format, pscreen);
 	//p = (unsigned char *) overlay->pixels[0];
@@ -504,59 +509,16 @@ int main(int argc, char **argv)
 	affmutex = SDL_CreateMutex();
 	ptdata.affmutex = affmutex;
 //	mythread = SDL_CreateThread(eventThread, (void *) &ptdata);
-	mythread = SDL_CreateThread(muhaha_eventThread, "muhaha_eventThread", (void *) &ptdata);
 	
 	// Initialize frame rate calculator
 	int loop_counter = 0;
-	const int frmrate_update = apcam[0]->UVC->fps / 2;
+	const int frmrate_update = gM.aCam[0].UVC->fps / 2;
 	lasttime = SDL_GetTicks();	// [ms]
 	
 	muhaha_Init ();
 	gM.pDst = p;
 	
-	/* main big loop */
-	while (apcam[0]->UVC->signalquit) {
-		// Measure the frame rate every (fps/2) frames
-		if(loop_counter ++ % frmrate_update == 0) {
-			currtime = SDL_GetTicks();	// [ms]
-			if (currtime - lasttime > 0) {
-				frmrate = frmrate_update * (1000.0 / (currtime - lasttime));
-			}
-			lasttime = currtime;
-		}
-		
-		for (int i = 0; i < 2; ++i) {
-			tCam* pcam = apcam[i];
-			
-			if (uvcGrab(pcam->UVC) < 0) {
-				printf("Error grabbing\n");
-				break;
-			}
-			
-			SDL_LockSurface (pcam->SDL_Surf);
-			
-			for (int y = 0; y < pcam->SDL_Surf->h; ++y) {
-				for (int x = 0; x < pcam->SDL_Surf->w; ++x) {
-					tPix* pix = (tPix*)pcam->UVC->framebuffer + x + y* apcam[i]->UVC->width;
-					uint32_t* out = (uint32_t*)pcam->SDL_Surf->pixels + x + y* pcam->SDL_Surf->w;
-					*out = (pix->Y << 8) | (pix->Y << 0) | (pix->Y << 16);
-				}
-			}
-			
-			SDL_UnlockSurface (pcam->SDL_Surf);
-			SDL_UpdateWindowSurface(pcam->SDL_Win);
-		}
-		
-		SDL_LockMutex(affmutex);
-		ptdata.frmrate = frmrate;
-		//SDL_WM_SetCaption(videoIn->status, NULL);
-		SDL_UnlockMutex(affmutex);
-	//	SDL_Delay(10);
-	//	SDL_LockSurface (gM.pScreen);
-	//	memset (gM.pScreen->pixels, 0xff, 32* 1024);
-	//	SDL_UnlockSurface (gM.pScreen);
-		//SDL_Flip (gM.pScreen);
-	}
+	muhaha_Loop ();
 	
 	muhaha_DeInit ();
 	

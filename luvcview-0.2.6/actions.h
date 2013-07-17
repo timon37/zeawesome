@@ -21,21 +21,24 @@ dact (Mode_Switch,
 )
 
 dact (ReThr,
-	tEye* peye = &gM.Left;
-	Eye_CalcAYUV (peye, 5);	peye->FF.Y = ay + peye->FF.Y_Marg;
-	
-	peye = &gM.Right;
-	Eye_CalcAYUV (peye, 5);	peye->FF.Y = ay + peye->FF.Y_Marg;
-	
-	peye = &gM.Head.DotC;
-	Eye_CalcAYUV (peye, 4);	peye->FF.Y = ay + peye->FF.Y_Marg;
-	
-	peye = &gM.Head.DotL;
-	Eye_CalcAYUV (peye, 4);	peye->FF.Y = ay + peye->FF.Y_Marg;
-	
-	peye = &gM.Head.DotR;
-	Eye_CalcAYUV (peye, 4);	peye->FF.Y = ay + peye->FF.Y_Marg;
-	
+	for (int i = 0; i < gM.Cam_N; ++i) {
+		tCam* pcam = &gM.aCam[i];
+		
+		tEye* peye = &gM.Left;
+		Eye_CalcAYUV (peye, pcam, 5);	peye->aCam[i].FF.Y = ay + peye->aCam[i].FF.Y_Marg;
+		
+		peye = &gM.Right;
+		Eye_CalcAYUV (peye, pcam, 5);	peye->aCam[i].FF.Y = ay + peye->aCam[i].FF.Y_Marg;
+		
+		peye = &gM.Head.DotC;
+		Eye_CalcAYUV (peye, pcam, 4);	peye->aCam[i].FF.Y = ay + peye->aCam[i].FF.Y_Marg;
+		
+		peye = &gM.Head.DotL;
+		Eye_CalcAYUV (peye, pcam, 4);	peye->aCam[i].FF.Y = ay + peye->aCam[i].FF.Y_Marg;
+		
+		peye = &gM.Head.DotR;
+		Eye_CalcAYUV (peye, pcam, 4);	peye->aCam[i].FF.Y = ay + peye->aCam[i].FF.Y_Marg;
+	}
 	tHead* p = &gM.Head;
 	p->P.x = p->P.y = 0;
 	p->P.z = -40;
@@ -210,7 +213,7 @@ dact (Micro_Tog,
 )
 
 dact (View_Zoom,
-	static u08 zoomed = 0;
+/*	static u08 zoomed = 0;
 	if (zoomed) {
 		zoomed = 0;
 		gM.Draw_X = 0;
@@ -223,7 +226,7 @@ dact (View_Zoom,
 		gM.Draw_Y = -gM.Cam.Image_H/2 + 300;
 		gM.Draw_W = gM.Cam.Image_W;
 		gM.Draw_H = gM.Cam.Image_H;
-	}
+	}*/
 )
 
 
@@ -241,7 +244,7 @@ dact (Num1,
 	gM.Right.GTF.y = 0;
 )
 
-
+/*
 dact (Num2,
 	tEye* peye = &gM.Left;
 	
@@ -265,7 +268,7 @@ dact (Num3,
 	peye->tmp.P[1] = peye->P;
 	Eye_GV_Get (peye, &peye->tmp.GV[1]);
 )
-
+*/
 
 dact (Num4,
 	tEye* peye = &gM.Left;

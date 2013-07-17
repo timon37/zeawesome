@@ -36,9 +36,11 @@ int	strpathcmp	(const char *name, const char *path)
 	return strncmp (name, path, dot - path);
 }
 
-dyn_config_entry* dyn_find_entry(dyn_config_entry *de, const char *path) {
+dyn_config_entry* dyn_find_entry(dyn_config_entry *de, const char *path)
+{
 	char *pch = strchr(path, '.');
 	while (de) {
+		//printf("path %s de->name %s\n", path, de->name);
 		if (strpathcmp(de->name, path) == 0)
 			if (pch && de->child)
 				return dyn_find_entry(de->child , pch+1);
@@ -50,14 +52,16 @@ dyn_config_entry* dyn_find_entry(dyn_config_entry *de, const char *path) {
 	return 0; 
 }
 
-int dyn_get_value_float(dyn_config_entry *de, const char *path, float *val) {
+int dyn_get_value_float(dyn_config_entry *de, const char *path, float *val)
+{
 	de = dyn_find_entry(de, path);
 	if (!de)
 		return 0;
 	sscanf(de->value, "%f", val);
 	return 1; 
 }
-int dyn_get_value_si(dyn_config_entry *de, const char *path, si *val) {
+int dyn_get_value_si(dyn_config_entry *de, const char *path, si *val)
+{
 	de = dyn_find_entry(de, path);
 	if (!de)
 		return 0;
@@ -120,8 +124,8 @@ dyn_config_entry* dyn_parse(yaml_parser_t *parser) {
 	int stack_size = 0;
 	int prev_event_type = YAML_SCALAR_EVENT;
 	
-	dyn_config_entry *stack[16];
-	dyn_config_entry *var_stack[16];
+	dyn_config_entry *stack[32];
+	dyn_config_entry *var_stack[32];
 	char label[32];
 	
 	dyn_config_entry *cur_entry = malloc(sizeof(dyn_config_entry));
@@ -156,7 +160,7 @@ dyn_config_entry* dyn_parse(yaml_parser_t *parser) {
 					exit (1);
 				}
 				var_stack[stack_size-1] = cur_entry;
-			//	printf("SCALAR VAL: %s\n", event.data.scalar.value);
+				//printf("SCALAR VAL: %s\n", event.data.scalar.value);
 				prev_event_type = YAML_NO_EVENT;
 			} else if (prev_event_type == YAML_MAPPING_START_EVENT) { 
 			//	printf("AFTER MAP SCALAR NAME: %s\n", event.data.scalar.value);
@@ -164,13 +168,15 @@ dyn_config_entry* dyn_parse(yaml_parser_t *parser) {
 				var_stack[stack_size-1]->child = new_entry;
 				cur_entry = new_entry;
 				memcpy(cur_entry->name, event.data.scalar.value, event.data.scalar.length);
+				cur_entry->name[event.data.scalar.length] = 0;
 				prev_event_type = YAML_SCALAR_EVENT;
 			} else {
-			//	printf("SCALAR NAME: %s\n", event.data.scalar.value);
+				//printf("SCALAR NAME: %s\n", event.data.scalar.value);
 				dyn_config_entry *new_entry = malloc(sizeof(dyn_config_entry));
 				var_stack[stack_size-1]->next = new_entry;
 				cur_entry = new_entry;
 				memcpy(cur_entry->name, event.data.scalar.value, event.data.scalar.length);
+				cur_entry->name[event.data.scalar.length] = 0;
 				prev_event_type = YAML_SCALAR_EVENT;
 			}
 		}
@@ -197,7 +203,8 @@ dyn_config_entry* dyn_parse(yaml_parser_t *parser) {
 }
 
 
-void dyn_config_read(dyn_config *dc, const char *f_name) {
+void dyn_config_read(dyn_config *dc, const char *f_name)
+{
 	FILE *file;
 	yaml_parser_t parser;
 
@@ -208,9 +215,9 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	
 	dyn_config_entry *dce = dyn_parse(&parser);
 	
-	if (!dce)
-		return;
-	
+	if (!dce) {
+		abort();
+	}
 	int val_int;
 	u08 val_u08;
 	si val_si;
@@ -269,6 +276,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	
 	dSafe_Main_S();
 	
+	
 	drw_u08 (Eye_Line_Ray)
 	drw_u08 (Eye_GlintMode)
 	drw_u08 (GazeAvg)
@@ -281,25 +289,57 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	
 	drw_u08 (bEye_S4_EdgeMark3_Micro)
 	
-	drw_f (Cam.Full_W)
-	drw_f (Cam.Full_H)
-	drw_f (Cam.Full_FOV)
+	drw_f (aCam[0].Full_W)
+	drw_f (aCam[0].Full_H)
+	drw_f (aCam[0].Full_FOV)
 	
-	drw_f (Cam.Image_W)
-	drw_f (Cam.Image_H)
-	drw_f (Cam.Image_Zoom)
-	drw_f (Cam.Image_FOV)
-	drw_f (Cam.Image_FOV_W)
-	drw_f (Cam.Image_FOV_H)
+	drw_f (aCam[0].Image_W)
+	drw_f (aCam[0].Image_H)
+	drw_f (aCam[0].Image_Zoom)
+	drw_f (aCam[0].Image_FOV)
+	drw_f (aCam[0].Image_FOV_W)
+	drw_f (aCam[0].Image_FOV_H)
 	
-	drw_f (Cam.Focus)
-	drw_f (Cam.Exposure)
-	drw_f (Cam.Zoom)
+	drw_f (aCam[0].Focus)
+	drw_f (aCam[0].Exposure)
+	drw_f (aCam[0].Zoom)
 	
-	//Cam_Param_Set (&gM.Cam);
+	for (int i = 1; i < gM.Cam_N; ++i) {
+		tCam* pcam = &gM.aCam[i];
+		
+		pcam->Full_W	= gM.aCam[0].Full_W;
+		pcam->Full_H	= gM.aCam[0].Full_H;
+		pcam->Full_FOV	= gM.aCam[0].Full_FOV;
+		
+		pcam->Image_Zoom	= gM.aCam[0].Image_Zoom;
+		pcam->Image_FOV	= gM.aCam[0].Image_FOV;
+		pcam->Image_FOV_W	= gM.aCam[0].Image_FOV_W;
+		pcam->Image_FOV_H	= gM.aCam[0].Image_FOV_H;
+		
+		pcam->Focus		= gM.aCam[0].Focus;
+		pcam->Exposure	= gM.aCam[0].Exposure;
+		pcam->Zoom		= gM.aCam[0].Zoom;
+	}
+	drw_f (aCam[1].Full_W)
+	drw_f (aCam[1].Full_H)
+	drw_f (aCam[1].Full_FOV)
 	
-	gM.View_W = gM.Cam.Image_W;
-	gM.View_H = gM.Cam.Image_H;
+	drw_f (aCam[1].Image_W)
+	drw_f (aCam[1].Image_H)
+	drw_f (aCam[1].Image_Zoom)
+	drw_f (aCam[1].Image_FOV)
+	drw_f (aCam[1].Image_FOV_W)
+	drw_f (aCam[1].Image_FOV_H)
+	
+	drw_f (aCam[1].Focus)
+	drw_f (aCam[1].Exposure)
+	drw_f (aCam[1].Zoom)
+	
+	//abort();
+	//Cam_Param_Set (&gM.aCam);
+	
+	gM.View_W = gM.aCam[0].Image_W;
+	gM.View_H = gM.aCam[0].Image_H;
 //	drw_f (View_W)
 //	drw_f (View_H)
 	
@@ -314,7 +354,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_f (Proj_T)
 	//void makeFrustum(double fovY, double aspectRatio, double front, double back)
 /*	{
-		double fovY = gM.Cam.Full_FOV, aspectRatio = (float)gM.Cam.Image_W/(float)gM.Cam.Image_H, front = 1, back = 10;
+		double fovY = gM.aCam.Full_FOV, aspectRatio = (float)gM.aCam.Image_W/(float)gM.aCam.Image_H, front = 1, back = 10;
 		const double DEG2RAD = M_PI / 180;
 		
 		double tangent = tan(fovY/2 * DEG2RAD);   // tangent of half fovY
@@ -328,7 +368,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	//	gM.Proj_F = back;
 	}
 /*	{
-		double fovY = gM.Cam.Full_FOV, aspectRatio = (float)gM.Cam.Image_W/(float)gM.Cam.Image_H, front = 1, back = 10;
+		double fovY = gM.aCam.Full_FOV, aspectRatio = (float)gM.aCam.Image_W/(float)gM.aCam.Image_H, front = 1, back = 10;
 		const double DEG2RAD = M_PI / 180;
 		
 		double tangent = tan(fovY/2 * DEG2RAD);   // tangent of half fovY
@@ -350,9 +390,9 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	gM.Proj.x23 = (-2*gM.Proj_F*gM.Proj_N) / (gM.Proj_F - gM.Proj_N);
 	gM.Proj.x32 = -1;/**/
 	
-	Proj_Cam ();
+	//Proj_Cam ();
 	
-	//Cam_Param_Set (&gM.Cam);
+	//Cam_Param_Set (&gM.aCam);
 	
 	drw_v4f (Head.Mod.PC);
 	drw_v4f (Head.Mod.PL);
@@ -388,21 +428,32 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 	drw_si (Head.DotC.S5.Pix_Diff_Start)
 	drw_si (Head.DotC.S5.Pix_Diff_Min)
 	
-	drw_si (Head.DotC.FF.Max_R)
-	drw_f (Head.DotC.FF.Perf_R)
-	drw_f (Head.DotC.FF.MaxDiff_R)
-	drw_si (Head.DotC.FF.Search_R)
-	drw_si (Head.DotC.FF.Y)
-	drw_si (Head.DotC.FF.GY)
-	drw_si (Head.DotC.FF.Y_Marg)
+	drw_si (Head.DotC.aCam[0].FF.Max_R)
+	drw_f (Head.DotC.aCam[0].FF.Perf_R)
+	drw_f (Head.DotC.aCam[0].FF.MaxDiff_R)
+	drw_si (Head.DotC.aCam[0].FF.Search_R)
+	drw_si (Head.DotC.aCam[0].FF.Y)
+	drw_si (Head.DotC.aCam[0].FF.GY)
+	drw_si (Head.DotC.aCam[0].FF.Y_Marg)
+	
+	drw_si (Head.DotC.aCam[1].FF.Max_R)
+	drw_f (Head.DotC.aCam[1].FF.Perf_R)
+	drw_f (Head.DotC.aCam[1].FF.MaxDiff_R)
+	drw_si (Head.DotC.aCam[1].FF.Search_R)
+	drw_si (Head.DotC.aCam[1].FF.Y)
+	drw_si (Head.DotC.aCam[1].FF.GY)
+	drw_si (Head.DotC.aCam[1].FF.Y_Marg)
 	
 	gM.Head.DotC.LinView.x = 0;
 	gM.Head.DotC.LinView.y = 0;
 	
-	
 	memcpy (&gM.Head.DotL.Ax, &gM.Head.DotC.Ax, sizeof(gM.Head.DotC) - ((si)&gM.Head.DotC.Ax - (si)&gM.Head.DotC));
 	memcpy (&gM.Head.DotR.Ax, &gM.Head.DotC.Ax, sizeof(gM.Head.DotC) - ((si)&gM.Head.DotC.Ax - (si)&gM.Head.DotC));
 	
+	for (int i = 0; i < gM.Cam_N; ++i) {
+		gM.Head.DotL.aCam[i] = gM.Head.DotC.aCam[i];
+		gM.Head.DotR.aCam[i] = gM.Head.DotC.aCam[i];
+	}
 	drw_f (Head.DotL.Exp_R)
 	drw_e (Head.DotL.Fit)
 	drw_f (Head.DotL.Fit_Scale)
@@ -455,14 +506,23 @@ void dyn_config_read(dyn_config *dc, const char *f_name) {
 		drw_si (name.S5.Pix_Diff_Start)	\
 		drw_si (name.S5.Pix_Diff_Min)	\
 			\
-		drw_si (name.FF.Max_R)	\
-		drw_f (name.FF.Perf_R)	\
-		drw_f (name.FF.MaxDiff_R)	\
-		drw_si (name.FF.Search_R)	\
-		drw_si (name.FF.Y)	\
-		drw_si (name.FF.Y_Marg)	\
-		drw_si (name.FF.GY)	\
-		drw_si (name.FF.GSearch_R)	\
+		drw_si (name.aCam[0].FF.Max_R)	\
+		drw_f (name.aCam[0].FF.Perf_R)	\
+		drw_f (name.aCam[0].FF.MaxDiff_R)	\
+		drw_si (name.aCam[0].FF.Search_R)	\
+		drw_si (name.aCam[0].FF.Y)	\
+		drw_si (name.aCam[0].FF.Y_Marg)	\
+		drw_si (name.aCam[0].FF.GY)	\
+		drw_si (name.aCam[0].FF.GSearch_R)	\
+			\
+		drw_si (name.aCam[1].FF.Max_R)	\
+		drw_f (name.aCam[1].FF.Perf_R)	\
+		drw_f (name.aCam[1].FF.MaxDiff_R)	\
+		drw_si (name.aCam[1].FF.Search_R)	\
+		drw_si (name.aCam[1].FF.Y)	\
+		drw_si (name.aCam[1].FF.Y_Marg)	\
+		drw_si (name.aCam[1].FF.GY)	\
+		drw_si (name.aCam[1].FF.GSearch_R)	\
 			\
 		drw_v2f (name.GTF);	\
 			\

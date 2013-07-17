@@ -21,19 +21,21 @@
 #define ddist(x0,y0,x1,y1) sqrt(ddist2(x0,y0,x1,y1))
 
 #define dopix(_x,_y) ((tPix*)pcam->UVC->framebuffer + ((si)(_x) + (si)(_y)*pcam->Image_W))
-#define dnpix(_x,_y) ((tPix*)gM.pDst + ((si)(_x) + (si)(_y)*pcam->Image_W))
+#define dnpix(_x,_y) ((tPix*)((tRGBA*)pcam->SDL_Surf->pixels + ((si)(_x) + (si)(_y)*pcam->SDL_Surf->w)))
 #define dpix(_x,_y) dnpix(_x,_y)
 
 
-#define dsout(_x,_y) ((_x) < 0 || (_y) < 0 || (_x) >= gM.pScreen->w || (_y) >= gM.pScreen->h)
-#define dspix(_x,_y) (*((u32*)gM.pScreen->pixels + ((si)(_x) + (si)(_y)*gM.pScreen->pitch/4)))
+#define dsout(_x,_y) ((_x) < 0 || (_y) < 0 || (_x) >= pcam->SDL_Surf->w || (_y) >= pcam->SDL_Surf->h)
+//#define dspix(_x,_y) (*((u32*)gM.pScreen->pixels + ((si)(_x) + (si)(_y)*gM.pScreen->pitch/4)))
+//#define dspix(_x,_y) (*((u32*)pcam->SDL_Surf->pixels + ((si)(_x) + (si)(_y)*pcam->SDL_Surf->w)))
+#define dspix(_x,_y) (*((u32*)pcam->SDL_Surf->pixels))
 
 #define dmono2rgb(_g) ((u32)(_g) | (u32)(_g)<<8 | (u32)(_g)<<16)
 
 
-#define dpixout(_x,_y) ((_x) < 0 || (_y) < 0 || (_x) >= pcam->Image_W || (_y) >= pcam->Image_W)
+#define dpixout(_x,_y) ((_x) < 0 || (_y) < 0 || (_x) >= pcam->Image_W || (_y) >= pcam->Image_H)
 
-
+/*
 #define dset_cyuv(_x,_y,y,u,v)	\
 	do {	\
 		if (dpixout(_x,_y))	\
@@ -42,9 +44,26 @@
 		dnpix(_x,_y)->U = u;	\
 		dnpix(_x,_y)->V = v;	\
 	}while(0)
+*/
 
-#define dset_c0(_x,_y) dset_cyuv (_x,_y,0xFF,0x0,0x0)
-#define dset_c1(_x,_y) dset_cyuv (_x,_y,0xFF,0xF,0xF)
+//#define dset_c0(_x,_y) dset_cyuv (_x,_y,0xFF,0x0,0x0)
+//#define dset_c1(_x,_y) dset_cyuv (_x,_y,0xFF,0xF,0xF)
+
+#define dset_crgb(_x,_y,r,g,b)	\
+	do {	\
+		if ((_x) < 0 || (_y) < 0 || (_x)/2 >= pcam->SDL_Surf->w || (_y)/2 >= pcam->SDL_Surf->h)	\
+			break;		\
+		tRGBA* pout = dnpix((_x)/2, (_y)/2);			\
+		pout->R = r;			\
+		pout->G = g;			\
+		pout->B = b;			\
+		pout->A = 0xFF;			\
+	}while(0)
+
+//#define dset_c0(_x,_y) ((*(tRGBA*)dnpix((_x)/2, (_y)/2)) = (tRGBA){ .R = 0xFF, .G = 0x00, .B = 0x00, .A = 0xFF })
+//#define dset_c1(_x,_y) ((*(tRGBA*)dnpix((_x)/2, (_y)/2)) = (tRGBA){ .R = 0x00, .G = 0xFF, .B = 0x00, .A = 0xFF })
+#define dset_c0(_x,_y) dset_crgb(_x,_y,0xFF,0x00,0x00)
+#define dset_c1(_x,_y) dset_crgb(_x,_y,0x00,0xFF,0x00)
 
 
 
@@ -158,7 +177,7 @@ static inline void	Eye_Xset	(tEye* peye, float x)
 		x = 20;
 	else if (x > pcam->Image_W-20)
 		x = pcam->Image_W-20;
-	peye->P.x = x;
+	peye->aCam[pcam->Idx].P.x = x;
 }
 static inline void	Eye_Yset	(tEye* peye, float y)
 {
@@ -166,12 +185,35 @@ static inline void	Eye_Yset	(tEye* peye, float y)
 		y = 20;
 	else if (y > pcam->Image_H-20)
 		y = pcam->Image_H-20;
-	peye->P.y = y;
+	peye->aCam[pcam->Idx].P.y = y;
 }
 static inline void	Eye_XYset	(tEye* peye, float x, float y)
 {
 	Eye_Xset (peye, x);
 	Eye_Yset (peye, y);
+}
+
+
+static inline void	EyeC_Xset	(tEye* peye, tCam* pcam, float x)
+{
+	if (x < 20)
+		x = 20;
+	else if (x > pcam->Image_W-20)
+		x = pcam->Image_W-20;
+	peye->aCam[pcam->Idx].P.x = x;
+}
+static inline void	EyeC_Yset	(tEye* peye, tCam* pcam, float y)
+{
+	if (y < 20)
+		y = 20;
+	else if (y > pcam->Image_H-20)
+		y = pcam->Image_H-20;
+	peye->aCam[pcam->Idx].P.y = y;
+}
+static inline void	EyeC_XYset	(tEye* peye, tCam* pcam, float x, float y)
+{
+	EyeC_Xset (peye, pcam, x);
+	EyeC_Yset (peye, pcam, y);
 }
 
 
