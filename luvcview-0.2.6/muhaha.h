@@ -190,25 +190,6 @@ enum {//Calibration point state
 };
 
 typedef struct {
-	struct {
-		tV2f P, OP, V; // Position, OldPosition, Velocity
-		
-		
-		struct {
-			u08 tmpID;
-			si tmpNum;
-			tV2f tmpP;
-			ui Max_R;
-			float Perf_R, MaxDiff_R;
-			si Search_R, GSearch_R;
-			si Y, Y_Marg, GY;
-			
-			tV2si Mark_P;
-			u08* paMark;
-		}FF;
-		
-	}aCam[2];
-	
 	tV2f P, OP, V; // Position, OldPosition, Velocity
 	float Ax, Ay, Aa;
 	
@@ -259,6 +240,25 @@ typedef struct {
 	
 	
 	tV2si LinView, CirView;
+	
+	struct {
+		tV2f P, OP, V; // Position, OldPosition, Velocity
+		
+		
+		struct {
+			u08 tmpID;
+			si tmpNum;
+			tV2f tmpP;
+			ui Max_R;
+			float Perf_R, MaxDiff_R;
+			si Search_R, GSearch_R;
+			si Y, Y_Marg, GY;
+			
+			tV2si Mark_P;
+			u08* paMark;
+		}FF;
+		
+	}aCam[2];
 	
 	tHomo Homo;
 	struct {
@@ -318,6 +318,15 @@ typedef struct {
 		tV4f PC, PL, PR;
 		tV4f TInc, RInc;
 	}Mod;
+	
+	struct {
+		tV4f P, N, R;	//Position, Normal, Rotation about axes
+		
+		tM4f M4, M4_T, M4_R;
+		tM4f M4I, M4I_T, M4I_R;
+		
+		float R_X, R_Y, R_Z, SRX, SRY;
+	}aCam[2];
 }tHead;
 
 
@@ -365,6 +374,15 @@ typedef struct {
 	si Focus, Exposure, Zoom;
 	
 	CvMat* cvCam, *cvDist;
+	
+	
+	si View_W, View_H;
+	float Proj_L, Proj_R, Proj_B, Proj_T;
+	float Proj_W, Proj_H, Proj_N, Proj_F;
+	
+	tM4f Proj, World;
+	
+	
 }tCam;
 
 typedef struct {
@@ -381,11 +399,25 @@ typedef struct {
 }tMarker;
 
 
+typedef struct _tDbg
+{
+	SDL_Window* SDL_Win;
+	SDL_Surface* SDL_Surf;
+	
+	tM4f Proj, World;
+	si View_X, View_Y, View_W, View_H;	//x y is the center
+	
+	float Scale, T_X, T_Y, R_X, R_Y;
+	tV2si Off;
+}tDbg;
+
 enum {
 	dM_X_Queue_M_Down,
 	dM_X_Queue_M_Up,
 	
-	dM_X_Queue_NUM = 8
+	dM_X_Queue_NUM = 8,
+	
+	M_Dbg_NUM = 3
 };
 
 //actions should be triggered by 0 - off, 1 - X11 key grab, 2 - kernel zeawesome module
@@ -411,11 +443,6 @@ typedef struct {
 	tLight aLight[2];
 	
 	si Draw_X, Draw_Y, Draw_W, Draw_H;
-	
-	si View_W, View_H;
-	float Proj_L, Proj_R, Proj_B, Proj_T;
-	float Proj_W, Proj_H, Proj_N, Proj_F;
-	tM4f Proj, World;
 	
 	tHead Head, HeadC;
 	
@@ -482,16 +509,7 @@ typedef struct {
 		float R_X, R_Y;
 	}Micro;
 	
-	struct {
-		struct sDbg_View {
-			float Scale, T_X, T_Y, R_X, R_Y;
-			tV2si Off;
-		}Top, Left, Front;
-		
-		tM4f Proj, World;
-		si View_X, View_Y, View_W, View_H;	//x y is the center
-		
-	}Dbg;
+	tDbg aDbg[M_Dbg_NUM];
 	
 	struct {
 		float scale;
@@ -500,7 +518,8 @@ typedef struct {
 }tM;
 
 extern tM gM;
-extern tPix gCol;
+//extern tPix gCol;
+extern tRGBA gCol;
 extern u32 gColARGB;
 extern tCam* pcam;
 
@@ -527,6 +546,9 @@ extern si ay, au, av, n;
 void	muhaha_Init		();
 void	muhaha_DeInit	();
 void	muhaha		();
+
+
+void	Ehh_Draw_Line_2d	(tCam* pcam, si x0, si y0, si x1, si y1);
 
 
 

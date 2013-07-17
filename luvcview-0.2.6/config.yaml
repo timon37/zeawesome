@@ -7,7 +7,6 @@ aCam[0]:
   Image_Zoom: 1
   #Image_W: 1920
   #Image_H: 1080
-  Exposure: 100
   #Image_Zoom: 1.8
   #Image_W: 1280
   #Image_H: 720
@@ -17,31 +16,27 @@ aCam[0]:
   Image_FOV: 83
   #Image_FOV_W: 0.872753
   #Image_FOV_H: 0.523095
+  Proj_W: 4
+  Proj_H: 3
+  Proj_N: 1
+  Proj_F: 100
+  #
+  Proj_L: -1
+  Proj_R: 1
+  Proj_B: -1
+  Proj_T: 1
+  #
+  Exposure: 600
   Focus: 200
   #Focus:	130	120	80	0	-1
   #Exposure:	200	400	600	800
   Zoom: 5
 
 aCam[1]:
-  Exposure: 300
+  Exposure: 600
   Focus: 120
   Zoom: 5
 
-
-View_W: 1920
-View_H: 1080
-#View_W: 2048
-#View_H: 1536
-
-Proj_W: 4
-Proj_H: 3
-Proj_N: 1
-Proj_F: 100
-
-Proj_L: -1
-Proj_R: 1
-Proj_B: -1
-Proj_T: 1
 
 Eye_Line_Ray: 0
 Eye_GlintMode: 2
@@ -88,32 +83,31 @@ tmp:
   y: 0
   z: -8
 
-Dbg:
-  Front:
-    Scale: 0.33
-    R_X: 0
-    R_Y: 180
-    Off:
-      x: 1000
-      y: 500
-  Top:
-    T_X: 0
-    T_Y: 0
-    R_X: 90
-    R_Y: 180
-    Scale: 0.31
-    Off:
-      x: 1000
-      y: 200
-  Left:
-    #T_X: 15
-    T_Y: 0
-    R_X: 0
-    R_Y: 90
-    Scale: 0.33
-    Off:
-      x: 1200
-      y: 200
+aDbg[0]:
+  Scale: 0.33
+  R_X: 0
+  R_Y: 180
+  Off:
+    x: 1000
+    y: 500
+aDbg[1]:
+  T_X: 0
+  T_Y: 0
+  R_X: 90
+  R_Y: 180
+  Scale: 0.31
+  Off:
+    x: 1000
+    y: 200
+aDbg[2]:
+  #T_X: 15
+  T_Y: 0
+  R_X: 0
+  R_Y: 90
+  Scale: 0.33
+  Off:
+    x: 1200
+    y: 200
 
 Y_Level: 128
 DeSat: 0

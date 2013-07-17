@@ -9,6 +9,11 @@
 #define rad2deg	(180.0f/M_PI)
 #define dpow2(_num) ((_num)*(_num))
 
+
+#define dcam	aCam[pcam->Idx]
+
+
+
 #define dclip_l(val,min)	({typeof(val) ret; if ((val) < (min)) ret = (min); else ret = (val); ret;})
 #define dclip_h(val,max)	({typeof(val) ret; if ((val) > (max)) ret = (max); else ret = (val); ret;})
 

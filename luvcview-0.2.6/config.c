@@ -304,6 +304,16 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	drw_f (aCam[0].Exposure)
 	drw_f (aCam[0].Zoom)
 	
+	drw_f (aCam[0].Proj_W)
+	drw_f (aCam[0].Proj_H)
+	drw_f (aCam[0].Proj_N)
+	drw_f (aCam[0].Proj_F)
+	
+	drw_f (aCam[0].Proj_L)
+	drw_f (aCam[0].Proj_R)
+	drw_f (aCam[0].Proj_B)
+	drw_f (aCam[0].Proj_T)
+	
 	for (int i = 1; i < gM.Cam_N; ++i) {
 		tCam* pcam = &gM.aCam[i];
 		
@@ -319,6 +329,16 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 		pcam->Focus		= gM.aCam[0].Focus;
 		pcam->Exposure	= gM.aCam[0].Exposure;
 		pcam->Zoom		= gM.aCam[0].Zoom;
+		
+		pcam->Proj_W	= gM.aCam[0].Proj_W;
+		pcam->Proj_H	= gM.aCam[0].Proj_H;
+		pcam->Proj_N	= gM.aCam[0].Proj_N;
+		pcam->Proj_F	= gM.aCam[0].Proj_F;
+		
+		pcam->Proj_L	= gM.aCam[0].Proj_L;
+		pcam->Proj_R	= gM.aCam[0].Proj_R;
+		pcam->Proj_B	= gM.aCam[0].Proj_B;
+		pcam->Proj_T	= gM.aCam[0].Proj_T;
 	}
 	drw_f (aCam[1].Full_W)
 	drw_f (aCam[1].Full_H)
@@ -338,20 +358,11 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	//abort();
 	//Cam_Param_Set (&gM.aCam);
 	
-	gM.View_W = gM.aCam[0].Image_W;
-	gM.View_H = gM.aCam[0].Image_H;
+	//gM.View_W = gM.aCam[0].Image_W;
+	//gM.View_H = gM.aCam[0].Image_H;
 //	drw_f (View_W)
 //	drw_f (View_H)
 	
-	drw_f (Proj_W)
-	drw_f (Proj_H)
-	drw_f (Proj_N)
-	drw_f (Proj_F)
-	
-	drw_f (Proj_L)
-	drw_f (Proj_R)
-	drw_f (Proj_B)
-	drw_f (Proj_T)
 	//void makeFrustum(double fovY, double aspectRatio, double front, double back)
 /*	{
 		double fovY = gM.aCam.Full_FOV, aspectRatio = (float)gM.aCam.Image_W/(float)gM.aCam.Image_H, front = 1, back = 10;
@@ -577,18 +588,18 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	Screen_Eye_Init (gM.aScreen + 2, &gM.Left);
 	Screen_Eye_Init (gM.aScreen + 2, &gM.Right);
 	
-	#define dview(name)	\
-	drw_f (Dbg.name.Scale);	\
-	drw_f (Dbg.name.R_X);	\
-	drw_f (Dbg.name.R_Y);	\
-	drw_f (Dbg.name.T_X);	\
-	drw_f (Dbg.name.T_Y);	\
-	drw_si (Dbg.name.Off.x);	\
-	drw_si (Dbg.name.Off.y);
+	#define dview(_num)	\
+	drw_f (aDbg[_num].Scale);	\
+	drw_f (aDbg[_num].R_X);	\
+	drw_f (aDbg[_num].R_Y);	\
+	drw_f (aDbg[_num].T_X);	\
+	drw_f (aDbg[_num].T_Y);	\
+	drw_si (aDbg[_num].Off.x);	\
+	drw_si (aDbg[_num].Off.y);
 	
-	dview(Front)
-	dview(Left)
-	dview(Top)
+	dview(0)
+	dview(1)
+	dview(2)
 	
 	
 	#define dlight(name)	\
@@ -654,8 +665,8 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	#undef drw_e
 	//TODO free the dyn_config_entries...
 	
-	printf ("W %f H %f", gM.Proj_W, gM.Proj_H);
-	printf ("   N %f F %f\n", gM.Proj_N, gM.Proj_F);
+	//printf ("W %f H %f", gM.Proj_W, gM.Proj_H);
+	//printf ("   N %f F %f\n", gM.Proj_N, gM.Proj_F);
 	
 	dSafe_Main_E();
 	
