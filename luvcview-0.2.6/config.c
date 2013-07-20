@@ -52,7 +52,7 @@ dyn_config_entry* dyn_find_entry(dyn_config_entry *de, const char *path)
 	return 0; 
 }
 
-int dyn_get_value_float(dyn_config_entry *de, const char *path, float *val)
+int dyn_get_value_f00(dyn_config_entry *de, const char *path, f00 *val)
 {
 	de = dyn_find_entry(de, path);
 	if (!de)
@@ -221,23 +221,23 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	int val_int;
 	u08 val_u08;
 	si val_si;
-	float val_f;
+	f00 val_f;
 	//test
-/*	if (dyn_get_value_float(dce, strdup("ala"), &val))
+/*	if (dyn_get_value_f00(dce, strdup("ala"), &val))
 		printf("\n%f\n", val);
-	if (dyn_get_value_float(dce, strdup("a.g"), &val))
+	if (dyn_get_value_f00(dce, strdup("a.g"), &val))
 		printf("\n%f\n", val);
-	if (dyn_get_value_float(dce, strdup("z.g"), &val))
+	if (dyn_get_value_f00(dce, strdup("z.g"), &val))
 		printf("\n%f\n", val);
-	if (dyn_get_value_float(dce, strdup("lukasz.e.a"), &val))
+	if (dyn_get_value_f00(dce, strdup("lukasz.e.a"), &val))
 		printf("\n%f\n", val);/**/
 	//end test
-	#define drw_full_f(name,tgt)		if (dyn_get_value_float(dce, name , &val_f)) { tgt = val_f; } else { printf ("fail to get " name "\n"); }
+	#define drw_full_f(name,tgt)		if (dyn_get_value_f00(dce, name , &val_f)) { tgt = val_f; } else { printf ("fail to get " name "\n"); }
 	#define drw_full_u08(name,tgt)	if (dyn_get_value_u08(dce, name , &val_u08)) { tgt = val_u08; } else { printf ("fail to get " name "\n"); }
 	
 	#define drw_u08(name)	drw_full_f(#name, gM.name)
 	#define drw_si(name)	if (dyn_get_value_si(dce, #name , &val_si)) { /*printf(#name " = %ld\n", val_si);/**/ gM.name = val_si; } else { printf ("fail to get " #name "\n"); }
-	#define drw_f(name)	if (dyn_get_value_float(dce, #name , &val_f)) { /*printf(#name " = %f\n", val_f);/**/ gM.name = val_f; } else { printf ("fail to get " #name "\n"); }
+	#define drw_f(name)	if (dyn_get_value_f00(dce, #name , &val_f)) { /*printf(#name " = %f\n", val_f);/**/ gM.name = val_f; } else { printf ("fail to get " #name "\n"); }
 	#define drw_e(name)	if (dyn_get_value_enum(dce, #name , &val_int)) { /*printf(#name " = %d\n", val_int);/**/ gM.name = val_int; }
 	
 	#define drw_full_v2f(name,tgt)		\
@@ -378,7 +378,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	
 	//void makeFrustum(double fovY, double aspectRatio, double front, double back)
 /*	{
-		double fovY = gM.aCam.Full_FOV, aspectRatio = (float)gM.aCam.Image_W/(float)gM.aCam.Image_H, front = 1, back = 10;
+		double fovY = gM.aCam.Full_FOV, aspectRatio = (f00)gM.aCam.Image_W/(f00)gM.aCam.Image_H, front = 1, back = 10;
 		const double DEG2RAD = M_PI / 180;
 		
 		double tangent = tan(fovY/2 * DEG2RAD);   // tangent of half fovY
@@ -392,7 +392,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	//	gM.Proj_F = back;
 	}
 /*	{
-		double fovY = gM.aCam.Full_FOV, aspectRatio = (float)gM.aCam.Image_W/(float)gM.aCam.Image_H, front = 1, back = 10;
+		double fovY = gM.aCam.Full_FOV, aspectRatio = (f00)gM.aCam.Image_W/(f00)gM.aCam.Image_H, front = 1, back = 10;
 		const double DEG2RAD = M_PI / 180;
 		
 		double tangent = tan(fovY/2 * DEG2RAD);   // tangent of half fovY

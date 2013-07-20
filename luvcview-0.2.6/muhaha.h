@@ -69,15 +69,15 @@ typedef struct {
 }tV2si;
 
 typedef struct {
-	float x, y;
+	f00 x, y;
 }tV2f;
 
 typedef struct {
-	float x, y, z;
+	f00 x, y, z;
 }tV3f;
 
 typedef struct {
-	float x, y, z, w;
+	f00 x, y, z, w;
 }tV4f;
 
 typedef struct {
@@ -86,30 +86,30 @@ typedef struct {
 
 
 typedef struct {
-	float a, b, c, d;
+	f00 a, b, c, d;
 }tM2f;
 
 typedef struct {
 	union {
 	struct {
-		float x00, x01, x02;
-		float x10, x11, x12;
-		float x20, x21, x22;
+		f00 x00, x01, x02;
+		f00 x10, x11, x12;
+		f00 x20, x21, x22;
 	};
-	float f[3][3];
+	f00 f[3][3];
 	};
 }tM3f;
 
 typedef struct {
 	union {
 	struct {
-		float x00, x01, x02, x03;
-		float x10, x11, x12, x13;
-		float x20, x21, x22, x23;
-		float x30, x31, x32, x33;
+		f00 x00, x01, x02, x03;
+		f00 x10, x11, x12, x13;
+		f00 x20, x21, x22, x23;
+		f00 x30, x31, x32, x33;
 	};
-	float f[4][4];
-	float ff[16];
+	f00 f[4][4];
+	f00 ff[16];
 	};
 }tM4f;
 
@@ -135,12 +135,12 @@ typedef struct {
 	
 	double map_matrix[3][3];
 	
-	float aa, bb, cc, dd, ee;                       //pupil X coefficients
-	float ff, gg, hh, ii, jj;			//pupil Y coefficients
+	f00 aa, bb, cc, dd, ee;                       //pupil X coefficients
+	f00 ff, gg, hh, ii, jj;			//pupil Y coefficients
 	
-	float centx, centy;                             // translation to center pupil data after biquadratics
+	f00 centx, centy;                             // translation to center pupil data after biquadratics
 	int inx, iny;                                   // translation to center pupil data before biquadratics
-	float cmx[4], cmy[4];                           // corner correctioncoefficients
+	f00 cmx[4], cmy[4];                           // corner correctioncoefficients
 }tHomo;
 
 enum {
@@ -198,28 +198,28 @@ typedef struct _tEye
 	tV4f PS;		//global position calculated from two cameras
 	
 	tV2f P, OP, V; // Position, OldPosition, Velocity
-	float Ax, Ay, Aa;
+	f00 Ax, Ay, Aa;
 	
 	si Pix_Dark, Pix_Bright;
 	si S4_Pix_Bright;
 	
-	float Exp_R;
-	float Min_R, Max_R, PFit_R;
+	f00 Exp_R;
+	f00 Min_R, Max_R, PFit_R;
 	
 	u08 Fit, Fit_Edge, PFit;
-	float AngRes;
-	float Fit_Scale, Fit_Trans;
-	float S2Fit_Scale, S2Fit_Trans;
+	f00 AngRes;
+	f00 Fit_Scale, Fit_Trans;
+	f00 S2Fit_Scale, S2Fit_Trans;
 	
 	struct {
 		si Min_N;
-		float Min_R;
-		float Break_Dist;
+		f00 Min_R;
+		f00 Break_Dist;
 		si Pix_Dark, Pix_Bright;
 		si Pix_Diff_Start;
 		si Pix_Diff_Min;
 		
-		float Diff_Dist;
+		f00 Diff_Dist;
 	}S5;
 	
 /*	struct {
@@ -227,7 +227,7 @@ typedef struct _tEye
 		si tmpNum;
 		tV2f tmpP;
 		ui Max_R;
-		float Perf_R, MaxDiff_R;
+		f00 Perf_R, MaxDiff_R;
 		si Search_R, GSearch_R;
 		si Y, Y_Marg, GY;
 		
@@ -243,7 +243,7 @@ typedef struct _tEye
 	tV2f GV;		//normalized glint-retina vector
 	tV4f GP;	//Lense sphere position based on G0, G1
 	SDL_mutex *GV_mutex;
-	float LR;	//Lense sphere radius
+	f00 LR;	//Lense sphere radius
 	
 	
 	tV2si LinView, CirView;
@@ -257,7 +257,7 @@ typedef struct _tEye
 			si tmpNum;
 			tV2f tmpP;
 			ui Max_R;
-			float Perf_R, MaxDiff_R;
+			f00 Perf_R, MaxDiff_R;
 			si Search_R, GSearch_R;
 			si Y, Y_Marg, GY;
 			
@@ -275,7 +275,7 @@ typedef struct _tEye
 		}aLine[128];
 		
 		tV4f P;
-		float R;
+		f00 R;
 	}InHead;
 	
 	struct {
@@ -318,7 +318,7 @@ typedef struct {
 	tM4f M4, M4_T, M4_R;
 	tM4f M4I, M4I_T, M4I_R;
 	
-	float R_X, R_Y, R_Z, SRX, SRY;
+	f00 R_X, R_Y, R_Z, SRX, SRY;
 	
 	
 	struct {
@@ -332,7 +332,7 @@ typedef struct {
 		tM4f M4, M4_T, M4_R;
 		tM4f M4I, M4I_T, M4I_R;
 		
-		float R_X, R_Y, R_Z, SRX, SRY;
+		f00 R_X, R_Y, R_Z, SRX, SRY;
 	}aCam[2];
 }tHead;
 
@@ -345,11 +345,11 @@ typedef struct {
 	
 	struct {
 		tV4f C; //center
-		float W, H;
+		f00 W, H;
 	};/**/
 	struct {
 		tV4f C, Rot; //center
-		float W, H;
+		f00 W, H;
 	}Real;/**/
 	
 	Window Win;
@@ -373,10 +373,10 @@ typedef struct {
 	SDL_Thread* SDL_Thread;
 	
 	ui Full_W, Full_H;
-	float Full_FOV;
+	f00 Full_FOV;
 	
 	ui Image_W, Image_H;
-	float Image_Zoom, Image_FOV, Image_FOV_W, Image_FOV_H;
+	f00 Image_Zoom, Image_FOV, Image_FOV_W, Image_FOV_H;
 	
 	si Focus, Exposure, Zoom;
 	
@@ -384,8 +384,8 @@ typedef struct {
 	
 	
 	si View_W, View_H;
-	float Proj_L, Proj_R, Proj_B, Proj_T;
-	float Proj_W, Proj_H, Proj_N, Proj_F;
+	f00 Proj_L, Proj_R, Proj_B, Proj_T;
+	f00 Proj_W, Proj_H, Proj_N, Proj_F;
 	
 	tM4f Proj;
 	tM4f  World, WorldI;
@@ -417,7 +417,7 @@ typedef struct _tDbg
 	tM4f Proj, World;
 	si View_X, View_Y, View_W, View_H;	//x y is the center
 	
-	float Scale, T_X, T_Y, R_X, R_Y;
+	f00 Scale, T_X, T_Y, R_X, R_Y;
 	tV2si Off;
 }tDbg;
 
@@ -511,20 +511,20 @@ typedef struct {
 		#undef dact2
 	}Action;
 	
-	float GazeAvg_3_MinAlpha, GazeAvg_3_MinDist, GazeAvg_3_Dist;
+	f00 GazeAvg_3_MinAlpha, GazeAvg_3_MinDist, GazeAvg_3_Dist;
 	struct {
 		u08 State;
 		tM4f Head_CR;
 		tV2f Gaze;
-		float SX, SY;	//scale
-		float R_X, R_Y;
+		f00 SX, SY;	//scale
+		f00 R_X, R_Y;
 	}Micro;
 	
 	tDbg aDbg[M_Dbg_NUM];
 	
 	struct {
-		float scale;
-		float x, y, z;
+		f00 scale;
+		f00 x, y, z;
 	}tmp;
 }tM;
 
@@ -619,7 +619,7 @@ struct pt_data {
 	SDL_Event *ptsdlevent;
 	SDL_Rect *drect;
 	struct vdIn *ptvideoIn;
-	float frmrate;
+	f00 frmrate;
 	SDL_mutex *affmutex;
 } ptdata;
 
@@ -642,7 +642,7 @@ struct _dyn_config_entry {
 	dyn_config_entry *child;
 	char name[dyn_config_entry_name_max];
 	char value[dyn_config_entry_value_max];
-//	float value;
+//	f00 value;
 };
 
 struct _dyn_config {

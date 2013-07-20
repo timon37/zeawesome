@@ -73,23 +73,23 @@
 
 
 
-static inline float	V2f_dot_V2f	(tV2f* pv0, tV2f* pv1)
+static inline f00	V2f_dot_V2f	(tV2f* pv0, tV2f* pv1)
 {
 	return pv0->x*pv1->x + pv0->y*pv1->y;
 }
-static inline float	V4f_dot_V4f	(tV4f* pv0, tV4f* pv1)
+static inline f00	V4f_dot_V4f	(tV4f* pv0, tV4f* pv1)
 {
 	return pv0->x*pv1->x + pv0->y*pv1->y + pv0->z*pv1->z;
 }
 
-static inline void	V4f_set1	(tV4f* pv0, float s)
+static inline void	V4f_set1	(tV4f* pv0, f00 s)
 {
 	pv0->x = s;
 	pv0->y = s;
 	pv0->z = s;
 	pv0->w = 1;
 }
-static inline void	V4f_mul_S	(tV4f* pv0, float s)
+static inline void	V4f_mul_S	(tV4f* pv0, f00 s)
 {
 	pv0->x *= s;
 	pv0->y *= s;
@@ -98,7 +98,7 @@ static inline void	V4f_mul_S	(tV4f* pv0, float s)
 }
 
 
-static inline float	V2f_cross	(tV2f* pv0, tV2f* pv1)
+static inline f00	V2f_cross	(tV2f* pv0, tV2f* pv1)
 {
 	return pv0->x*pv1->y - pv0->y*pv1->x;
 }
@@ -113,22 +113,22 @@ static inline void	V4f_cross	(tV4f* pret, tV4f* pv0, tV4f* pv1)
 	*pret = ret;
 }
 
-static inline float	V2f_dist	(tV2f* pv)
+static inline f00	V2f_dist	(tV2f* pv)
 {
 	return sqrtf(pv->x*pv->x + pv->y*pv->y);
 }
 
-static inline float	V4f_dist2	(tV4f* pv)
+static inline f00	V4f_dist2	(tV4f* pv)
 {
 	return pv->x*pv->x + pv->y*pv->y + pv->z*pv->z;
 }
-static inline float	V4f_dist	(tV4f* pv)
+static inline f00	V4f_dist	(tV4f* pv)
 {
 	return sqrtf(V4f_dist2(pv));
 }
 
 
-static inline float	V4f_ry	(tV4f* pv)
+static inline f00	V4f_ry	(tV4f* pv)
 {
 	return  atan2 (pv->z, pv->x);
 }
@@ -140,13 +140,13 @@ static inline void	V4f_norm	(tV4f* pv0)
 	V4f_mul_S (pv0, 1.0f/V4f_dist (pv0));
 }
 
-static inline float	V4f_dist_V4f	(tV4f* pv0, tV4f* pv1)
+static inline f00	V4f_dist_V4f	(tV4f* pv0, tV4f* pv1)
 {
 	return sqrtf(dpow2(pv1->x-pv0->x) + dpow2(pv1->y-pv0->y) + dpow2(pv1->z-pv0->z));
 }
 
 
-static inline float	angle_norm_0_2pi	(float a)
+static inline f00	angle_norm_0_2pi	(f00 a)
 {
 	while (a < 0) {
 		a += 2*M_PI;
@@ -157,7 +157,7 @@ static inline float	angle_norm_0_2pi	(float a)
 	return a;
 }
 
-static inline float	angle_norm_pi_pi	(float a)
+static inline f00	angle_norm_pi_pi	(f00 a)
 {
 	while (a < -M_PI) {
 		a += 2*M_PI;
@@ -168,7 +168,7 @@ static inline float	angle_norm_pi_pi	(float a)
 	return a;
 }
 
-static inline float	angle_diff_norm_pi_pi	(float a0, float a1)
+static inline f00	angle_diff_norm_pi_pi	(f00 a0, f00 a1)
 {
 	return angle_norm_pi_pi(a0 - a1);
 }
@@ -194,7 +194,7 @@ static inline void	Col_CamSet	(tCam* pcam)
 }
 
 
-static inline void	Eye_Xset	(tEye* peye, float x)
+static inline void	Eye_Xset	(tEye* peye, f00 x)
 {
 	if (x < 20)
 		x = 20;
@@ -202,7 +202,7 @@ static inline void	Eye_Xset	(tEye* peye, float x)
 		x = pcam->Image_W-20;
 	peye->aCam[pcam->Idx].P.x = x;
 }
-static inline void	Eye_Yset	(tEye* peye, float y)
+static inline void	Eye_Yset	(tEye* peye, f00 y)
 {
 	if (y < 20)
 		y = 20;
@@ -210,14 +210,14 @@ static inline void	Eye_Yset	(tEye* peye, float y)
 		y = pcam->Image_H-20;
 	peye->aCam[pcam->Idx].P.y = y;
 }
-static inline void	Eye_XYset	(tEye* peye, float x, float y)
+static inline void	Eye_XYset	(tEye* peye, f00 x, f00 y)
 {
 	Eye_Xset (peye, x);
 	Eye_Yset (peye, y);
 }
 
 
-static inline void	EyeC_Xset	(tEye* peye, tCam* pcam, float x)
+static inline void	EyeC_Xset	(tEye* peye, tCam* pcam, f00 x)
 {
 	if (x < 20)
 		x = 20;
@@ -225,7 +225,7 @@ static inline void	EyeC_Xset	(tEye* peye, tCam* pcam, float x)
 		x = pcam->Image_W-20;
 	peye->aCam[pcam->Idx].P.x = x;
 }
-static inline void	EyeC_Yset	(tEye* peye, tCam* pcam, float y)
+static inline void	EyeC_Yset	(tEye* peye, tCam* pcam, f00 y)
 {
 	if (y < 20)
 		y = 20;
@@ -233,7 +233,7 @@ static inline void	EyeC_Yset	(tEye* peye, tCam* pcam, float y)
 		y = pcam->Image_H-20;
 	peye->aCam[pcam->Idx].P.y = y;
 }
-static inline void	EyeC_XYset	(tEye* peye, tCam* pcam, float x, float y)
+static inline void	EyeC_XYset	(tEye* peye, tCam* pcam, f00 x, f00 y)
 {
 	EyeC_Xset (peye, pcam, x);
 	EyeC_Yset (peye, pcam, y);
@@ -251,7 +251,7 @@ static inline void	PrintMat	(CvMat *A)
 	case CV_32F:
 	case CV_64F:
 	for (j = 0; j < A->cols; j++)
-	printf ("%8.3f ", (float)cvGetReal2D(A, i, j));
+	printf ("%8.3f ", (f00)cvGetReal2D(A, i, j));
 	break;
 	case CV_8U:
 	case CV_16U:
