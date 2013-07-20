@@ -12,6 +12,7 @@
 
 #define dcam	aCam[pcam->Idx]
 
+#define drgb(_r,_g,_b)	((tRGBA){.R = _r * 0xFF, .G = _g * 0xFF, .B = _b * 0xFF, .A = 0xFF})
 
 
 #define dclip_l(val,min)	({typeof(val) ret; if ((val) < (min)) ret = (min); else ret = (val); ret;})
@@ -81,11 +82,19 @@ static inline float	V4f_dot_V4f	(tV4f* pv0, tV4f* pv1)
 	return pv0->x*pv1->x + pv0->y*pv1->y + pv0->z*pv1->z;
 }
 
+static inline void	V4f_set1	(tV4f* pv0, float s)
+{
+	pv0->x = s;
+	pv0->y = s;
+	pv0->z = s;
+	pv0->w = 1;
+}
 static inline void	V4f_mul_S	(tV4f* pv0, float s)
 {
 	pv0->x *= s;
 	pv0->y *= s;
 	pv0->z *= s;
+	pv0->w = 1;
 }
 
 
@@ -170,9 +179,18 @@ static inline float	angle_diff_norm_pi_pi	(float a0, float a1)
 static inline void	Col_EyeSet	(tEye* peye)
 {
 	if (peye == &gM.Left)
-		gColARGB = 0x00FF00;
+		gCol = (tRGBA){.R = 0xFF, .G = 0x00, .B = 0x00, .A = 0x00};
 	else
-		gColARGB = 0xFF0000;
+		gCol = (tRGBA){.R = 0x00, .G = 0xFF, .B = 0x00, .A = 0x00};
+}
+
+static inline void	Col_CamSet	(tCam* pcam)
+{
+	switch (pcam->Idx) {
+	case 0:	gCol = (tRGBA){.R = 0xFF, .G = 0xFF, .B = 0x00, .A = 0x00};	break;
+	case 1:	gCol = (tRGBA){.R = 0x00, .G = 0xFF, .B = 0xFF, .A = 0x00};	break;
+	default:	gCol = (tRGBA){.R = 0xFF, .G = 0xFF, .B = 0xFF, .A = 0x00};	break;
+	}
 }
 
 
@@ -220,6 +238,33 @@ static inline void	EyeC_XYset	(tEye* peye, tCam* pcam, float x, float y)
 	EyeC_Xset (peye, pcam, x);
 	EyeC_Yset (peye, pcam, y);
 }
+
+
+static inline void	PrintMat	(CvMat *A)
+{
+	int i, j;
+	for (i = 0; i < A->rows; i++)
+	{
+	printf("\n"); 
+	switch (CV_MAT_DEPTH(A->type))
+	{
+	case CV_32F:
+	case CV_64F:
+	for (j = 0; j < A->cols; j++)
+	printf ("%8.3f ", (float)cvGetReal2D(A, i, j));
+	break;
+	case CV_8U:
+	case CV_16U:
+	for(j = 0; j < A->cols; j++)
+	printf ("%6d",(int)cvGetReal2D(A, i, j));
+	break;
+	default:
+	break;
+	}
+	}
+	printf("\n");
+}
+
 
 
 #endif

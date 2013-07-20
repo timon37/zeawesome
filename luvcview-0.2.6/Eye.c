@@ -4039,8 +4039,8 @@ void	Eye_FF			(tEye* peye, tCam* pcam)
 				}
 			}
 		}
-		if (peye == &gM.Left)
-			printf ("best id %d ar %f\n", best_id, best_ar);
+		//if (peye == &gM.Left)
+			//printf ("best id %d ar %f\n", best_id, best_ar);
 		dcam.P.x = best_x;
 		dcam.P.y = best_y;
 		

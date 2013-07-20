@@ -26,21 +26,37 @@ aCam[0]:
   Proj_B: -1
   Proj_T: 1
   #
+  T:
+    x: 0
+    y: 0
+    z: 0
+  R:
+    x: 0
+    y: 0
+    z: 0
   Exposure: 600
-  Focus: 200
+  Focus: 204
   #Focus:	130	120	80	0	-1
   #Exposure:	200	400	600	800
   Zoom: 5
 
 aCam[1]:
+  T:
+    x: 0
+    y: -2.4
+    z: 0
+  #R:
+    #x: -1.65
+    #y: 1.05
+    #z: 0
   Exposure: 600
-  Focus: 120
+  Focus: 153
   Zoom: 5
 
 
 Eye_Line_Ray: 0
-Eye_GlintMode: 2
-GazeAvg: 3
+Eye_GlintMode: 0
+GazeAvg: 0
 
 GazeMode: 0
 Pointer_Mode: 1
@@ -128,7 +144,7 @@ Head:
     PC:
       x: 0.0
       y: -1.6
-      z: 4
+      z: 3.2
     #PC:
       #x: 0.0
       #y: -3
@@ -136,11 +152,11 @@ Head:
     PL:
       x: -9.6
       y: -0.94
-      z: 0
+      z: -0.8
     PR:
       x: 9.6
       y: -0.94
-      z: 0
+      z: -0.8
     TInc:
       x: 0.01
       y: 0.01
@@ -177,7 +193,7 @@ Head:
         MaxDiff_R: 0.4
         Search_R: 200
         Y: 60
-        Y_Marg: 10
+        Y_Marg: 40
         GY: 240
     aCam[1]:
       FF:
@@ -186,7 +202,7 @@ Head:
         MaxDiff_R: 0.4
         Search_R: 200
         Y: 60
-        Y_Marg: 10
+        Y_Marg: 40
         GY: 240
     
     #Fit: eEye_Fit_S0	eEye_Fit_S3Fit_Eye	eEye_Fit_S3Fit_Point	eEye_Fit_S5_START		eEye_Fit_FF_START		eEye_Fit_FF_Diode
@@ -239,16 +255,17 @@ Left:
     Diff_Dist: 10
     Pix_Diff_Start: 30
     Pix_Diff_Min: 5
-  
-  FF:
-    Max_R: 256
-    Perf_R: 15
-    MaxDiff_R: 0.2f
-    Search_R: 80
-    Y: 60
-    Y_Marg: 8
-    GY: 150
-    GSearch_R: 60
+    
+  aCam[0]:
+    FF:
+      Max_R: 256
+      Perf_R: 15
+      MaxDiff_R: 0.2f
+      Search_R: 80
+      Y: 60
+      Y_Marg: 10
+      GY: 150
+      GSearch_R: 60
   
   PFit_R: 40
   
@@ -268,8 +285,8 @@ Left:
   LR: 0.393
   
   InHead:
-    #R: 1.25
-    R: 1.125
+    R: 0.8
+    #R: 1.125
     P:
       x: -3.246802
       y: 0.074058
@@ -304,15 +321,16 @@ Right:
     Pix_Diff_Start: 30
     Pix_Diff_Min: 5
   
-  FF:
-    Max_R: 256
-    Perf_R: 15
-    MaxDiff_R: 0.2f
-    Search_R: 80a
-    Y: 60
-    Y_Marg: 8
-    GY: 150
-    GSearch_R: 60
+  aCam[0]:
+    FF:
+      Max_R: 256
+      Perf_R: 15
+      MaxDiff_R: 0.2f
+      Search_R: 80
+      Y: 60
+      Y_Marg: 10
+      GY: 150
+      GSearch_R: 60
   
   PFit_R: 100
   
@@ -331,8 +349,8 @@ Right:
   LR: 0.393
   
   InHead:
-    #R: 1.25
-    R: 1.125
+    R: 0.8
+    #R: 1.125
     P:
       x: 3.405655
       y: 0.249110
@@ -363,6 +381,9 @@ Action:
   Back: 14			BackSpace
   CalNext: 28		Enter
   
+  Cam_TCal: 10		9
+  Cam_RCal: 11		0
+  
   ReThr: 24			o
   
   Screen_Hide: 41		`
@@ -383,79 +404,3 @@ Action:
   
   Micro_Tog: 34		g
   
-
-
-Action:
-  Mod_Key: 0xffec
-  GazeHold: 0x20
-  Mode_Switch: 0xff09
-  
-  EyeCent_CalNext: 0x5c
-  CalNext: 0xff0d
-  Back: 0xff08
-  
-  ReThr: 0x72
-  
-  Screen_Hide: 0x60
-  Screen0: 0x27
-  Screen1: 0x2c
-  Screen2: 0x2e
-  Screen_Left: 0xff51
-  Screen_Right: 0xff53
-  Screen_Down: 0xff54
-  Screen_Up: 0xff52
-  
-  Screen_Point: 0xff57
-  Screen_PointDel: 0xffff
-#  Screen_Around: 
-  Screen_TL: 79
-  Screen_TC: 80
-  Screen_TR: 81
-  Screen_ML: 83
-  Screen_MC: 84
-  Screen_MR: 85
-  Screen_BL: 87
-  Screen_BC: 88
-  Screen_BR: 89
-  
-  Mouse_Click_L: 0x68
-  Mouse_Click_R: 0x74
-  Mouse_Click_M: 0x6e
-  
-  View_Zoom: 0x69
-  Head_Eye_LineDraw: 0x30
-  Micro_Tog: 0x75
-  
-  Num1: 0x31
-  Num2: 0x32
-  Num3: 0x33
-  Num4: 0x34
-  Num5: 0x35
-  
-  
-Action:
-  Mod_Key: 66
-  GazeHold: 65
-  Mode_Switch: 23
-  EyeCent_CalNext: 51
-  CalNext: 36
-  Back: 22
-  Screen0: 24
-  Screen1: 25
-  Screen2: 26
-  Screen_Left: 113
-  Screen_Right: 114
-  Screen_Down: 116
-  Screen_Up: 111
-  Screen_TL: 79
-  Screen_TC: 80
-  Screen_TR: 81
-  Screen_ML: 83
-  Screen_MC: 84
-  Screen_MR: 85
-  Screen_BL: 87
-  Screen_BC: 88
-  Screen_BR: 89
-  View_Zoom: 49
-  Head_Eye_LineDraw: 19
-

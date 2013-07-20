@@ -465,59 +465,125 @@ void	V4f_DrawPosPos	(tCam* pcam, tV4f* ppos0, tV4f* ppos1)
 {
 	tV4f p0 = *ppos0, p1 = *ppos1;
 	
-//	V4f_mul_M4f (&p0, &pcam->World);	V4f_mul_M4f (&p1, &pcam->World);
-//	V4f_mul_M4f (&p0, &pcam->Proj);	V4f_mul_M4f (&p1, &pcam->Proj);
-	
-	M4f_mul_V4f (&pcam->World, &p0);		M4f_mul_V4f (&pcam->World, &p1);
-	M4f_mul_V4f (&pcam->Proj, &p0);		M4f_mul_V4f (&pcam->Proj, &p1);
-	
-	p0.x /= p0.w;
-	p0.y /= p0.w;
-	p0.z /= p0.w;
-	
-	p1.x /= p1.w;
-	p1.y /= p1.w;
-	p1.z /= p1.w;
-	
-	p0.x *= pcam->View_W/2;	p0.x += pcam->View_W/2;
-	p0.y *= pcam->View_H/2;	p0.y += pcam->View_H/2;
-	p1.x *= pcam->View_W/2;	p1.x += pcam->View_W/2;
-	p1.y *= pcam->View_H/2;	p1.y += pcam->View_H/2;
-	
-//	printf ("p0 %f %f  p1 %f %f\n", p0.x, p0.y, p1.x, p1.y);
-	Vec_Draw (pcam, p0.x, p0.y, p1.x, p1.y);
-	
-/*	printf ("p0 %f %f\n", p0.x, p0.y);
-	
-	CvMat* cm0 = cvCreateMatHeader(3, 1, CV_32FC1);
-	cvCreateData(cm0);
-	cvSet2D (cm0, 0, 0, cvScalarAll(ppos0->x));
-	cvSet2D (cm0, 1, 0, cvScalarAll(ppos0->y));
-	cvSet2D (cm0, 2, 0, cvScalarAll(ppos0->z));
-	
-	CvMat* cm_t = cvCreateMatHeader(3, 1, CV_32FC1);
-	cvCreateData(cm_t);
-	cvSet (cm_t, cvScalarAll(0), 0);
-	CvMat* cm_r = cvCreateMatHeader(3, 1, CV_32FC1);
-	cvCreateData(cm_r);
-	cvSet (cm_r, cvScalarAll(0), 0);
-	
-	CvMat* cmret = cvCreateMatHeader(2, 1, CV_32FC1);
-	cvCreateData(cmret);
-	
-	PrintMat (cm0);
-	
-	cvProjectPoints2(cm0, cm_r, cm_t, gM.Cam.cvCam, gM.Cam.cvDist, cmret, NULL, NULL, NULL, NULL, NULL, 1);
-	
-	printf ("c0 %f %f\n", cvGet2D(cmret, 0, 0).val[0], cvGet2D(cmret, 1, 0).val[0]);
-	/**/
+	if (gM.Eye_Line_Ray == 2) {
+		CvMat* cm_t = cvCreateMatHeader(3, 1, CV_32FC1);
+		cvCreateData(cm_t);
+		//cvSet (cm_t, cvScalarAll(0), 0);
+		cvSet2D (cm_t, 0, 0, cvScalarAll(pcam->T.x));
+		cvSet2D (cm_t, 1, 0, cvScalarAll(pcam->T.y));
+		cvSet2D (cm_t, 2, 0, cvScalarAll(pcam->T.z));
+		CvMat* cm_r = cvCreateMatHeader(3, 1, CV_32FC1);
+		cvCreateData(cm_r);
+		//cvSet (cm_r, cvScalarAll(0), 0);
+		cvSet2D (cm_r, 0, 0, cvScalarAll(pcam->R.x * deg2rad));
+		cvSet2D (cm_r, 1, 0, cvScalarAll(-pcam->R.y * deg2rad));
+		cvSet2D (cm_r, 2, 0, cvScalarAll(pcam->R.z * deg2rad));
+		
+		CvMat* cmret = cvCreateMatHeader(2, 1, CV_32FC1);
+		cvCreateData(cmret);
+		
+		CvMat* cm0 = cvCreateMatHeader(3, 1, CV_32FC1);
+		cvCreateData(cm0);
+		
+		
+		cvSet2D (cm0, 0, 0, cvScalarAll(ppos0->x));
+		cvSet2D (cm0, 1, 0, cvScalarAll(ppos0->y));
+		cvSet2D (cm0, 2, 0, cvScalarAll(-ppos0->z));
+		cvProjectPoints2(cm0, cm_r, cm_t, pcam->cvCam, pcam->cvDist, cmret, NULL, NULL, NULL, NULL, NULL, 1);
+		p0.x = cvGet2D(cmret, 0, 0).val[0]/2.0;	p0.x += pcam->View_W/2;
+		p0.y = cvGet2D(cmret, 1, 0).val[0]/2.0;//	p0.y += pcam->View_H/2;
+		
+		
+		cvSet2D (cm0, 0, 0, cvScalarAll(ppos1->x));
+		cvSet2D (cm0, 1, 0, cvScalarAll(ppos1->y));
+		cvSet2D (cm0, 2, 0, cvScalarAll(-ppos1->z));
+		cvProjectPoints2(cm0, cm_r, cm_t, pcam->cvCam, pcam->cvDist, cmret, NULL, NULL, NULL, NULL, NULL, 1);
+		p1.x = cvGet2D(cmret, 0, 0).val[0]/2.0;	p1.x += pcam->View_W/2;
+		p1.y = cvGet2D(cmret, 1, 0).val[0]/2.0;//	p1.y += pcam->View_H/2;
+		
+		//printf ("np0 %f %f  p1 %f %f\n", p0.x, p0.y, p1.x, p1.y);
+		
+		cvReleaseMat(&cm0);
+		cvReleaseMat(&cm_t);
+		cvReleaseMat(&cm_r);
+		cvReleaseMat(&cmret);
+		Vec_Draw (pcam, p0.x, p0.y, p1.x, p1.y);
+	}else {
+	//	V4f_mul_M4f (&p0, &pcam->World);	V4f_mul_M4f (&p1, &pcam->World);
+	//	V4f_mul_M4f (&p0, &pcam->Proj);	V4f_mul_M4f (&p1, &pcam->Proj);
+		
+		M4f_mul_V4f (&pcam->World, &p0);		M4f_mul_V4f (&pcam->World, &p1);
+		M4f_mul_V4f (&pcam->Proj, &p0);		M4f_mul_V4f (&pcam->Proj, &p1);
+		
+		p0.x /= p0.w;
+		p0.y /= p0.w;
+		p0.z /= p0.w;
+		
+		p1.x /= p1.w;
+		p1.y /= p1.w;
+		p1.z /= p1.w;
+		
+		p0.x *= pcam->View_W/2;	p0.x += pcam->View_W/2;
+		p0.y *= pcam->View_H/2;	p0.y += pcam->View_H/2;
+		p1.x *= pcam->View_W/2;	p1.x += pcam->View_W/2;
+		p1.y *= pcam->View_H/2;	p1.y += pcam->View_H/2;
+		
+		//printf ("op0 %f %f  p1 %f %f\n", p0.x, p0.y, p1.x, p1.y);
+		Vec_Draw (pcam, p0.x, p0.y, p1.x, p1.y);
+		
+		//printf ("p0 %f %f\n", p0.x, p0.y);
+	}
 }
 
 
 void	V4f_ScreenPosNorm	(tCam* pcam, tV4f* ppos0, tV2f* pret)
 {
 	tV4f p0 = *ppos0;
-	if (gM.Eye_Line_Ray) {
+	if (gM.Eye_Line_Ray == 2) {
+		CvMat* cm_t = cvCreateMatHeader(3, 1, CV_32FC1);
+		cvCreateData(cm_t);
+		//cvSet (cm_t, cvScalarAll(0), 0);
+		cvSet2D (cm_t, 0, 0, cvScalarAll(pcam->T.x));
+		cvSet2D (cm_t, 1, 0, cvScalarAll(pcam->T.y));
+		cvSet2D (cm_t, 2, 0, cvScalarAll(pcam->T.z));
+		CvMat* cm_r = cvCreateMatHeader(3, 1, CV_32FC1);
+		cvCreateData(cm_r);
+		//cvSet (cm_r, cvScalarAll(0), 0);
+		cvSet2D (cm_r, 0, 0, cvScalarAll(pcam->R.x * deg2rad));
+		cvSet2D (cm_r, 1, 0, cvScalarAll(-pcam->R.y * deg2rad));
+		cvSet2D (cm_r, 2, 0, cvScalarAll(pcam->R.z * deg2rad));
+		
+		CvMat* cm_distortion = cvCreateMatHeader(5, 1, CV_32FC1);
+		cvCreateData(cm_distortion);
+		cvSet (cm_distortion, cvScalarAll(0), 0);
+		
+		CvMat* cmret = cvCreateMatHeader(2, 1, CV_32FC1);
+		cvCreateData(cmret);
+		
+		CvMat* cm0 = cvCreateMatHeader(3, 1, CV_32FC1);
+		cvCreateData(cm0);
+		
+		cvSet2D (cm0, 0, 0, cvScalarAll(ppos0->x));
+		cvSet2D (cm0, 1, 0, cvScalarAll(ppos0->y));
+		cvSet2D (cm0, 2, 0, cvScalarAll(-ppos0->z));
+		cvProjectPoints2(cm0, cm_r, cm_t, pcam->cvCam, pcam->cvDist, cmret, NULL, NULL, NULL, NULL, NULL, 1);
+		//cvProjectPoints2(cm0, cm_r, cm_t, pcam->cvCam, cm_distortion, cmret, NULL, NULL, NULL, NULL, NULL, 1);
+		p0.x = cvGet2D(cmret, 0, 0).val[0]/2.0;	p0.x += pcam->View_W/2;
+		p0.y = cvGet2D(cmret, 1, 0).val[0]/2.0;//	p0.y += pcam->View_H/2;
+		
+		p0.x -= pcam->View_W/2;
+		p0.y -= pcam->View_H/2;
+		p0.x /= pcam->View_W/2;
+		p0.y /= pcam->View_H/2;
+	
+		cvReleaseMat(&cm0);
+		cvReleaseMat(&cm_t);
+		cvReleaseMat(&cm_r);
+		cvReleaseMat(&cm_distortion);
+		cvReleaseMat(&cmret);
+		
+		//printf ("Cam_Pos2Ray:n	");	V4f_Print (&p0);
+	}else	if (gM.Eye_Line_Ray == 1) {
 	/*	float ax = M_PI_2 - gM.Cam.Image_FOV_W/2 + (peye->P.x/gM.Cam.Image_W)*gM.Cam.Image_FOV_W;
 		float ay = M_PI_2 - gM.Cam.Image_FOV_H/2 + (peye->P.y/gM.Cam.Image_H)*gM.Cam.Image_FOV_H;
 		
@@ -551,12 +617,15 @@ void	V4f_ScreenPosNorm	(tCam* pcam, tV4f* ppos0, tV2f* pret)
 	//	if (!--count)
 	//		exit(1);
 	}else {
+		p0 = *ppos0;
 		M4f_mul_V4f (&pcam->World, &p0);
 		M4f_mul_V4f (&pcam->Proj, &p0);
 		
 		p0.x /= p0.w;
 		p0.y /= p0.w;
 		p0.z /= p0.w;
+		
+		//printf ("Cam_Pos2Ray:o	");	V4f_Print (&p0);
 	}
 	pret->x = p0.x;	pret->y = p0.y;
 }
@@ -570,17 +639,7 @@ void	V4f_ScreenPosf	(tCam* pcam, tV4f* ppos0, tV2f* pret)
 void	V4f_ScreenPos	(tCam* pcam, tV4f* ppos0, tV2si* pret)
 {
 	tV4f p0 = *ppos0;
-	
-	M4f_mul_V4f (&pcam->World, &p0);
-	M4f_mul_V4f (&pcam->Proj, &p0);
-	
-	p0.x /= p0.w;
-	p0.y /= p0.w;
-	p0.z /= p0.w;
-	
-	p0.x *= pcam->Image_W/2;	p0.x += pcam->Image_W/2;
-	p0.y *= pcam->Image_H/2;	p0.y += pcam->Image_H/2;
-	
+	V4f_ScreenPosf (pcam, ppos0, &p0);
 	pret->x = p0.x;	pret->y = p0.y;
 }
 
@@ -595,7 +654,7 @@ void	Dbg_V4f_DrawPosPos	(tDbg* pdbg, tV4f* ppos0, tV4f* ppos1)
 		return;
 	assert (p0.w == 1);
 	
-	//printf ("4f p0 ");	V4f_Print (&p0);
+//	printf ("4f p0 ");	V4f_Print (&p0);
 	
 	M4f_mul_V4f (&pdbg->World, &p0);		M4f_mul_V4f (&pdbg->World, &p1);
 //	printf ("4f p0 ");	V4f_Print (&p0);
@@ -1510,41 +1569,165 @@ float	NN_Sphere	(tV2si* ppos, float ir, float or, u08 dark, u08 bright)
 
 
 
-void	Cam_Pos2Ray	(tV2f pos, tV4f* pp0, tV4f* pp1, tV4f* pvec)
+void	Cam_Pos2Ray	(tCam* pcam, tV2f pos, tV4f* pp0, tV4f* pp1, tV4f* pvec)
 {
-	abort();
-	#if 0
 	tV4f p0 = {0, 0, 0, 1};
 	tV4f p1 = {0, 0, -1, 1};
 	
-	if (gM.Eye_Line_Ray) {
-		float ax = M_PI_2 - gM.Cam.Image_FOV_W/2 + (pos.x/gM.Cam.Image_W)*gM.Cam.Image_FOV_W;
-		float ay = M_PI_2 - gM.Cam.Image_FOV_H/2 + (pos.y/gM.Cam.Image_H)*gM.Cam.Image_FOV_H;
+	//V4f_mul_S (&p1, 1.0/V4f_dist(&p1));
+	//printf ("Cam_Pos2Ray:n	");	V4f_Print (&p1);
+	//p1 = (tV4f){0, 0, -1, 1};
+	/*
+	cvCreateData(cm0);
+	cvSet2D (cm0, 0, 0, cvScalarAll(pos.x - pcam->Image_W/2));
+	cvSet2D (cm0, 1, 0, cvScalarAll(pos.y - pcam->Image_H/2));
+	
+	Cam_Pos2Ray:n	-0.080405 0.290777 -0.953406 1.000000
+	Cam_Pos2Ray:o	-0.094883 0.060829 -0.993628 1.000000
+	Cam_Pos2Ray:n	-0.046535 0.300905 -0.952518 1.000000
+	Cam_Pos2Ray:o	-0.057052 0.072128 -0.995762 1.000000
+	Cam_Pos2Ray:n	-0.080405 0.290777 -0.953406 1.000000
+	Cam_Pos2Ray:o	-0.094883 0.060829 -0.993628 1.000000
+	Cam_Pos2Ray:n	0.109433 0.296674 -0.948688 1.000000
+	Cam_Pos2Ray:o	0.118364 0.068514 -0.990604 1.000000
+	Cam_Pos2Ray:n	-0.046535 0.300905 -0.952518 1.000000
+	Cam_Pos2Ray:o	-0.057052 0.072128 -0.995762 1.000000
+	Cam_Pos2Ray:n	0.125167 0.306269 -0.943680 1.000000
+	Cam_Pos2Ray:o	0.136356 0.080290 -0.987401 1.000000
+	
+	cvSet2D (cm0, 0, 0, cvScalarAll(pos.x - pcam->Image_W/2));
+	cvSet2D (cm0, 1, 0, cvScalarAll(pos.y));
+	
+	Cam_Pos2Ray:n	-0.079513 0.466286 -0.881053 1.000000
+Cam_Pos2Ray:o	-0.101256 0.039023 -0.994095 1.000000
+Cam_Pos2Ray:n	-0.035981 0.464632 -0.884772 1.000000
+Cam_Pos2Ray:o	-0.048394 0.034987 -0.998215 1.000000
+Cam_Pos2Ray:n	-0.079513 0.466286 -0.881053 1.000000
+Cam_Pos2Ray:o	-0.101256 0.039023 -0.994095 1.000000
+Cam_Pos2Ray:n	0.100619 0.484730 -0.868857 1.000000
+Cam_Pos2Ray:o	0.118846 0.068049 -0.990578 1.000000
+Cam_Pos2Ray:n	-0.035981 0.464632 -0.884772 1.000000
+Cam_Pos2Ray:o	-0.048394 0.034987 -0.998215 1.000000
+Cam_Pos2Ray:n	0.138174 0.475278 -0.868918 1.000000
+Cam_Pos2Ray:o	0.163974 0.056609 -0.984839 1.000000
+
+*/
+	if (gM.Eye_Line_Ray == 2) {
+		CvMat* cm0 = cvCreateMatHeader(3, 1, CV_32FC1);
+		cvCreateData(cm0);
+		cvSet2D (cm0, 0, 0, cvScalarAll(pos.x - pcam->Image_W/2));
+		cvSet2D (cm0, 1, 0, cvScalarAll(pos.y - pcam->Image_H));
+		cvSet2D (cm0, 2, 0, cvScalarAll(-1));
+		
+		CvMat* cmret = cvCreateMatHeader(3, 1, CV_32FC1);
+		cvCreateData(cmret);
+		
+		cvMatMul (pcam->cvCamI, cm0, cmret);
+		
+		p1.x = cvGet2D(cmret, 0, 0).val[0];
+		p1.y = cvGet2D(cmret, 1, 0).val[0];
+		p1.z = cvGet2D(cmret, 2, 0).val[0];
+		
+	/*	CvMat* cm_t = cvCreateMatHeader(3, 1, CV_32FC1);
+		cvCreateData(cm_t);
+		//cvSet (cm_t, cvScalarAll(0), 0);
+		cvSet2D (cm_t, 0, 0, cvScalarAll(pcam->T.x));
+		cvSet2D (cm_t, 1, 0, cvScalarAll(pcam->T.y));
+		cvSet2D (cm_t, 2, 0, cvScalarAll(pcam->T.z));
+		CvMat* cm_r = cvCreateMatHeader(3, 1, CV_32FC1);
+		cvCreateData(cm_r);
+		//cvSet (cm_r, cvScalarAll(0), 0);
+		cvSet2D (cm_r, 0, 0, cvScalarAll(pcam->R.x * deg2rad));
+		cvSet2D (cm_r, 1, 0, cvScalarAll(pcam->R.y * deg2rad));
+		cvSet2D (cm_r, 2, 0, cvScalarAll(pcam->R.z * deg2rad));
+		
+		CvMat* cmret = cvCreateMatHeader(2, 1, CV_32FC1);
+		cvCreateData(cmret);
+		
+		CvMat* cm0 = cvCreateMatHeader(3, 1, CV_32FC1);
+		cvCreateData(cm0);
+		
+		
+		cvSet2D (cm0, 0, 0, cvScalarAll(ppos0->x));
+		cvSet2D (cm0, 1, 0, cvScalarAll(ppos0->y));
+		cvSet2D (cm0, 2, 0, cvScalarAll(-ppos0->z));
+		cvProjectPoints2(cm0, cm_r, cm_t, pcam->cvCam, pcam->cvDist, cmret, NULL, NULL, NULL, NULL, NULL, 1);
+		p0.x = cvGet2D(cmret, 0, 0).val[0]/2.0;	p0.x += pcam->View_W/2;
+		p0.y = cvGet2D(cmret, 1, 0).val[0]/2.0;//	p0.y += pcam->View_H/2;
+		
+		
+		cvSet2D (cm0, 0, 0, cvScalarAll(ppos1->x));
+		cvSet2D (cm0, 1, 0, cvScalarAll(ppos1->y));
+		cvSet2D (cm0, 2, 0, cvScalarAll(-ppos1->z));
+		cvProjectPoints2(cm0, cm_r, cm_t, pcam->cvCam, pcam->cvDist, cmret, NULL, NULL, NULL, NULL, NULL, 1);
+		p1.x = cvGet2D(cmret, 0, 0).val[0]/2.0;	p1.x += pcam->View_W/2;
+		p1.y = cvGet2D(cmret, 1, 0).val[0]/2.0;//	p1.y += pcam->View_H/2;
+		
+		//printf ("np0 %f %f  p1 %f %f\n", p0.x, p0.y, p1.x, p1.y);
+		
+		cvReleaseMat(&cm0);
+		cvReleaseMat(&cm_t);
+		cvReleaseMat(&cm_r);
+		cvReleaseMat(&cmret);
+		Vec_Draw (pcam, p0.x, p0.y, p1.x, p1.y);
+		/**/
+	}else if (gM.Eye_Line_Ray == 1) {
+		float ax = M_PI_2 - pcam->Image_FOV_W/2 + (pos.x/pcam->Image_W)*pcam->Image_FOV_W;
+		float ay = M_PI_2 - pcam->Image_FOV_H/2 + (pos.y/pcam->Image_H)*pcam->Image_FOV_H;
 		
 		ax = M_PI_2 - ax;
 		ay = M_PI_2 - ay;
 		
-	//	printf ("Image_FOV   %f\n", gM.Cam.Image_FOV);
-	//	printf ("Image_FOV_W %f\n", gM.Cam.Image_FOV_W*rad2deg);
+	//	printf ("Image_FOV   %f\n", pcam->Image_FOV);
+	//	printf ("Image_FOV_W %f\n", pcam->Image_FOV_W*rad2deg);
 	//	printf ("axy %f %f\n", ax*rad2deg, ay*rad2deg);
 		V4f_roty (&p1, ax);
 		V4f_rotx (&p1, ay);
 	}else {
-		p1.x = pcam->Proj_L + (pos.x/gM.Cam.Image_W)*pcam->Proj_W;
-		p1.y = pcam->Proj_B + (pos.y/gM.Cam.Image_H)*pcam->Proj_H;
+		p1.x = pcam->Proj_L + (pos.x/pcam->Image_W)*pcam->Proj_W;
+		p1.y = pcam->Proj_B + (pos.y/pcam->Image_H)*pcam->Proj_H;
 	}
 	V4f_mul_S (&p1, 1.0/V4f_dist(&p1));
-//	printf ("Cam_Pos2Ray:	");	V4f_Print (&p1);
+	
+	//printf ("Cam_Pos2Ray:o	");	V4f_Print (&p1);
+/*	if (pvec) {
+		*pvec = p1;
+		M4f_mul_V4f (&pcam->WorldI_R, pvec);
+	}/**/
+	M4f_mul_V4f (&pcam->WorldI, &p0);
+	M4f_mul_V4f (&pcam->WorldI, &p1);
 	if (pp0)
 		*pp0 = p0;
 	if (pp1)
 		*pp1 = p1;
 	if (pvec) {
 		*pvec = p1;
+		V4f_sub_V4f (pvec, &p0);
 	}
-	#endif
 }
 
+
+void	Eye_ACam_Position	(tEye* peye)
+{
+	struct {
+		tV4f p0, p1, vec;
+	}acam[gM.Cam_N];
+	
+	for (si i = 0; i < gM.Cam_N; ++i) {
+		Cam_Pos2Ray (&gM.aCam[i], peye->aCam[i].P, &acam[i].p0, &acam[i].p1, &acam[i].vec);
+	}
+	tV4f i0, i1;
+	V4f_Intersect_Line01_Line01 (
+		&i0, &i1,
+		&acam[0].p0, &acam[0].p1,
+		&acam[1].p0, &acam[1].p1
+	);
+	peye->PS.x = (i0.x + i1.x) / 2.0;
+	peye->PS.y = (i0.y + i1.y) / 2.0;
+	peye->PS.z = (i0.z + i1.z) / 2.0;
+	peye->PS.w = 1;
+	return;
+}
 
 void	Cam_Retina_Ray	(tEye* peye, tV4f* pp0, tV4f* pp1, tV4f* pvec)
 {
@@ -2040,7 +2223,7 @@ void	Head_Conf		(tHead* p)
 }
 
 
-void	HeadC_Draw		(tHead* p, tCam* pcam)
+void	Head_Cam_Draw		(tHead* p, tCam* pcam)
 {
 	
 	#define dline3(x0,y0,z0,x1,y1,z1)	\
@@ -2151,8 +2334,8 @@ void	HeadC_Draw		(tHead* p, tCam* pcam)
 	
 	
 	if (gM.bHead_Eye_LineDraw) {
-		Head_Eye_LineDraw (p, &gM.Left);
-		Head_Eye_LineDraw (p, &gM.Right);
+		Head_Cam_Eye_LineDraw (p, pcam, &gM.Left);
+		Head_Cam_Eye_LineDraw (p, pcam, &gM.Right);
 	}
 	
 	if (0) {
@@ -2209,14 +2392,13 @@ void	HeadC_Draw		(tHead* p, tCam* pcam)
 		
 	}
 	
-	if (gM.GazeMode == 0) {
+/*	if (gM.GazeMode == 0) {
 		Head_Dbg_Print (p);
 	}else if (gM.GazeMode == 1) {
 		Glint_Dbg_Print ();
 	}else if (gM.GazeMode == 2) {
 		Glint_Dbg_Print ();
-	}
-	
+	}*/
 	
 	if (0) {//hihihi couldn't resist
 		dpoint3(pbl, -1.8,	3.7,		3.0);
@@ -2278,12 +2460,20 @@ void	HeadC_Draw		(tHead* p, tCam* pcam)
 		pos.x = 0; pos.y = ehh_y + 1.2f + 0.9f/2.0f;	pos.z = ehh_z - 0.75f/2;
 		drect (1.6f, 0.9f, 0.75f);
 		
-		pos.x = -8; pos.y = ehh_y+0.3+0.15;	pos.z = ehh_z-1.5f;
-		drect (1.5f, 0.3f, 4.8f);
+		//pos.x = -8; pos.y = ehh_y+0.3+0.15;	pos.z = ehh_z-1.5f;
+		//drect (1.5f, 0.3f, 4.8f);
 		
-		pos.x = 8;
-		drect (1.5f, 0.3f, 4.8f);
+		//pos.x = -pos.x;
+		//drect (1.5f, 0.3f, 4.8f);
 		
+		pos.x = 6.4 + 4.78f/2; pos.y = ehh_y-0.3 - 0.9/2;	pos.z = ehh_z- 4.75 - 0.75f/2;
+		drect (4.78f, 0.9f, 0.75f);
+		
+		pos.x = -pos.x;
+		drect (4.78f, 0.9f, 0.75f);
+		
+		//pos.x = 8;
+		//drect (1.5f, 0.3f, 4.8f);
 	/*	tV4f pos;
 		pos.x = 0; pos.y = p->Mod.PC.y+0.15;	pos.z = p->Mod.PC.z-0.75;
 		drect (16, 0.3f, 1.5f);
@@ -2304,7 +2494,7 @@ void	HeadC_Draw		(tHead* p, tCam* pcam)
 	}
 }
 
-#if 1
+
 float	Head_Calc_a3	(tHead* p, float* pa)
 {
 	pa[0] = atan2(p->DotR.P.y - p->DotL.P.y, p->DotR.P.x - p->DotL.P.x);
@@ -2516,6 +2706,7 @@ void	Head_Calc_M_Rel	(tHead* p, tHead* pc)
 	M3f_mul_M3f (&p->MI, &sheeri);
 }
 
+
 void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 {
 	if (0) {
@@ -2620,9 +2811,9 @@ void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 		return;
 	}
 	if (1) {
-		tV2f osl = p->DotL.aCam[pcam->Idx].P;
-		tV2f osr = p->DotR.aCam[pcam->Idx].P;
-		tV2f osc = p->DotC.aCam[pcam->Idx].P;
+		tV2f osl = p->DotL.dcam.P;
+		tV2f osr = p->DotR.dcam.P;
+		tV2f osc = p->DotC.dcam.P;
 		
 		tV2f os_vrl = osl;	V2f_sub_V2f (&os_vrl, &osr);
 		tV2f os_vlc = osc;	V2f_sub_V2f (&os_vlc, &osl);
@@ -2633,13 +2824,13 @@ void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 		float osdrc = ddist (osr.x,osr.y,osc.x,osc.y);
 		
 		
-		static tM4f rot = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
-		static tM4f trans = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+		tM4f rot = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+		tM4f trans = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
 		
 		if (1) {
 			p->dcam.P.x = p->dcam.P.y = 0;
 			p->dcam.P.z = -30;
-			p->R_X = p->R_Y = p->R_Z = 0;
+			p->dcam.R_X = p->dcam.R_Y = p->dcam.R_Z = 0;
 			M4f_Iden (&rot);	M4f_Iden (&trans);	M4f_trans (&trans, 0, 0, -30);
 		}
 	/*	if (!finite(p->dcam.M4.x03)) {
@@ -2649,16 +2840,16 @@ void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 		}/**/
 		
 		float err = 0;
-		static si i = 0;
+		si i = 0;
 		for (i = 0; i < 100; ++i) {
 			if (1) {
 			//	M4f_Iden (&trans);
 			//	M4f_trans (&trans, p->dcam.P.x, p->dcam.P.y, p->dcam.P.z);
 				
 				M4f_Iden (&rot);
-				M4f_rotx (&rot, p->R_X);
-				M4f_roty (&rot, p->R_Y);
-				M4f_rotz (&rot, p->R_Z);
+				M4f_rotx (&rot, p->dcam.R_X);
+				M4f_roty (&rot, p->dcam.R_Y);
+				M4f_rotz (&rot, p->dcam.R_Z);
 			}
 			M4f_Iden (&p->dcam.M4);
 			M4f_mul_M4f (&p->dcam.M4, &rot);
@@ -2731,7 +2922,7 @@ void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 				dz += angle_norm_pi_pi(atan2(s_vrc.y,s_vrc.x) - atan2(os_vrc.y,os_vrc.x));
 			//	dz = -dz;
 			//	printf ("rotz %f\n", dz);
-				p->R_Z += p->Mod.RInc.z*dz;
+				p->dcam.R_Z += p->Mod.RInc.z*dz;
 			//	M4f_rotz (&rot, p->Mod.RInc.z*dz);
 			}/**/
 			
@@ -2740,7 +2931,7 @@ void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 				float cross = V2f_cross (&s_vlc, &s_vrc) / (sdlc*sdrc);
 				dx = -ocross + cross;
 			//	printf ("rotx %f\n", dx);
-				p->R_X += -p->Mod.RInc.x*dx;
+				p->dcam.R_X += -p->Mod.RInc.x*dx;
 			//	M4f_rotx (&rot, -p->Mod.RInc.x*dx);
 			}/**/
 			if (1) {
@@ -2762,7 +2953,7 @@ void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 				//	dy *= 0.1f;
 			//		printf ("roty %f\n", dy);
 				}
-				p->R_Y += -p->Mod.RInc.y*dy;
+				p->dcam.R_Y += -p->Mod.RInc.y*dy;
 			//	printf ("roty %f\n", dy);
 			//	M4f_roty (&rot, -p->Mod.RInc.y*dy);
 			}/**/
@@ -2779,9 +2970,9 @@ void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 		//	M4f_trans (&trans, p->dcam.P.x, p->dcam.P.y, p->dcam.P.z);
 			
 			M4f_Iden (&rot);
-			M4f_rotx (&rot, p->R_X);
-			M4f_roty (&rot, p->R_Y);
-			M4f_rotz (&rot, p->R_Z);
+			M4f_rotx (&rot, p->dcam.R_X);
+			M4f_roty (&rot, p->dcam.R_Y);
+			M4f_rotz (&rot, p->dcam.R_Z);
 		}
 	/*	if (fabsf(err) > 5 || !finite(trans.x03)) {
 			M4f_Iden (&rot);	M4f_Iden (&trans);	M4f_trans (&trans, 0, 0, -40);
@@ -2793,13 +2984,13 @@ void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 		
 		if (1) {
 			M4f_Iden (&rot);
-			M4f_rotx (&rot, p->R_X);
-			M4f_roty (&rot, p->R_Y);
-			M4f_rotz (&rot, p->R_Z);
+			M4f_rotx (&rot, p->dcam.R_X);
+			M4f_roty (&rot, p->dcam.R_Y);
+			M4f_rotz (&rot, p->dcam.R_Z);
 		}
 		if (0) {
-			M4f_rotx (&rot, p->SRX*p->R_X);
-			M4f_roty (&rot, p->SRY*p->R_Y);
+			M4f_rotx (&rot, p->dcam.SRX*p->dcam.R_X);
+			M4f_roty (&rot, p->dcam.SRY*p->dcam.R_Y);
 		}
 		p->dcam.M4_R = rot;
 		
@@ -2816,7 +3007,7 @@ void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 		p->dcam.N.y = 0;
 		p->dcam.N.z = 1;
 		p->dcam.N.w = 1;
-		M4f_mul_V4f (&p->dcam.M4_R, &p->N);
+		M4f_mul_V4f (&p->dcam.M4_R, &p->dcam.N);
 		
 	//	printf ("p->P: ");	V4f_Print (&p->P);
 	//	printf ("p->N: ");	V4f_Print (&p->N);
@@ -2830,8 +3021,8 @@ void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 		M4f_Inv (&p->dcam.M4_T, &p->dcam.M4I_T);
 		
 	}
-	printf ("c:\t%f\t%f\t%f\n", p->dcam.M4.x03, p->dcam.M4.x13, p->dcam.M4.x23);
-	printf ("c:\t%f\t%f\t%f\n", p->dcam.M4_T.x03, p->dcam.M4_T.x13, p->dcam.M4_T.x23);
+	//printf ("c:\t%f\t%f\t%f\n", p->dcam.M4.x03, p->dcam.M4.x13, p->dcam.M4.x23);
+	//printf ("c:\t%f\t%f\t%f\n", p->dcam.M4_T.x03, p->dcam.M4_T.x13, p->dcam.M4_T.x23);
 	
 }
 
@@ -2892,30 +3083,12 @@ tV4f	Head_Diff4_Eye4	(tHead* p, tEye* peye)
 	return u;
 }
 
-void	Head_Eye_Line	(tHead* p, tEye* peye, tV4f* ppos, tV4f* pvec)	//line from camera to retina in head_space
+void	Head_EyeC_Line	(tHead* p, tEye* peye, tCam* pcam, tV4f* ppos, tV4f* pvec)	//line from camera to retina in head_space
 {
 	tV4f p0 = {0, 0, 0, 1};
 	tV4f p1 = {0, 0, -1, 1};
-	/*
-	if (gM.Eye_Line_Ray) {
-		float ax = M_PI_2 - gM.Cam.Image_FOV_W/2 + (peye->P.x/gM.Cam.Image_W)*gM.Cam.Image_FOV_W;
-		float ay = M_PI_2 - gM.Cam.Image_FOV_H/2 + (peye->P.y/gM.Cam.Image_H)*gM.Cam.Image_FOV_H;
-		
-		ax = M_PI_2 - ax;
-		ay = M_PI_2 - ay;
-		
-	//	printf ("Image_FOV   %f\n", gM.Cam.Image_FOV);
-	//	printf ("Image_FOV_W %f\n", gM.Cam.Image_FOV_W*rad2deg);
-	//	printf ("axy %f %f\n", ax*rad2deg, ay*rad2deg);
-		V4f_roty (&p1, ax);
-		V4f_rotx (&p1, ay);
-	}else {
-		p1.x = pcam->Proj_L + (peye->P.x/gM.Cam.Image_W)*pcam->Proj_W;
-		p1.y = pcam->Proj_B + (peye->P.y/gM.Cam.Image_H)*pcam->Proj_H;
-	}/**/
-	Cam_Retina_Ray (peye, &p0, &p1, 0);
-//	printf ("p0: ");	V4f_Print (&p0);
-//	printf ("p1: ");	V4f_Print (&p1);
+	
+	Cam_Pos2Ray (pcam, peye->dcam.P, &p0, &p1, 0);
 	
 	tV4f u;
 	V4f_Intersect_Line01_Plane0N (
@@ -2924,17 +3097,6 @@ void	Head_Eye_Line	(tHead* p, tEye* peye, tV4f* ppos, tV4f* pvec)	//line from ca
 		&p->P, &p->N
 	);
 	
-	/*
-	tV4f n = p->N, negn = V4f_rneg (&p->N);
-	tV4f negw = p->P;
-	tV4f u = p1; //V4f_sub_V4f (&u, &p0);
-//	printf ("n*u %f\n", V4f_dot_V4f (&n, &u));
-	float s = V4f_dot_V4f (&n, &negw) / V4f_dot_V4f (&n, &u);
-	
-	u.x *= s;
-	u.y *= s;
-	u.z *= s;
-	/**/
 	*ppos = u;		V4f_sub_V4f (ppos, &p->P);
 	
 	*pvec = u;
@@ -2949,11 +3111,39 @@ void	Head_Eye_Line	(tHead* p, tEye* peye, tV4f* ppos, tV4f* pvec)	//line from ca
 //	printf ("onplane1 %f %f %f\n", onplane.x, onplane.y, onplane.z);
 	
 }
+void	HeadC_EyeC_Line	(tHead* p, tCam* pcam, tEye* peye, tV4f* ppos, tV4f* pvec)	//line from camera to retina in head_space
+{
+	tV4f p0 = {0, 0, 0, 1};
+	tV4f p1 = {0, 0, -1, 1};
+	
+	Cam_Pos2Ray (pcam, peye->dcam.P, &p0, &p1, 0);
+	
+	tV4f u;
+	V4f_Intersect_Line01_Plane0N (
+		&u,
+		&p0, &p1,
+		&p->dcam.P, &p->dcam.N
+	);
+	
+	*ppos = u;		V4f_sub_V4f (ppos, &p->dcam.P);
+	
+	*pvec = u;
+	pvec->x *= 0.2f;	pvec->y *= 0.2f;	pvec->z *= 0.2f;
+//	V4f_add_V4f (ppos, pvec);
+	V4f_lneg (pvec);
+//	pvec->x *= 2.0f;	pvec->y *= 2.0f;	pvec->z *= 2.0f;
+	
+//	printf ("onplane0 %f %f %f\n", onplane.x, onplane.y, onplane.z);
+	M4f_mul_V4f (&gM.Head.dcam.M4I_R, ppos);
+	M4f_mul_V4f (&gM.Head.dcam.M4I_R, pvec);
+//	printf ("onplane1 %f %f %f\n", onplane.x, onplane.y, onplane.z);
+	
+}
 
-void	Head_Eye_LineAdd	(tHead* p, tEye* peye)
+void	HeadC_EyeC_LineAdd	(tHead* p, tCam* pcam, tEye* peye)
 {
 	tV4f pos, vec;
-	Head_Eye_Line (p, peye, &pos, &vec);
+	HeadC_EyeC_Line (p, pcam, peye, &pos, &vec);
 	
 //	printf ("pos: ");	V4f_Print (&pos);
 //	printf ("vec: ");	V4f_Print (&vec);
@@ -2971,7 +3161,7 @@ void	Head_Eye_LineAdd	(tHead* p, tEye* peye)
 		Head_Eye_CalcP (p, peye);
 }
 
-void	Head_Eye_LineDraw	(tHead* p, tEye* peye)
+void	Head_Cam_Eye_LineDraw		(tHead* p, tCam* pcam, tEye* peye)
 {
 	if (1) {
 		gCol.R = 0x0;
@@ -3005,11 +3195,11 @@ void	Head_Eye_LineDraw	(tHead* p, tEye* peye)
 	V4f_DrawPosPos (pcam, &pos, &pos);
 }
 
-void	Head_Eye_Vector	(tHead* p, tEye* peye, tV4f* pret)	//Point of retina in head_space
+void	Head_EyeC_Vector		(tHead* p, tEye* peye, tCam* pcam, tV4f* pret)	//Point of retina in head_space
 {
 	float r = peye->InHead.R;
 	tV4f p0, vec, p1;
-	Head_Eye_Line (p, peye, &p0, &vec);
+	Head_EyeC_Line (p, peye, pcam, &p0, &vec);
 	
 	p1 = p0;	V4f_add_V4f (&p1, &vec);
 	
@@ -3062,15 +3252,14 @@ void	Head_Eye_Vector	(tHead* p, tEye* peye, tV4f* pret)	//Point of retina in hea
 	pret->w = 1;
 	printf ("pret0 "); V4f_Print (pret);/**/
 }
-
-void	Head_Eye_VectorGlob	(tHead* p, tEye* peye, tV4f* pr0, tV4f* pr1, tV4f* prv)	//gaze vector of retina in world_space
+void	Head_EyeC_VectorGlob	(tHead* p, tEye* peye, tCam* pcam, tV4f* pr0, tV4f* pr1, tV4f* prv)	//gaze vector of retina in world_space
 {
 	if (gM.GazeMode == 2) {
 		Eye_GP_GazeVector (peye, pr0, pr1, prv);
 		return;
 	}
 	tV4f eye, ret, vec;
-	Head_Eye_Vector (p, peye, &ret);
+	Head_EyeC_Vector (p, peye, pcam, &ret);
 	
 	eye = peye->InHead.P;
 	
@@ -3086,32 +3275,86 @@ void	Head_Eye_VectorGlob	(tHead* p, tEye* peye, tV4f* pr0, tV4f* pr1, tV4f* prv)
 	}
 }
 
-#endif
-
-void PrintMat(CvMat *A)
+void	HeadC_EyeC_Vector	(tHead* p, tCam* pcam, tEye* peye, tV4f* pret)	//Point of retina in head_space
 {
-	int i, j;
-	for (i = 0; i < A->rows; i++)
-	{
-	printf("\n"); 
-	switch (CV_MAT_DEPTH(A->type))
-	{
-	case CV_32F:
-	case CV_64F:
-	for (j = 0; j < A->cols; j++)
-	printf ("%8.3f ", (float)cvGetReal2D(A, i, j));
-	break;
-	case CV_8U:
-	case CV_16U:
-	for(j = 0; j < A->cols; j++)
-	printf ("%6d",(int)cvGetReal2D(A, i, j));
-	break;
-	default:
-	break;
+	float r = peye->InHead.R;
+	tV4f p0, vec, p1;
+	HeadC_EyeC_Line (p, pcam, peye, &p0, &vec);
+	
+	p1 = p0;	V4f_add_V4f (&p1, &vec);
+	
+	float a = V4f_dist2 (&vec);
+	float b = 2*( (p1.x-p0.x)*(p0.x-peye->InHead.P.x)
+				+ (p1.y-p0.y)*(p0.y-peye->InHead.P.y)
+				+ (p1.z-p0.z)*(p0.z-peye->InHead.P.z)
+	);
+	float c = V4f_dist2 (&peye->InHead.P) + V4f_dist2 (&p0) - 2*(peye->InHead.P.x*p0.x + peye->InHead.P.y*p0.y + peye->InHead.P.z*p0.z) - dpow2(r);
+	
+	float d = b*b - 4*a*c;
+	if (d < 0) {
+		pret->x = 0;
+		pret->y = 0;
+		pret->z = 0;
+		pret->w = 1;
+		
+		tV4f pos = peye->InHead.P;
+		M4f_mul_V4f (&p->dcam.M4, &pos);
+		
+		tV2si screen_pos;
+		V4f_ScreenPos (pcam, &pos, &screen_pos);
+		
+		peye->dcam.P.x = screen_pos.x;
+		peye->dcam.P.y = screen_pos.y;
+	//	printf ("eye failed"
+		return;
 	}
-	}
-	printf("\n");
+//	printf ("d %f\n", d);
+	float u;
+	
+	u = (-b - sqrt(d)) / (2*a);
+	pret->x = p0.x + u*vec.x;
+	pret->y = p0.y + u*vec.y;
+	pret->z = p0.z + u*vec.z;
+	pret->w = 1;
+//	printf ("pret0 "); V4f_Print (pret);
+	
+	u = (-b + sqrt(d)) / (2*a);
+	pret->x = p0.x + u*vec.x;
+	pret->y = p0.y + u*vec.y;
+	pret->z = p0.z + u*vec.z;
+	pret->w = 1;
+//	printf ("pret1 "); V4f_Print (pret);
+	
+/*	u = (-b - sqrt(d)) / (2*a);
+	pret->x = p0.x + u*vec.x;
+	pret->y = p0.y + u*vec.y;
+	pret->z = p0.z + u*vec.z;
+	pret->w = 1;
+	printf ("pret0 "); V4f_Print (pret);/**/
 }
+void	HeadC_EyeC_VectorGlob	(tHead* p, tCam* pcam, tEye* peye, tV4f* pr0, tV4f* pr1, tV4f* prv)	//gaze vector of retina in world_space
+{
+	if (gM.GazeMode == 2) {
+		Eye_GP_GazeVector (peye, pr0, pr1, prv);
+		return;
+	}
+	tV4f eye, ret, vec;
+	HeadC_EyeC_Vector (p, pcam, peye, &ret);
+	
+	eye = peye->InHead.P;
+	
+	M4f_mul_V4f (&p->M4, &eye);
+	M4f_mul_V4f (&p->M4, &ret);
+	
+	if (pr0)
+		*pr0 = eye;
+	if (pr1)
+		*pr1 = ret;
+	if (prv) {
+		*prv = ret;	V4f_sub_V4f (prv, &eye);
+	}
+}
+
 
 
 
@@ -3647,7 +3890,7 @@ void	Screen_ReInterp		(tScreen* p)
 
 void	Screen_Cal_Save_Eye	(tScreen* p, tEye* peye, float z)
 {
-	printf ("Screen_Cal_Save_Eye Z %f\n", z);
+	//printf ("Screen_Cal_Save_Eye Z %f\n", z);
 //	peye->aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].SX = p->Cal.sx;
 //	peye->aScreen[p->Idx].aaCal[p->Cal.iy][p->Cal.ix].SY = p->Cal.sy;
 	
@@ -3657,7 +3900,7 @@ void	Screen_Cal_Save_Eye	(tScreen* p, tEye* peye, float z)
 	lvec = lret;	V4f_sub_V4f (&lvec, &peye->InHead.P);
 	
 	M4f_mul_V4f (&gM.Head.M4, &leye);	M4f_mul_V4f (&gM.Head.M4, &lret);	M4f_mul_V4f (&gM.Head.M4, &lvec);/**/
-	Head_Eye_VectorGlob (&gM.Head, peye, &leye, &lret, &lvec);
+	abort(); //Head_Eye_VectorGlob (&gM.Head, peye, &leye, &lret, &lvec);
 	
 	tV4f pos = (tV4f){0, 0, z, 1};
 	tV4f norm = (tV4f){0, 0, 1, 1};
@@ -3682,9 +3925,13 @@ void	Screen_Cal_Save		(tScreen* p)
 	if (0) {
 		tV4f e00, e01, e10, e11;
 		tV4f p0, p1;
+		//Head_Eye_VectorGlob (&gM.Head, &gM.Left, &e00, &e01, NULL);
+		//Head_Eye_VectorGlob (&gM.Head, &gM.Right, &e10, &e11, NULL);
 		
-		Head_Eye_VectorGlob (&gM.Head, &gM.Left, &e00, &e01, NULL);
-		Head_Eye_VectorGlob (&gM.Head, &gM.Right, &e10, &e11, NULL);
+		e00 = gM.Left.P0;
+		e01 = gM.Left.P1;
+		e10 = gM.Right.P0;
+		e11 = gM.Right.P1;
 		
 		V4f_Intersect_Line01_Line01 (
 			&p0, &p1,
@@ -3716,9 +3963,7 @@ void	Screen_Cal_Record		(tScreen* p, tEye* peye, float z)
 {
 //	printf ("Screen_Cal_Record Z %f\n", z);
 	
-	tV4f leye, lret, lvec;
-	
-	Head_Eye_VectorGlob (&gM.Head, peye, &leye, &lret, &lvec);
+	tV4f leye = peye->P0, lret = peye->P1, lvec = peye->Vec;
 	
 	tV4f pos = (tV4f){0, 0, z, 1};
 	tV4f norm = (tV4f){0, 0, 1, 1};		V4f_rotx (&norm, -30*deg2rad);
@@ -3832,7 +4077,7 @@ u08	Screen_Eye_Point	(tEye* peye, tV4f* ppos, float* ps, float *pt)
 	
 	M4f_mul_V4f (&gM.Head.M4, &p0);
 	M4f_mul_V4f (&gM.Head.M4, &p1);/**/
-	Head_Eye_VectorGlob (&gM.Head, peye, &p0, &p1, NULL);
+	p0 = peye->P0;	p1 = peye->P1;
 	
 	t0.z = gM.aScreen[0].C.z;
 	t2 = t1 = t0;
@@ -3855,8 +4100,7 @@ s08	Screen_Eye_XY_T	(tScreen* p, tEye* peye, si ix, si iy, float *px, float *py,
 	
 	M4f_mul_V4f (&gM.Head.M4, &p0);
 	M4f_mul_V4f (&gM.Head.M4, &p1);/**/
-	
-	Head_Eye_VectorGlob (&gM.Head, peye, &p0, &p1, NULL);
+	p0 = peye->P0;	p1 = peye->P1;
 	
 	float s, t;
 	V4f_Intersect_Line01_Tri012 (
@@ -3891,8 +4135,7 @@ s08	Screen_Eye_XY_B	(tScreen* p, tEye* peye, si ix, si iy, float *px, float *py,
 	
 	M4f_mul_V4f (&gM.Head.M4, &p0);
 	M4f_mul_V4f (&gM.Head.M4, &p1);/**/
-	
-	Head_Eye_VectorGlob (&gM.Head, peye, &p0, &p1, NULL);
+	p0 = peye->P0;	p1 = peye->P1;
 	
 	float s, t;
 	V4f_Intersect_Line01_Tri012 (
@@ -4050,7 +4293,7 @@ void	Screen_Print	(tScreen* p)
 	Screen_Eye_Print (p, &gM.Left);
 	Screen_Eye_Print (p, &gM.Right);
 	
-	if (p == gM.aScreen + 0) {
+/*	if (p == gM.aScreen + 0) {
 		tEye* peye = &gM.Left;
 		printf ("width top %f\n", V4f_dist_V4f (&dcal(0,0).P, &dcal(dEye_Screen_Cal_LAST,0).P));
 		printf ("width bot %f\n", V4f_dist_V4f (&dcal(0,dEye_Screen_Cal_LAST).P, &dcal(dEye_Screen_Cal_LAST,dEye_Screen_Cal_LAST).P));
@@ -4058,22 +4301,88 @@ void	Screen_Print	(tScreen* p)
 		printf ("heigh lef %f\n", V4f_dist_V4f (&dcal(0,0).P, &dcal(0,dEye_Screen_Cal_LAST).P));
 		printf ("heigh rig %f\n", V4f_dist_V4f (&dcal(dEye_Screen_Cal_LAST,0).P, &dcal(dEye_Screen_Cal_LAST,dEye_Screen_Cal_LAST).P));
 		
-	}
+	}/**/
 	
 }
 
 #undef dcal
 
 
+void	Head_Eye_GazeToScreen	(tHead* p, tEye* peye, tV2f* pret)
+{
+/*	tV4f eye, ret, vec;
+	Head_Eye_Vector (p, peye, &ret);
+	
+	eye = peye->InHead.P;
+	vec = ret;	V4f_sub_V4f (&vec, &peye->InHead.P);
+	
+	M4f_mul_V4f (&p->M4, &eye);
+	M4f_mul_V4f (&p->M4, &ret);
+	*/
+//	printf ("Head_Eye_GazeToScreen\n");
+//	s08 good[gM.Screen_N];
+//	tV2f gaze[gM.Screen_N];
+	si i, an = 0, mind = 600;	s08 got = 0;
+	float ax = 0, ay = 0;
+	
+	for (i = 0; i < gM.Screen_N; ++i) {
+		if (!gM.aScreen[i].bGood)
+			continue;
+		float x, y;
+		s08 ret = Screen_Eye_XY (gM.aScreen + i, peye, &x, &y);
+	//	printf ("Screen_Eye_XY ret %d\n", ret);
+		if (ret) {
+			si d = 0;
+			if (x < 0) {
+				d += -x;
+				x = 0;
+			}else if (x >= gM.aScreen[i].PixW) {
+				d += x-gM.aScreen[i].PixW+1;
+				x = gM.aScreen[i].PixW-1;
+			}
+			if (y < 0) {
+				d += -y;
+				y = 0;
+			}else if (y >= gM.aScreen[i].PixH) {
+				d += y-gM.aScreen[i].PixH+1;
+				y = gM.aScreen[i].PixH-1;
+			}
+			if (got != 1) {
+				if (!d) {
+					got = 1;
+					ax = gM.aScreen[i].Off.x+x;
+					ay = gM.aScreen[i].Off.y+y;
+					an = 1;
+					break;
+				}else if (d < mind) {
+					got = -1;
+					mind = d;
+					ax = gM.aScreen[i].Off.x+x;
+					ay = gM.aScreen[i].Off.y+y;
+					an = 1;
+				}
+			}
+		}
+	}
+//	printf ("an %ld\n", an);
+	ax /= an;
+	ay /= an;
+	
+	pret->x = ax;
+	pret->y = ay;
+}
 
 
-void	Head_Eye_Print	(tHead* p, tEye* peye)	//print the eye vectors
+
+
+void	Eye_Dbg_Print	(tEye* peye)	//print the eye vectors
 {
 	Col_EyeSet (peye);
 	
 	tV4f eye, ret, vec;
 	if (1) {
-		Head_Eye_VectorGlob (p, peye, &eye, NULL, &vec);
+		eye = peye->P0;
+		vec = peye->Vec;
 		V4f_mul_S (&vec, 60);
 		V4f_add_V4f (&vec, &eye);
 		
@@ -4081,20 +4390,21 @@ void	Head_Eye_Print	(tHead* p, tEye* peye)	//print the eye vectors
 		Dbg_V4f_ADrawPoint (&eye);
 		
 		if (1) {
-			Head_Eye_VectorGlob (p, peye, &eye, NULL, &vec);
+			eye = peye->P0;
+			vec = peye->Vec;
 			V4f_mul_S (&vec, peye->InHead.R/V4f_dist(&vec));
 			V4f_add_V4f (&vec, &eye);
 			
 			Dbg_V4f_ADrawPoint (&vec);
 			
-			gCol.R = 0x0;
-			gCol.G = 0xFF;
-			gCol.B = 0x0;
-			V4f_DrawPosPos (pcam, &vec, &vec);
+			//gCol.R = 0x0;
+			//gCol.G = 0xFF;
+			//gCol.B = 0x0;
+			//V4f_DrawPosPos (pcam, &vec, &vec);
 		}
 	}
 	
-	if (1) {
+	if (0) {
 	//	float r = peye->InHead.R;
 		tV4f p0, vec, p1;
 	//	Head_Eye_Line (p, peye, &p0, &vec);
@@ -4149,77 +4459,6 @@ void	Head_Dbg_Print	(tHead* p)
 		Dbg_V4f_ADrawPoint (&p1);
 	}
 	/**/
-}
-
-void	Head_Eye_Gaze	(tHead* p, tEye* peye)
-{
-	tV4f eye, ret, vec;
-	Head_Eye_Vector (p, peye, &ret);
-	
-	eye = peye->InHead.P;
-	vec = ret;	V4f_sub_V4f (&vec, &peye->InHead.P);
-	
-	M4f_mul_V4f (&p->M4, &eye);
-	M4f_mul_V4f (&p->M4, &ret);
-	
-//	printf ("Head_Eye_Gaze\n");
-//	s08 good[gM.Screen_N];
-//	tV2f gaze[gM.Screen_N];
-	si i, an = 0, mind = 600;	s08 got = 0;
-	float ax = 0, ay = 0;
-	
-	for (i = 0; i < gM.Screen_N; ++i) {
-		if (!gM.aScreen[i].bGood)
-			continue;
-		float x, y;
-		s08 ret = Screen_Eye_XY (gM.aScreen + i, peye, &x, &y);
-	//	printf ("Screen_Eye_XY ret %d\n", ret);
-		if (ret) {
-			si d = 0;
-			if (x < 0) {
-				d += -x;
-				x = 0;
-			}else if (x >= gM.aScreen[i].PixW) {
-				d += x-gM.aScreen[i].PixW+1;
-				x = gM.aScreen[i].PixW-1;
-			}
-			if (y < 0) {
-				d += -y;
-				y = 0;
-			}else if (y >= gM.aScreen[i].PixH) {
-				d += y-gM.aScreen[i].PixH+1;
-				y = gM.aScreen[i].PixH-1;
-			}
-			if (got != 1) {
-				if (!d) {
-					got = 1;
-					ax = gM.aScreen[i].Off.x+x;
-					ay = gM.aScreen[i].Off.y+y;
-					an = 1;
-					break;
-				}else if (d < mind) {
-					got = -1;
-					mind = d;
-					ax = gM.aScreen[i].Off.x+x;
-					ay = gM.aScreen[i].Off.y+y;
-					an = 1;
-				}
-			}
-		}
-	}
-//	printf ("an %ld\n", an);
-	ax /= an;
-	ay /= an;
-	
-	if (peye == &gM.Left) {
-	//	printf ("Left\t%f\t%f\n", ax, ay);
-		gM.GazeL.x = ax;
-		gM.GazeL.y = ay;
-	}else {
-	//	printf ("Righ\t%f\t%f\n", ax, ay);
-		gM.GazeR.x = ax;
-		gM.GazeR.y = ay;
-	}
 }
 
 
@@ -4406,7 +4645,26 @@ void	Eye_Glint_Gaze	(tEye* peye)
 }
 
 
-
+void	Cam_World_Conf		(tCam* pcam)
+{
+	M4f_Iden (&pcam->World);
+	M4f_rotx (&pcam->World, pcam->R.x * deg2rad);
+	M4f_roty (&pcam->World, pcam->R.y * deg2rad);
+	M4f_rotz (&pcam->World, pcam->R.z * deg2rad);
+	pcam->World_R = pcam->World;
+	M4f_trans (&pcam->World, pcam->T.x, pcam->T.y, pcam->T.z);
+	
+	pcam->WorldI = pcam->World;
+	//M4f_Inv (&pcam->World, &pcam->WorldI);
+	M4f_Inv (&pcam->World_R, &pcam->WorldI_R);
+	
+	M4f_Iden (&pcam->WorldI);
+	M4f_rotx (&pcam->WorldI, -pcam->R.x * deg2rad);
+	M4f_roty (&pcam->WorldI, -pcam->R.y * deg2rad);
+	M4f_rotz (&pcam->WorldI, -pcam->R.z * deg2rad);
+	M4f_trans (&pcam->WorldI, -pcam->T.x, -pcam->T.y, -pcam->T.z);/**/
+	
+}
 void	Cam_Proj_Conf		(tCam* pcam)
 {
 	if (0) {
@@ -4452,26 +4710,49 @@ void	Cam_Proj_Conf		(tCam* pcam)
 	pcam->Proj.x32 = -1;/**/
 	M4f_Frustrum (&pcam->Proj, pcam->Proj_W, pcam->Proj_H, pcam->Proj_N, pcam->Proj_F);
 	
+	Cam_World_Conf(pcam);
+	
+	/*
+	<Camera_Matrix type_id="opencv-matrix">
+	  <rows>3</rows>
+	  <cols>3</cols>
+	  <dt>d</dt>
+	  <data>
+	    2.1984484337665349e+03 0. 9.5950000000000000e+02 0.
+	    2.1984484337665349e+03 5.3950000000000000e+02 0. 0. 1.</data></Camera_Matrix>
+	<Distortion_Coefficients type_id="opencv-matrix">
+	  <rows>5</rows>
+	  <cols>1</cols>
+	  <dt>d</dt>
+	  <data>
+	    -8.8508181047377607e-02 1.2478902888339536e+00 0. 0.
+	    -7.2250931959244387e+00</data></Distortion_Coefficients>
+	<Avg_Reprojection_Error>9.2358660336575382e-01</Avg_Reprojection_Error>
+	*/
 	
 	pcam->cvCam = cvCreateMatHeader(3, 3, CV_32FC1);
 	cvCreateData(pcam->cvCam);
-	cvSet2D (pcam->cvCam, 0, 0, cvScalarAll(2058.4890867164763));
+	cvSet2D (pcam->cvCam, 0, 0, cvScalarAll(2.1984484337665349e+03));
 	cvSet2D (pcam->cvCam, 0, 1, cvScalarAll(0));
-	cvSet2D (pcam->cvCam, 0, 2, cvScalarAll(959.50000000000000));
+	cvSet2D (pcam->cvCam, 0, 2, cvScalarAll(9.5950000000000000e+0));
 	cvSet2D (pcam->cvCam, 1, 0, cvScalarAll(0));
-	cvSet2D (pcam->cvCam, 1, 1, cvScalarAll(2058.4890867164763));
-	cvSet2D (pcam->cvCam, 1, 2, cvScalarAll(539.50000000000000));
+	cvSet2D (pcam->cvCam, 1, 1, cvScalarAll(2.1984484337665349e+03));
+	cvSet2D (pcam->cvCam, 1, 2, cvScalarAll(5.3950000000000000e+02));
 	cvSet2D (pcam->cvCam, 2, 0, cvScalarAll(0));
 	cvSet2D (pcam->cvCam, 2, 1, cvScalarAll(0));
 	cvSet2D (pcam->cvCam, 2, 2, cvScalarAll(1));
 	
+	pcam->cvCamI = cvCreateMatHeader(3, 3, CV_32FC1);
+	cvCreateData(pcam->cvCamI);
+	cvInvert(pcam->cvCam, pcam->cvCamI, CV_LU);
+	
 	pcam->cvDist = cvCreateMatHeader(5, 1, CV_32FC1);
 	cvCreateData(pcam->cvDist);
-	cvSet2D (pcam->cvDist, 0, 0, cvScalarAll(-0.023321480666943440));
-	cvSet2D (pcam->cvDist, 1, 0, cvScalarAll(0.69231202113335466));
+	cvSet2D (pcam->cvDist, 0, 0, cvScalarAll(-8.8508181047377607e-02));
+	cvSet2D (pcam->cvDist, 1, 0, cvScalarAll(1.2478902888339536e+00));
 	cvSet2D (pcam->cvDist, 2, 0, cvScalarAll(0));
 	cvSet2D (pcam->cvDist, 3, 0, cvScalarAll(0));
-	cvSet2D (pcam->cvDist, 4, 0, cvScalarAll(-3.5279699461953733));
+	cvSet2D (pcam->cvDist, 4, 0, cvScalarAll(-7.2250931959244387e+00));
 	
 	
 	PrintMat (pcam->cvCam);
@@ -4521,41 +4802,25 @@ int	Cam_Loop		(tCam* pcam)
 		Eye_Clip (&gM.Head.DotR);
 		
 	//	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
-		/*
-	//	Eye_V_Pre (&gM.Right);
-		Eye_Fit (&gM.Right);
-	//	Eye_V_Post (&gM.Right);
-		Eye_Clip (&gM.Right);
+		
+		Eye_V_Pre (&gM.Right, pcam);
+		Eye_Fit (&gM.Right, pcam);
+		Eye_V_Post (&gM.Right, pcam);
+		Eye_Clip (&gM.Right, pcam);
 		
 	//	memcpy(gM.pDst, videoIn->framebuffer, videoIn->width * (videoIn->height) * 2);
 		
-	//	Eye_V_Pre (&gM.Left);
-		Eye_Fit (&gM.Left);
-	//	Eye_V_Post (&gM.Left);
-		Eye_Clip (&gM.Left);
+		Eye_V_Pre (&gM.Left, pcam);
+		Eye_Fit (&gM.Left, pcam);
+		Eye_V_Post (&gM.Left, pcam);
+		Eye_Clip (&gM.Left, pcam);
 		
-		Eye_Draw (&gM.Left);
-		Eye_Draw (&gM.Right);
 	//	printf ("Eye pos Left %f %f\n", gM.Left.P.x, gM.Left.P.y);
 	//	printf ("Eye pos Righ %f %f\n", gM.Right.P.x, gM.Right.P.y);
-		*/
-		if (pcam->Idx == 0) {
-			//printf ("DotC aCam[0].P %f %f\n", gM.Head.DotC.aCam[0].P.x, gM.Head.DotC.aCam[0].P.y);
-			
-			HeadC_Calc_M4_Rel (&gM.Head, pcam, &gM.HeadC);
-			
-			#define dcopy(_name)	gM.Head._name = gM.Head.aCam[pcam->Idx]._name
-			
-			dcopy(P);		dcopy(N);		dcopy(R);
-			dcopy(M4);		dcopy(M4_T);	dcopy(M4_R);
-			dcopy(M4I);		dcopy(M4I_T);	dcopy(M4I_R);
-			dcopy(R_X);		dcopy(R_Y);		dcopy(R_Z);
-			dcopy(SRX);		dcopy(SRY);
-			#undef dcopy
-			
-			Head_Dbg_Print(&gM.Head);
-		}
-		HeadC_Draw (&gM.Head, pcam);
+		/**/
+		HeadC_Calc_M4_Rel (&gM.Head, pcam, &gM.HeadC);
+		
+		//HeadC_Draw (&gM.Head, pcam);
 		
 		#define dprojline3(x0,y0,z0,x1,y1,z1)	\
 			do {	\
@@ -4563,16 +4828,17 @@ int	Cam_Loop		(tCam* pcam)
 				V4f_DrawPosPos (pcam, &__p0, &__p1);	\
 			}while(0)
 		
-		dprojline3(0, 0, -40, 10, 0, -40);
-		
-		dprojline3(0, 0, -40, 0, 10, -40);
-		
+		//dprojline3(0, 0, -40, 10, 0, -40);
+		//dprojline3(0, 0, -40, 0, 10, -40);
 		
 		#undef dprojline3
 		
 		Eye_Draw (&gM.Head.DotC, pcam);
 		Eye_Draw (&gM.Head.DotL, pcam);
 		Eye_Draw (&gM.Head.DotR, pcam);
+		
+		Eye_Draw (&gM.Left, pcam);
+		Eye_Draw (&gM.Right, pcam);
 		
 		SDL_UnlockSurface (pcam->SDL_Surf);
 		//printf("cam %d write start end\n", pcam->Idx);
@@ -4600,7 +4866,7 @@ int	muhaha_chrdev_Thread	(void *data)
 	while (1) {
 		char buf[32];
 		ssize_t size = read(fd, &buf, 1);
-		printf ("YEAH got character 0x%hhx 0x%hhu\n", buf[0], buf[0] & 0x7F);
+		printf ("YEAH got character 0x%hhx %hhu\n", buf[0], buf[0] & 0x7F);
 		do {
 			if (buf[0] & 0x80) {
 				buf[0] &= 0x7F;
@@ -4832,11 +5098,12 @@ void	muhaha_Init	()
 		
 		Cam_Proj_Conf (pcam);
 		
-		M4f_Iden (&pcam->World);
-		if (i == 0)
-			M4f_trans (&pcam->World, 0, 0, 0);
-		else
-			M4f_trans (&pcam->World, 0, -2.3, 0);
+		//if (i == 0)
+			//M4f_trans (&pcam->World, 0, 0, 0);
+		//else
+			//M4f_trans (&pcam->World, 0, -2.4, 0);
+		
+	//	M4f_Inv (&pcam->World, &pcam->WorldI);
 	//	M4f_rotx (&pcam->World, 15*deg2rad);
 	//	M4f_trans (&pcam->World, 0, 0, -15);
 	//	M4f_rotx (&pcam->World, 15*deg2rad);
@@ -5693,8 +5960,8 @@ void	muhaha	()
 		
 		
 		if (gM.GazeMode == 0) {	//Normal head tracking
-			Head_Eye_Gaze (&gM.Head, &gM.Left);
-			Head_Eye_Gaze (&gM.Head, &gM.Right);
+			Head_Eye_GazeToScreen (&gM.Head, &gM.Left);
+			Head_Eye_GazeToScreen (&gM.Head, &gM.Right);
 			
 		}else if (gM.GazeMode == 1) {	//Glint normalization homography mapping
 			gM.GazeL = Eye_map_point(&gM.Left, gM.Left.GV);
@@ -5710,8 +5977,8 @@ void	muhaha	()
 			
 		//	printf ("Gaze						%f %f\n", gM.GazeL.x, gM.GazeL.y);
 		}else if (gM.GazeMode == 2) {	//Glint sphere tracking
-			Head_Eye_Gaze (&gM.Head, &gM.Left);
-		//	Head_Eye_Gaze (&gM.Head, &gM.Right);
+			Head_Eye_GazeToScreen (&gM.Head, &gM.Left);
+		//	Head_Eye_GazeToScreen (&gM.Head, &gM.Right);
 			gM.GazeR = gM.GazeL;
 		//	Eye_Glint_Gaze (&gM.Left);
 		//	Eye_Glint_Gaze (&gM.Right);
@@ -5902,16 +6169,10 @@ void	muhaha_Loop	()
 	}
 	
 	SDL_SemPostN (gM.sWaitForUpdate, gM.Cam_N);
+	
 	/* main big loop */
 	while (gM.aCam[0].UVC->signalquit) {
-		// Measure the frame rate every (fps/2) frames
-	/*	if(loop_counter ++ % frmrate_update == 0) {
-			currtime = SDL_GetTicks();	// [ms]
-			if (currtime - lasttime > 0) {
-				frmrate = frmrate_update * (1000.0 / (currtime - lasttime));
-			}
-			lasttime = currtime;
-		}*/
+		++tfps;
 		
 	/*	for (int i = 0; i < gM.Cam_N; ++i) {
 			tCam* pcam = &gM.aCam[i];
@@ -5925,7 +6186,351 @@ void	muhaha_Loop	()
 	//	SDL_Delay(10);
 		
 		SDL_SemWaitN (gM.sWaitForCams, gM.Cam_N);
-		//printf ("Main update start  ");
+		
+		/// Common stage
+		if (gM.Cam_TCal > 0) {
+			gM.Cam_TCal--;
+			
+			tV4f dp = gM.Head.aCam[1].P;	V4f_sub_V4f (&dp, &gM.Head.aCam[0].P);
+			//printf ("HOHOHOHHOHOO:	");	V4f_Print(&dp);
+			
+			gM.aCam[1].T.x += dp.x * 0.5f;
+			gM.aCam[1].T.y += dp.y * 0.5f;
+			
+			Cam_World_Conf (&gM.aCam[1]);
+		}else if (gM.Cam_RCal > 0) {
+			gM.Cam_RCal--;
+			
+			tV4f dp = gM.Head.aCam[1].P;	V4f_sub_V4f (&dp, &gM.Head.aCam[0].P);
+			//printf ("HOHOHOHHOHOO:	");	V4f_Print(&dp);
+			
+			gM.aCam[1].R.y -= dp.x * 0.5f;
+			gM.aCam[1].R.x -= dp.y * 0.5f;
+			
+			Cam_World_Conf (&gM.aCam[1]);
+		}
+		
+		if (1) {/// stereo head point calc
+			Eye_ACam_Position (&gM.Head.DotC);
+			Eye_ACam_Position (&gM.Head.DotL);
+			Eye_ACam_Position (&gM.Head.DotR);
+			
+			gCol = drgb(1, 1, 1);
+			Dbg_V4f_ADrawPosPos (&gM.Head.DotC.PS, &gM.Head.DotL.PS);
+			Dbg_V4f_ADrawPosPos (&gM.Head.DotC.PS, &gM.Head.DotR.PS);
+			Dbg_V4f_ADrawPosPos (&gM.Head.DotL.PS, &gM.Head.DotR.PS);
+			
+			//printf("DotC.PS: "); V4f_Print (&gM.Head.DotC.PS);
+			//printf("DotL.PS: "); V4f_Print (&gM.Head.DotL.PS);
+			//printf("DotR.PS: "); V4f_Print (&gM.Head.DotR.PS);
+			
+		/*	printf("CL: %f		CR: %f		LR: %f\n",
+				V4f_dist_V4f (&gM.Head.DotC.PS, &gM.Head.DotL.PS) - V4f_dist_V4f (&gM.Head.Mod.PC, &gM.Head.Mod.PL),
+				V4f_dist_V4f (&gM.Head.DotC.PS, &gM.Head.DotR.PS) - V4f_dist_V4f (&gM.Head.Mod.PC, &gM.Head.Mod.PR),
+				V4f_dist_V4f (&gM.Head.DotL.PS, &gM.Head.DotR.PS) - V4f_dist_V4f (&gM.Head.Mod.PL, &gM.Head.Mod.PR)
+			);/**/
+		}
+		Eye_ACam_Position (&gM.Left);
+		Eye_ACam_Position (&gM.Right);
+		
+		
+		for (si i = 0; i < gM.Cam_N; ++i) {
+			tCam* pcam = &gM.aCam[i];
+			Col_CamSet (pcam);
+			
+			//V4f_add_V4f (&gM.Head.P, gM.Head.aCam[i]._name)
+			#define dcopy(_name)	gM.Head._name = gM.Head.aCam[i]._name;
+			#define dv4f(_name)	dcopy(_name.x);		dcopy(_name.y);		dcopy(_name.z);		dcopy(_name.w);
+			#define dm4f(_name)	for (int _i = 0; _i < 16; ++_i)	gM.Head._name.ff[_i] = gM.Head.aCam[i]._name.ff[_i];
+			
+			dv4f(P);		dv4f(N);		dv4f(R);
+			
+			dm4f(M4);		dm4f(M4_T);		dm4f(M4_R);
+			dm4f(M4I);		dm4f(M4I_T);	dm4f(M4I_R);
+			dcopy(R_X);		dcopy(R_Y);		dcopy(R_Z);
+			
+			#undef dcopy
+			#undef dv4f
+			#undef dm4f
+			
+			//Head_Cam_Draw (&gM.Head, pcam);
+			Head_Dbg_Print(&gM.Head);
+			
+			
+			if (0) {//cam2retina
+				tV4f p0, p1, vec;
+				
+				Cam_Pos2Ray (pcam, gM.Left.dcam.P, &p0, &p1, &vec);
+				V4f_mul_S (&vec, 40);
+				p1 = p0; V4f_add_V4f (&p1, &vec);
+				Dbg_V4f_ADrawPosPos(&p0, &p1);
+			}
+		}
+		
+		#define dcopy(_name)	gM.Head._name = (gM.Head.aCam[0]._name + gM.Head.aCam[1]._name) / 2.0f;
+		#define dv4f(_name)	dcopy(_name.x);		dcopy(_name.y);		dcopy(_name.z);		dcopy(_name.w);
+		#define dm4f(_name)	for (int i = 0; i < 16; ++i)	gM.Head._name.ff[i] = (gM.Head.aCam[0]._name.ff[i] + gM.Head.aCam[1]._name.ff[i]) / 2.0f;
+		
+		dv4f(P);		dv4f(N);		dv4f(R);
+		
+		dm4f(M4);		dm4f(M4_T);		dm4f(M4_R);
+		dm4f(M4I);		dm4f(M4I_T);	dm4f(M4I_R);
+		dcopy(R_X);		dcopy(R_Y);		dcopy(R_Z);
+	//	dcopy(SRX);		dcopy(SRY);
+		#undef dcopy
+		#undef dv4f
+		#undef dm4f
+		
+		if (1) {//draw lego in cams
+			for (si i = 0; i < gM.Cam_N; ++i) {
+				tCam* pcam = &gM.aCam[i];
+				Col_CamSet (pcam);
+				
+				//printf ("c:\t%f\t%f\t%f\n", p->dcam.M4.x03, p->dcam.M4.x13, p->dcam.M4.x23);
+				//printf ("c:\t%f\t%f\t%f\n", gM.Head.dcam.M4_T.x03, gM.Head.dcam.M4_T.x13, gM.Head.dcam.M4_T.x23);
+				if (0) {
+					tV4f p0, p1, vec;
+					Cam_Pos2Ray	(pcam, gM.Head.DotC.aCam[pcam->Idx].P, &p0, &p1, &vec);
+					
+					V4f_mul_S(&vec, 20);
+					p1 = p0;
+					V4f_add_V4f(&p1, &vec);
+					
+					Dbg_V4f_ADrawPosPos (&p0, &p1);
+				}
+				Head_Cam_Draw (&gM.Head, pcam);
+			}
+		}
+		if (1) {//calculate gaze vectors separately for each camera and eye and average
+			V4f_set1 (&gM.Left.P0,		0);
+			V4f_set1 (&gM.Left.P1,		0);
+			V4f_set1 (&gM.Left.Vec,		0);
+			
+			V4f_set1 (&gM.Right.P0,		0);
+			V4f_set1 (&gM.Right.P1,		0);
+			V4f_set1 (&gM.Right.Vec,	0);
+			
+			
+			for (si i = 0; i < gM.Cam_N; ++i) {
+				tCam* pcam = &gM.aCam[i];
+				tV4f p0, p1, vec;
+				HeadC_EyeC_VectorGlob (&gM.Head, pcam, &gM.Left, &p0, &p1, &vec);
+				//Dbg_V4f_ADrawPosPos (&p0, &p1);
+				V4f_add_V4f (&gM.Left.P0,	&p0);
+				V4f_add_V4f (&gM.Left.P1,	&p1);
+				V4f_add_V4f (&gM.Left.Vec,	&vec);
+				
+				HeadC_EyeC_VectorGlob (&gM.Head, pcam, &gM.Right, &p0, &p1, &vec);
+				//Dbg_V4f_ADrawPosPos (&p0, &p1);
+				V4f_add_V4f (&gM.Right.P0,	&p0);
+				V4f_add_V4f (&gM.Right.P1,	&p1);
+				V4f_add_V4f (&gM.Right.Vec,	&vec);
+			}
+			
+			V4f_mul_S (&gM.Left.P0,		1.0/2.0);
+			V4f_mul_S (&gM.Left.P1,		1.0/2.0);
+			V4f_mul_S (&gM.Left.Vec,	1.0/2.0);
+			
+			V4f_mul_S (&gM.Right.P0,	1.0/2.0);
+			V4f_mul_S (&gM.Right.P1,	1.0/2.0);
+			V4f_mul_S (&gM.Right.Vec,	1.0/2.0);
+		}
+		
+		if (1) {
+			tV4f eyel, eyer;
+			
+			eyel = gM.Left.InHead.P;
+			M4f_mul_V4f (&gM.Head.M4, &eyel);
+			eyer = gM.Right.InHead.P;
+			M4f_mul_V4f (&gM.Head.M4, &eyer);
+			
+			printf("CL: %f		CR: %f\n",
+				V4f_dist_V4f (&gM.Left.PS, &eyel),
+				V4f_dist_V4f (&gM.Right.PS, &eyer)
+			);
+			
+			tV4f p1;
+			
+			tEye* peye = &gM.Left;
+			Col_EyeSet(peye);
+			p1 = peye->Vec;	V4f_mul_S (&p1, 100);	V4f_add_V4f (&p1, &peye->P0);
+			Dbg_V4f_ADrawPosPos(&peye->P0, &p1);
+			
+			peye = &gM.Right;
+			Col_EyeSet(peye);
+			p1 = peye->Vec;	V4f_mul_S (&p1, 100);	V4f_add_V4f (&p1, &peye->P0);
+			Dbg_V4f_ADrawPosPos(&peye->P0, &p1);
+		}
+		float x, y;
+		if (gM.GazeMode == 0) {	//Normal head tracking
+			Head_Eye_GazeToScreen (&gM.Head, &gM.Left, &gM.GazeL);
+			Head_Eye_GazeToScreen (&gM.Head, &gM.Right, &gM.GazeR);
+			
+		}else if (gM.GazeMode == 1) {	//Glint normalization homography mapping
+			gM.GazeL = Eye_map_point(&gM.Left, gM.Left.GV);
+			
+			gM.GazeL.x += gM.aScreen[0].Off.x;
+			gM.GazeL.y += gM.aScreen[0].Off.y;
+			
+			gM.GazeR = Eye_map_point(&gM.Right, gM.Right.GV);
+			gM.GazeR.x += gM.aScreen[0].Off.x;
+			gM.GazeR.y += gM.aScreen[0].Off.y;
+			
+		//	gM.GazeR = gM.GazeL;
+			
+		//	printf ("Gaze						%f %f\n", gM.GazeL.x, gM.GazeL.y);
+		}else if (gM.GazeMode == 2) {	//Glint sphere tracking
+			abort ();	//Head_Eye_GazeToScreen (&gM.Head, &gM.Right);
+			gM.GazeR = gM.GazeL;
+		//	Eye_Glint_Gaze (&gM.Left);
+		//	Eye_Glint_Gaze (&gM.Right);
+		}
+		
+		x = gM.GazeL.x;
+		y = gM.GazeL.y;
+		
+		if (!isnan(x) && !isnan(y)) {
+			if (!isnan(gM.GazeR.x) && !isnan(gM.GazeR.y)) {
+				x = (gM.GazeL.x+gM.GazeR.x)/2.0f;
+				y = (gM.GazeL.y+gM.GazeR.y)/2.0f;
+			}
+		}else {
+			x = gM.GazeR.x;
+			y = gM.GazeR.y;
+		}
+		
+		if (!isnan(x) && !isnan(y)) {
+			switch (gM.GazeAvg) {
+			case 0:
+				gM.Gaze.x = x;
+				gM.Gaze.y = y;
+				break;
+			case 1:
+				gM.Gaze.x = (gM.Gaze.x+x)/2.0f;
+				gM.Gaze.y = (gM.Gaze.y+y)/2.0f;
+				break;
+			case 2: {
+				#define dn (sizeof(weight)/sizeof(weight[0]))
+				static float weight[] = {0.2, 0.3, 0.5};
+				static tV2f prev[dn];
+				si i;
+				for (i = 0; i < dn-1; ++i) {
+					prev[i] = prev[i+1];
+				}
+				prev[dn-1].x = x;
+				prev[dn-1].y = y;
+				x = 0;
+				y = 0;
+				for (i = 0; i < dn; ++i) {
+					x += prev[i].x * weight[i];
+					y += prev[i].y * weight[i];
+				}
+				prev[dn-1].x = x;
+				prev[dn-1].y = y;
+				gM.Gaze.x = x;
+				gM.Gaze.y = y;
+				#undef dn
+				break;
+			}
+			case 3: {
+				float a = sqrt(dpow2(gM.Gaze.x-x) + dpow2(gM.Gaze.y-y)) - gM.GazeAvg_3_MinDist;
+				
+				a /= gM.GazeAvg_3_Dist;
+				if (a > 1)
+					a = 1;
+				if (a < gM.GazeAvg_3_MinAlpha)
+					a = gM.GazeAvg_3_MinAlpha;
+				
+				gM.Gaze.x = (1-a)*gM.Gaze.x + a*x;
+				gM.Gaze.y = (1-a)*gM.Gaze.y + a*y;
+				break;
+			}
+			}
+		}
+		//printf ("DotC aCam[0].P %f %f\n", gM.Head.DotC.aCam[0].P.x, gM.Head.DotC.aCam[0].P.y);
+		
+	/*	#define dcopy(_name)	gM.Head._name = gM.Head.aCam[pcam->Idx]._name
+		
+		dcopy(P);		dcopy(N);		dcopy(R);
+		dcopy(M4);		dcopy(M4_T);	dcopy(M4_R);
+		dcopy(M4I);		dcopy(M4I_T);	dcopy(M4I_R);
+		dcopy(R_X);		dcopy(R_Y);		dcopy(R_Z);
+		dcopy(SRX);		dcopy(SRY);
+		#undef dcopy
+		
+		Head_Dbg_Print(&gM.Head);*/
+		
+		//Head_Dbg_Print(&gM.Head);
+		
+		Screen_Print (gM.aScreen + 0);
+		Screen_Print (gM.aScreen + 1);
+		Screen_Print (gM.aScreen + 2);
+		
+		if (!gM.bGazeHold) {
+			if (gM.Micro.State) {
+				gM.Gaze = gM.Micro.Gaze;
+				float dx, dy;
+				dx = gM.Head.R_Y - gM.Micro.R_Y;
+				dy = gM.Head.R_X - gM.Micro.R_X;
+				dx *= gM.Micro.SX;
+				dy *= gM.Micro.SY;
+			//	printf ("micro dxy %f %f\n", dx, dy);
+				gM.Gaze.x += dx;
+				gM.Gaze.y += dy;
+			}
+			switch (gM.Pointer_Mode) {
+			case 1:{
+				Marker_Move (&gM.CrossHair, gM.Gaze.x, gM.Gaze.y);
+			//	Marker_Move (&gM.CrossHair, gM.aScreen[0].Off.x + gM.Gaze.x, gM.aScreen[0].Off.y + gM.Gaze.y);
+				break;
+			}
+			case 2: {
+				XIWarpPointer (gM.X.pDisp, gM.X.Pointer.deviceid, 
+					None, gM.aScreen[0].Win,
+					0, 0, 0, 0,
+					gM.Gaze.x,
+					gM.Gaze.y
+				);
+			/*	XIWarpPointer (gM.X.pDisp, gM.X.Pointer.deviceid, 
+					None, gM.aScreen[0].Win,
+					0, 0, 0, 0,
+					gM.aScreen[0].Off.x + gM.Gaze.x,
+					gM.aScreen[0].Off.y + gM.Gaze.y
+				);/**/
+				XFlush(gM.X.pDisp);
+				break;
+			}
+			}
+		}
+		
+		if (gM.Cal_bRecord) {
+			float z = gM.aScreen[gM.Screen_CalIdx].C.z;
+			if (0) {
+				tV4f e00, e01, e10, e11;
+				tV4f p0, p1;
+				//Head_Eye_VectorGlob (&gM.Head, &gM.Left, &e00, &e01, NULL);
+				//Head_Eye_VectorGlob (&gM.Head, &gM.Right, &e10, &e11, NULL);
+				
+				e00 = gM.Left.P0;
+				e01 = gM.Left.P1;
+				e10 = gM.Right.P0;
+				e11 = gM.Right.P1;
+				
+				V4f_Intersect_Line01_Line01 (
+					&p0, &p1,
+					&e00, &e01,
+					&e10, &e11
+				);
+				z = (p0.z + p1.z) / 2;
+				printf ("Screen_Cal_Save Z %f\n", z);
+			}
+			
+			Screen_Cal_Record (gM.aScreen + gM.Screen_CalIdx, &gM.Left, z);
+			Screen_Cal_Record (gM.aScreen + gM.Screen_CalIdx, &gM.Right, z);
+			
+			++gM.Cal_Record_Num;
+		}
+		/// Common stage END
 		
 		for (si i = 0; i < M_Dbg_NUM; ++i) {
 			tDbg* pdbg = &gM.aDbg[i];
@@ -6008,34 +6613,41 @@ int muhaha_eventThread(void *data)
 					printf("gM.DeSat\n");
 					gM.DeSat = !gM.DeSat;
 					break;
-				case SDLK_o:
-					if (pcam) {
-						gM.Head.DotC.aCam[pcam->Idx].P = pos;
-						gM.Head.DotC.aCam[pcam->Idx].V.x = 0;
-						gM.Head.DotC.aCam[pcam->Idx].V.y = 0;
-					}
-					break;
 				case SDLK_a:
 					if (pcam) {
-						gM.Head.DotL.aCam[pcam->Idx].P = pos;
-						gM.Head.DotL.aCam[pcam->Idx].V.x = 0;
-						gM.Head.DotL.aCam[pcam->Idx].V.y = 0;
+						tEye* peye = &gM.Head.DotL;
+						peye->dcam.P = pos;
+						peye->dcam.V.x = 0;
+						peye->dcam.V.y = 0;
+						Eye_CalcAYUV (peye, pcam, 5);
+						peye->dcam.FF.Y = ay + peye->dcam.FF.Y_Marg;
+					}
+					break;
+				case SDLK_o:
+					if (pcam) {
+						tEye* peye = &gM.Head.DotC;
+						peye->dcam.P = pos;
+						peye->dcam.V.x = 0;
+						peye->dcam.V.y = 0;
+						Eye_CalcAYUV (peye, pcam, 5);
+						peye->dcam.FF.Y = ay + peye->dcam.FF.Y_Marg;
 					}
 					break;
 				case SDLK_e:
 					if (pcam) {
-						gM.Head.DotR.aCam[pcam->Idx].P = pos;
-						gM.Head.DotR.aCam[pcam->Idx].V.x = 0;
-						gM.Head.DotR.aCam[pcam->Idx].V.y = 0;
+						tEye* peye = &gM.Head.DotR;
+						peye->dcam.P = pos;
+						peye->dcam.V.x = 0;
+						peye->dcam.V.y = 0;
+						Eye_CalcAYUV (peye, pcam, 5);
+						peye->dcam.FF.Y = ay + peye->dcam.FF.Y_Marg;
 					}
 					break;
 				case SDLK_SEMICOLON:
-					gM.Left.P.x = x;
-					gM.Left.P.y = y;
+					gM.Left.dcam.P = pos;
 					break;
 				case SDLK_j:
-					gM.Right.P.x = x;
-					gM.Right.P.y = y;
+					gM.Right.dcam.P = pos;
 					break;
 				case SDLK_y:
 					gM.Head.aPoint[0].P.x = x;

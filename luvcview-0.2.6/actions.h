@@ -47,8 +47,8 @@ dact (ReThr,
 
 
 dact (EyeCent_CalNext,
-	Head_Eye_LineAdd (&gM.Head, &gM.Left);
-	Head_Eye_LineAdd (&gM.Head, &gM.Right);
+	HeadC_EyeC_LineAdd (&gM.Head, pcam, &gM.Left);
+	HeadC_EyeC_LineAdd (&gM.Head, pcam, &gM.Right);
 )
 dact (Back,
 	if (gM.Left.InHead.Line_N)
@@ -56,6 +56,13 @@ dact (Back,
 	if (gM.Right.InHead.Line_N)
 		--gM.Right.InHead.Line_N;
 )
+dact (Cam_TCal,
+	gM.Cam_TCal++;
+)
+dact (Cam_RCal,
+	gM.Cam_RCal++;
+)
+
 dact (Head_Point_Train,
 	dSafe_Main_S ();
 	

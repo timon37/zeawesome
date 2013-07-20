@@ -62,6 +62,8 @@ typedef signed long s00;
 typedef u00 ui;
 typedef s00 si;
 
+typedef float	f00;
+
 typedef struct {
 	si x, y;
 }tV2si;
@@ -107,6 +109,7 @@ typedef struct {
 		float x30, x31, x32, x33;
 	};
 	float f[4][4];
+	float ff[16];
 	};
 }tM4f;
 
@@ -117,7 +120,7 @@ typedef struct {//YUV 4:2:2
 }__attribute__((packed)) tPix;
 
 typedef struct {
-	u08 R, G, B, A;
+	u08 B, G, R, A;
 }__attribute__((packed)) tRGBA;
 
 
@@ -189,7 +192,11 @@ enum {//Calibration point state
 	dEye_Screen_Cal_Extra,	//guess
 };
 
-typedef struct {
+typedef struct _tEye
+{
+	tV4f P0, P1, Vec;	//global position (start of retina), and global gaze vector, P1 = P0+Vec
+	tV4f PS;		//global position calculated from two cameras
+	
 	tV2f P, OP, V; // Position, OldPosition, Velocity
 	float Ax, Ay, Aa;
 	
@@ -373,17 +380,20 @@ typedef struct {
 	
 	si Focus, Exposure, Zoom;
 	
-	CvMat* cvCam, *cvDist;
+	CvMat* cvCam, *cvCamI, *cvDist;
 	
 	
 	si View_W, View_H;
 	float Proj_L, Proj_R, Proj_B, Proj_T;
 	float Proj_W, Proj_H, Proj_N, Proj_F;
 	
-	tM4f Proj, World;
+	tM4f Proj;
+	tM4f  World, WorldI;
+	tM4f  World_R, WorldI_R;
 	
-	
+	tV4f T, R;
 }tCam;
+
 
 typedef struct {
 	tV4f P;
@@ -436,7 +446,8 @@ typedef struct {
 	
 	u08 Cam_N;
 	tCam aCam[2];
-	//tCam* apCam[2];
+	si Cam_TCal, Cam_RCal;
+	
 	
 	SDL_sem* sWaitForCams, *sWaitForUpdate;
 	

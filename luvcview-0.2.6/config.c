@@ -314,6 +314,9 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	drw_f (aCam[0].Proj_B)
 	drw_f (aCam[0].Proj_T)
 	
+	drw_v4f (aCam[0].T);
+	drw_v4f (aCam[0].R);
+	
 	for (int i = 1; i < gM.Cam_N; ++i) {
 		tCam* pcam = &gM.aCam[i];
 		
@@ -355,6 +358,16 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	drw_f (aCam[1].Exposure)
 	drw_f (aCam[1].Zoom)
 	
+	drw_v4f (aCam[1].T);
+	drw_v4f (aCam[1].R);
+	
+	for (int i = 1; i < gM.Cam_N; ++i) {
+		tCam* pcam = &gM.aCam[i];
+		
+		//Cam_Param_Set (pcam);
+		
+		Cam_Proj_Conf (pcam);
+	}
 	//abort();
 	//Cam_Param_Set (&gM.aCam);
 	
@@ -462,8 +475,8 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	memcpy (&gM.Head.DotR.Ax, &gM.Head.DotC.Ax, sizeof(gM.Head.DotC) - ((si)&gM.Head.DotC.Ax - (si)&gM.Head.DotC));
 	
 	for (int i = 0; i < gM.Cam_N; ++i) {
-		gM.Head.DotL.aCam[i] = gM.Head.DotC.aCam[i];
-		gM.Head.DotR.aCam[i] = gM.Head.DotC.aCam[i];
+		gM.Head.DotL.aCam[i].FF = gM.Head.DotC.aCam[i].FF;
+		gM.Head.DotR.aCam[i].FF = gM.Head.DotC.aCam[i].FF;
 	}
 	drw_f (Head.DotL.Exp_R)
 	drw_e (Head.DotL.Fit)
@@ -526,6 +539,8 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 		drw_si (name.aCam[0].FF.GY)	\
 		drw_si (name.aCam[0].FF.GSearch_R)	\
 			\
+		gM.name.aCam[1].FF = gM.name.aCam[0].FF;	\
+			\
 		drw_si (name.aCam[1].FF.Max_R)	\
 		drw_f (name.aCam[1].FF.Perf_R)	\
 		drw_f (name.aCam[1].FF.MaxDiff_R)	\
@@ -545,7 +560,6 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 		drw_f (name.LinView.x)	\
 		drw_f (name.LinView.y)	\
 		drw_v2f (name.CirView);
-	
 	
 	deye(Left)
 	deye(Right)
@@ -675,18 +689,24 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	assert(!fclose(file));
 }
 
-void dyn_config_watch(dyn_config *dc, const char *f_name) {
-	dc->entries = NULL;
-	dc->count = 0;
-	
+void dyn_config_watch(dyn_config *dc, const char *f_name)
+{
 	int fd = inotify_init();
-	int wd = inotify_add_watch(fd, "config.yaml", IN_MODIFY | IN_CLOSE_WRITE);
+	int wd = inotify_add_watch(fd, "config.yaml", IN_MODIFY | IN_DELETE/* | IN_CLOSE_WRITE*/);
+	
 	struct inotify_event evt;
 	
 	while (1) {
 		ssize_t size = read(fd, &evt, sizeof(evt));
+		printf ("FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\n");
+		printf ("FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\n");
+		printf ("FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\n");
+		printf ("FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\n");
+		dyn_config_init (dc);
+		
 		dyn_config_read(dc, f_name);
 		
+		int wd = inotify_add_watch(fd, "config.yaml", IN_MODIFY | IN_DELETE/* | IN_CLOSE_WRITE*/);
 	}
 	
 	

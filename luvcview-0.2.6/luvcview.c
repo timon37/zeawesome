@@ -510,11 +510,6 @@ int main(int argc, char **argv)
 	ptdata.affmutex = affmutex;
 //	mythread = SDL_CreateThread(eventThread, (void *) &ptdata);
 	
-	// Initialize frame rate calculator
-	int loop_counter = 0;
-	const int frmrate_update = gM.aCam[0].UVC->fps / 2;
-	lasttime = SDL_GetTicks();	// [ms]
-	
 	muhaha_Init ();
 	gM.pDst = p;
 	
