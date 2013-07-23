@@ -35,6 +35,10 @@ dact (ReThr,
 		
 		peye = &gM.Head.DotL;
 		Eye_CalcAYUV (peye, pcam, 4);	peye->aCam[i].FF.Y = ay + peye->aCam[i].FF.Y_Marg;
+		for (si n = 0; n < gM.Head.Point_N; ++n) {
+			peye = gM.Head.aPoint+n;
+			Eye_CalcAYUV (peye, pcam, 4);	peye->aCam[i].FF.Y = ay + peye->aCam[i].FF.Y_Marg;
+		}
 		
 		peye = &gM.Head.DotR;
 		Eye_CalcAYUV (peye, pcam, 4);	peye->aCam[i].FF.Y = ay + peye->aCam[i].FF.Y_Marg;
@@ -46,22 +50,19 @@ dact (ReThr,
 )
 
 
-dact (EyeCent_CalNext,
-	HeadC_EyeC_LineAdd (&gM.Head, pcam, &gM.Left);
-	HeadC_EyeC_LineAdd (&gM.Head, pcam, &gM.Right);
-)
 dact (Back,
 	if (gM.Left.InHead.Line_N)
 		--gM.Left.InHead.Line_N;
 	if (gM.Right.InHead.Line_N)
 		--gM.Right.InHead.Line_N;
 )
-dact (Cam_TCal,
-	gM.Cam_TCal++;
-)
-dact (Cam_RCal,
-	gM.Cam_RCal++;
-)
+
+dactD (Cam_TCal)
+dactD (Cam_RCal)
+
+dactD (Head_Snap)
+
+dactD (EyeCent_CalNext)
 
 dact (Head_Point_Train,
 	dSafe_Main_S ();

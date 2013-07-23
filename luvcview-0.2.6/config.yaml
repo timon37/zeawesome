@@ -34,22 +34,22 @@ aCam[0]:
     x: 0
     y: 0
     z: 0
-  Exposure: 600
-  Focus: 204
+  Exposure: 400
+  Focus: 204	#187 204
   #Focus:	130	120	80	0	-1
   #Exposure:	200	400	600	800
   Zoom: 5
 
 aCam[1]:
   T:
-    x: 0
-    y: -2.4
-    z: 0
-  #R:
-    #x: -1.65
-    #y: 1.05
-    #z: 0
-  Exposure: 600
+    x: 0.024017
+    y: -2.347543
+    z: 0.000000
+  R:
+    x: -1.657784
+    y: -0.229901
+    z: -0.002099
+  Exposure: 400
   Focus: 153
   Zoom: 5
 
@@ -67,7 +67,7 @@ Screen:
   C:
     x: 0
     y: 0
-    z: 65
+    z: 52
 
 
 Screen_N: 3
@@ -140,7 +140,8 @@ aLight[1]:
     z: 0
 
 Head:
-  Mod:
+  Type: Head_Type_ePoint
+  Mod:	#brick size x,z 0.8,  y full 0.96  flat 0.32
     PC:
       x: 0.0
       y: -1.6
@@ -151,11 +152,11 @@ Head:
       #z: 3.2
     PL:
       x: -9.6
-      y: -0.94
+      y: -0.96
       z: -0.8
     PR:
       x: 9.6
-      y: -0.94
+      y: -0.96
       z: -0.8
     TInc:
       x: 0.01
@@ -188,7 +189,7 @@ Head:
       Pix_Diff_Min: 2
     aCam[0]:
       FF:
-        Max_R: 128
+        Max_R: 64
         Perf_R: 23
         MaxDiff_R: 0.4
         Search_R: 200
@@ -258,7 +259,7 @@ Left:
     
   aCam[0]:
     FF:
-      Max_R: 256
+      Max_R: 64
       Perf_R: 15
       MaxDiff_R: 0.2f
       Search_R: 80
@@ -285,7 +286,7 @@ Left:
   LR: 0.393
   
   InHead:
-    R: 0.8
+    R: 0.85
     #R: 1.125
     P:
       x: -3.246802
@@ -324,7 +325,7 @@ Right:
   aCam[0]:
     FF:
       Max_R: 256
-      Perf_R: 15
+      Perf_R: 18
       MaxDiff_R: 0.2f
       Search_R: 80
       Y: 60
@@ -349,7 +350,7 @@ Right:
   LR: 0.393
   
   InHead:
-    R: 0.8
+    R: 0.85
     #R: 1.125
     P:
       x: 3.405655
@@ -383,6 +384,8 @@ Action:
   
   Cam_TCal: 10		9
   Cam_RCal: 11		0
+  
+  Head_Snap: 40		-
   
   ReThr: 24			o
   

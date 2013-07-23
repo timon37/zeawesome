@@ -1167,7 +1167,7 @@ void	Eye_GP_GazeVector	(tEye* peye, tV4f* pr0, tV4f* pr1, tV4f* prv)
 	if (pr1)
 		*pr1 = p1;
 	if (prv) {
-		*prv = p1;	V4f_sub_V4f (prv, &p0);
+		*prv = p1;	V4f_sub (prv, &p0);
 	}
 	return;
 }

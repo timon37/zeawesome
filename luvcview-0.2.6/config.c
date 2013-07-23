@@ -57,7 +57,7 @@ int dyn_get_value_f00(dyn_config_entry *de, const char *path, f00 *val)
 	de = dyn_find_entry(de, path);
 	if (!de)
 		return 0;
-	sscanf(de->value, "%f", val);
+	sscanf(de->value, "%lf", val);
 	return 1; 
 }
 int dyn_get_value_si(dyn_config_entry *de, const char *path, si *val)
@@ -113,6 +113,9 @@ int dyn_get_value_enum(dyn_config_entry *de, const char *path, int *val) {
 	dhack(eEye_PFit_S3)
 	dhack(eEye_PFit_S3const)
 	dhack(eEye_PFit_RANSAC)
+	
+	dhack(Head_Type_eDot)
+	dhack(Head_Type_ePoint)
 	
 	#undef dhack
 	return 0; 
@@ -418,6 +421,8 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	
 	//Cam_Param_Set (&gM.aCam);
 	
+	drw_e (Head.Type);
+	
 	drw_v4f (Head.Mod.PC);
 	drw_v4f (Head.Mod.PL);
 	drw_v4f (Head.Mod.PR);
@@ -473,11 +478,20 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	
 	memcpy (&gM.Head.DotL.Ax, &gM.Head.DotC.Ax, sizeof(gM.Head.DotC) - ((si)&gM.Head.DotC.Ax - (si)&gM.Head.DotC));
 	memcpy (&gM.Head.DotR.Ax, &gM.Head.DotC.Ax, sizeof(gM.Head.DotC) - ((si)&gM.Head.DotC.Ax - (si)&gM.Head.DotC));
+	for (int p = 0; p < gM.Head.Point_N; ++p) {
+		memcpy (&gM.Head.aPoint[p].Ax, &gM.Head.DotC.Ax, sizeof(gM.Head.DotC) - ((si)&gM.Head.DotC.Ax - (si)&gM.Head.DotC));
+	}
 	
+	gM.Head.Point_N = Head_Point_MAX;
 	for (int i = 0; i < gM.Cam_N; ++i) {
 		gM.Head.DotL.aCam[i].FF = gM.Head.DotC.aCam[i].FF;
 		gM.Head.DotR.aCam[i].FF = gM.Head.DotC.aCam[i].FF;
+		
+		for (int p = 0; p < gM.Head.Point_N; ++p) {
+			gM.Head.aPoint[p].aCam[i].FF = gM.Head.DotC.aCam[i].FF;
+		}
 	}
+	
 	drw_f (Head.DotL.Exp_R)
 	drw_e (Head.DotL.Fit)
 	drw_f (Head.DotL.Fit_Scale)
@@ -661,9 +675,11 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	
 	#define dact(name,press_stuff) drw_si(Action.name)
 	#define dact2(name,press_stuff,release_stuff) drw_si(Action.name)
+	#define dactD(name) drw_si(Action.name)
 	#include "actions.h"
 	#undef dact
 	#undef dact2
+	#undef dactD
 	
 	
 	drw_f (GazeAvg_3_MinAlpha)

@@ -62,7 +62,7 @@ typedef signed long s00;
 typedef u00 ui;
 typedef s00 si;
 
-typedef float	f00;
+typedef double	f00;
 
 typedef struct {
 	si x, y;
@@ -306,11 +306,18 @@ typedef struct {
 	
 }tTrack_Point;
 
-
+enum {
+	Head_Type_eDot,
+	Head_Type_ePoint,
+	
+	Head_Point_MAX = 3,
+};
 typedef struct {
+	u08 Type;
+	
 	tV4f P, N, R;	//Position, Normal, Rotation about axes
 	
-	tTrack_Point aPoint[dHead_Point_NUM];
+	//tTrack_Point aPoint[dHead_Point_NUM];
 	
 	tEye DotC, DotL, DotR;
 	tM3f M, MI;
@@ -320,10 +327,19 @@ typedef struct {
 	
 	f00 R_X, R_Y, R_Z, SRX, SRY;
 	
+	si Point_N;
+	tEye aPoint[Head_Point_MAX];
 	
 	struct {
 		tV4f PC, PL, PR;
 		tV4f TInc, RInc;
+		
+		struct {
+			tV4f P, Psum;
+		}aPoint[Head_Point_MAX];
+		si Sample_N;
+		
+		CvPOSITObject* cvPOSIT;
 	}Mod;
 	
 	struct {
@@ -446,8 +462,8 @@ typedef struct {
 	
 	u08 Cam_N;
 	tCam aCam[2];
-	si Cam_TCal, Cam_RCal;
-	
+	//si Cam_TCal, Cam_RCal;
+	//si Head_Snap;
 	
 	SDL_sem* sWaitForCams, *sWaitForUpdate;
 	
@@ -501,15 +517,28 @@ typedef struct {
 	}X;
 	
 	struct {
-		
 		#define dact(name,press_stuff) name,
 		#define dact2(name,press_stuff,release_stuff) name,
+		#define dactD(name)	name,
 		int
 		#include "actions.h"
 		NONE;
 		#undef dact
 		#undef dact2
+		#undef dactD
 	}Action;
+	
+	struct {
+		#define dact(name,press_stuff)
+		#define dact2(name,press_stuff,release_stuff)
+		#define dactD(name)	name,
+		int
+		#include "actions.h"
+		NONE;
+		#undef dact
+		#undef dact2
+		#undef dactD
+	}ActionD;
 	
 	f00 GazeAvg_3_MinAlpha, GazeAvg_3_MinDist, GazeAvg_3_Dist;
 	struct {

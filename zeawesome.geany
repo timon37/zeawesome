@@ -16,25 +16,25 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=41
+current_page=2
 FILE_NAME_0=857;Make;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2FMakefile;0;6
-FILE_NAME_1=13247;C;0;EISO-8859-1;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fluvcview.c;0;6
-FILE_NAME_2=6067;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fmuhaha.c;0;6
-FILE_NAME_3=71703;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2FEye.c;0;6
-FILE_NAME_4=1993;YAML;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fconfig.yaml;0;6
-FILE_NAME_5=1349;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fmuhaha.h;0;6
-FILE_NAME_6=7916;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fconfig.c;0;6
-FILE_NAME_7=1148;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Factions.h;0;6
+FILE_NAME_1=13141;C;0;EISO-8859-1;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fluvcview.c;0;6
+FILE_NAME_2=88799;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fmuhaha.c;0;6
+FILE_NAME_3=1531;YAML;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fconfig.yaml;0;6
+FILE_NAME_4=5628;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fmuhaha.h;0;6
+FILE_NAME_5=18041;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fconfig.c;0;6
+FILE_NAME_6=71703;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2FEye.c;0;6
+FILE_NAME_7=1193;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Factions.h;0;6
 FILE_NAME_8=3132;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fpriv_macros.h;0;6
 FILE_NAME_9=5022;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fgab.c;0;6
 FILE_NAME_10=610;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fgab.h;0;6
 FILE_NAME_11=9057;C++;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fmuhaha_ransac_ellipse.c;0;6
-FILE_NAME_12=18068;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fv4l2uvc.c;0;6
-FILE_NAME_13=2366;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fv4l2uvc.h;0;6
+FILE_NAME_12=21063;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fv4l2uvc.c;0;6
+FILE_NAME_13=2251;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fv4l2uvc.h;0;6
 FILE_NAME_14=4653;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fuvcvideo.h;0;6
 FILE_NAME_15=6903;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fuvc_compat.h;0;6
 FILE_NAME_16=0;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fdynctrl-logitech.h;0;6
-FILE_NAME_17=27044;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Futils.c;0;6
+FILE_NAME_17=9360;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Futils.c;0;6
 FILE_NAME_18=0;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Futils.h;0;6
 FILE_NAME_19=0;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fgui.c;0;6
 FILE_NAME_20=0;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fgui.h;0;6
@@ -63,6 +63,8 @@ FILE_NAME_42=6364;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome
 FILE_NAME_43=34129;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fguvcview-src-1.7.0%2Fsrc%2Fmy%2FEye.c;0;6
 FILE_NAME_44=1066;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fguvcview-src-1.7.0%2Fsrc%2Fmy%2Fpriv_macros.h;0;6
 FILE_NAME_45=0;YAML;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fguvcview-src-1.7.0%2Fsrc%2Fconfig.yaml;0;6
+FILE_NAME_46=2326;C++;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fopencv-2.4.5%2Fmodules%2Fcalib3d%2Fsrc%2Fposit.cpp;0;6
+FILE_NAME_47=0;C++;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fopencv-2.4.5%2Fmodules%2Fcore%2Finclude%2Fopencv2%2Fcore%2Finternal.hpp;0;6
 
 [file_prefs]
 final_new_line=true
