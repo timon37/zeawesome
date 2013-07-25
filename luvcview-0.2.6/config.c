@@ -465,6 +465,8 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	drw_si (Head.DotC.aCam[0].FF.GY)
 	drw_si (Head.DotC.aCam[0].FF.Y_Marg)
 	
+	gM.Head.DotC.aCam[1].FF = gM.Head.DotC.aCam[0].FF;
+	
 	drw_si (Head.DotC.aCam[1].FF.Max_R)
 	drw_f (Head.DotC.aCam[1].FF.Perf_R)
 	drw_f (Head.DotC.aCam[1].FF.MaxDiff_R)

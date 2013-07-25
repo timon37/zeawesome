@@ -34,22 +34,22 @@ aCam[0]:
     x: 0
     y: 0
     z: 0
-  Exposure: 400
-  Focus: 204	#187 204
+  Exposure: 500
+  Focus: 187	#187 204
   #Focus:	130	120	80	0	-1
   #Exposure:	200	400	600	800
   Zoom: 5
 
 aCam[1]:
   T:
-    x: 0.024017
-    y: -2.347543
-    z: 0.000000
+    x: 0.001723
+    y: -3.886186
+    z: 0.0
   R:
-    x: -1.657784
-    y: -0.229901
-    z: -0.002099
-  Exposure: 400
+    x: -1.785241
+    y: -0.115888
+    z: -0.055034
+  #Exposure: 400
   Focus: 153
   Zoom: 5
 
@@ -67,7 +67,7 @@ Screen:
   C:
     x: 0
     y: 0
-    z: 52
+    z: 60
 
 
 Screen_N: 3
@@ -100,27 +100,27 @@ tmp:
   z: -8
 
 aDbg[0]:
-  Scale: 0.33
+  Scale: 0.2
   R_X: 0
   R_Y: 180
   Off:
     x: 1000
     y: 500
 aDbg[1]:
+  Scale: 0.2
   T_X: 0
   T_Y: 0
   R_X: 90
   R_Y: 180
-  Scale: 0.31
   Off:
     x: 1000
     y: 200
 aDbg[2]:
+  Scale: 0.2
   #T_X: 15
   T_Y: 0
   R_X: 0
   R_Y: 90
-  Scale: 0.33
   Off:
     x: 1200
     y: 200
@@ -189,17 +189,8 @@ Head:
       Pix_Diff_Min: 2
     aCam[0]:
       FF:
-        Max_R: 64
-        Perf_R: 23
-        MaxDiff_R: 0.4
-        Search_R: 200
-        Y: 60
-        Y_Marg: 40
-        GY: 240
-    aCam[1]:
-      FF:
         Max_R: 128
-        Perf_R: 23
+        Perf_R: 25
         MaxDiff_R: 0.4
         Search_R: 200
         Y: 60
@@ -286,8 +277,8 @@ Left:
   LR: 0.393
   
   InHead:
-    R: 0.85
-    #R: 1.125
+    #R: 0.85
+    R: 1.25
     P:
       x: -3.246802
       y: 0.074058
@@ -350,8 +341,8 @@ Right:
   LR: 0.393
   
   InHead:
-    R: 0.85
-    #R: 1.125
+    #R: 0.85
+    R: 1.25
     P:
       x: 3.405655
       y: 0.249110
@@ -378,8 +369,13 @@ Action:
   Mode_Switch: 15		Tab
   
   Head_Point_Train: 0x14	t
+  
   EyeCent_CalNext: 43	BackSlash
   Back: 14			BackSpace
+  
+  EyeCent_Inc:	78	KP +
+  EyeCent_Dec:	74	KP -
+  
   CalNext: 28		Enter
   
   Cam_TCal: 10		9

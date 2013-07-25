@@ -64,6 +64,14 @@ dactD (Head_Snap)
 
 dactD (EyeCent_CalNext)
 
+dact (EyeCent_Inc,
+	gM.Left.InHead.P.z += 0.1;
+	gM.Right.InHead.P.z += 0.1;
+)
+dact (EyeCent_Dec,
+	gM.Left.InHead.P.z -= 0.1;
+	gM.Right.InHead.P.z -= 0.1;
+)
 dact (Head_Point_Train,
 	dSafe_Main_S ();
 	

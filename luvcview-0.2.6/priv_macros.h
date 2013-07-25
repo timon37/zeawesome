@@ -118,13 +118,21 @@ static inline f00	V2f_dist	(tV2f* pv)
 	return sqrtf(pv->x*pv->x + pv->y*pv->y);
 }
 
+static inline f00	V2f_dist2_V2f	(tV2f* pv0, tV2f* pv1)
+{
+	return dpow2(pv1->x-pv0->x) + dpow2(pv1->y-pv0->y);
+}
+static inline f00	V2f_dist_V2f	(tV2f* pv0, tV2f* pv1)
+{
+	return sqrt(V2f_dist2_V2f(pv0, pv1));
+}
 static inline f00	V4f_dist2	(tV4f* pv)
 {
 	return pv->x*pv->x + pv->y*pv->y + pv->z*pv->z;
 }
 static inline f00	V4f_dist	(tV4f* pv)
 {
-	return sqrtf(V4f_dist2(pv));
+	return sqrt(V4f_dist2(pv));
 }
 
 
@@ -142,7 +150,7 @@ static inline void	V4f_norm	(tV4f* pv0)
 
 static inline f00	V4f_dist_V4f	(tV4f* pv0, tV4f* pv1)
 {
-	return sqrtf(dpow2(pv1->x-pv0->x) + dpow2(pv1->y-pv0->y) + dpow2(pv1->z-pv0->z));
+	return sqrt(dpow2(pv1->x-pv0->x) + dpow2(pv1->y-pv0->y) + dpow2(pv1->z-pv0->z));
 }
 
 
@@ -265,6 +273,40 @@ static inline void	PrintMat	(CvMat *A)
 	printf("\n");
 }
 
-
-
+static inline void	Iter_Optimize	(void* pclass, f00* apar, ui parn, f00 (*mse_cb)(void* pclass, f00* apar, ui parn))
+{
+	f00 omse = mse_cb(pclass, apar, parn);
+	f00 err = 0;
+	for (si i = 0; i < 500; ++i) {
+		si fix = 0;
+		for (si p = 0; p < parn; ++p) {
+			f00 save = apar[p];
+			f00 cor = apar[parn+p];
+			apar[p] = save + cor;
+			f00 nmse = mse_cb(pclass, apar, parn);
+			if (nmse < omse) {
+				//printf("fix %d %f\n", p, omse-nmse);
+				omse = nmse;
+				++fix;
+				continue;
+			}else {
+				apar[p] = save - cor;
+				nmse = mse_cb(pclass, apar, parn);
+				//printf("omse %f	nmse1 %f\n", omse, nmse);
+				if (nmse < omse) {
+					//printf("fix %d %f\n", p, omse-nmse);
+					omse = nmse;
+					++fix;
+					continue;
+				}
+				apar[p] = save;
+			}
+		}
+		if (fix == 0) {
+			for (si p = 0; p < parn; ++p) {
+				apar[parn+p] *= 0.9;
+			}
+		}
+	}
+}
 #endif

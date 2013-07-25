@@ -653,6 +653,8 @@ void	Dbg_V4f_DrawPosPos	(tDbg* pdbg, tV4f* ppos0, tV4f* ppos1)
 	
 //	printf ("4f p0 ");	V4f_Print (&p0);
 	
+	//M4f_mul_V4f (&gM.Head.M4I_T, &p0);		M4f_mul_V4f (&gM.Head.M4I_T, &p1);
+	//M4f_mul_V4f (&gM.Head.M4I, &p0);		M4f_mul_V4f (&gM.Head.M4I, &p1);
 	M4f_mul_V4f (&pdbg->World, &p0);		M4f_mul_V4f (&pdbg->World, &p1);
 //	printf ("4f p0 ");	V4f_Print (&p0);
 	
@@ -708,8 +710,9 @@ void	Dbg_V4f_DrawPoint		(tDbg* pdbg, tV4f* ppos0)
 	#define dd 1
 	for (y = p0.y-dd; y <= p0.y+dd; ++y) {
 		for (x = p0.x-dd; x <= p0.x+dd; ++x) {
-			if (x < 0 || x >= gM.pScreen->w || y < 0 || y >= gM.pScreen->h)
+			if (x < 0 || x >= pdbg->SDL_Surf->w || y < 0 || y >= pdbg->SDL_Surf->h)
 				continue;
+			*((tRGBA*)pdbg->SDL_Surf->pixels + x + y*pdbg->SDL_Surf->w) = gCol;
 			//dspix(x,y) = gColARGB;
 		}
 	}
@@ -3046,9 +3049,9 @@ void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 	//	V4f_sub (&p->P, &p->N);
 		
 		M4f_Iden (&rot);
-		M4f_rotx (&rot, -p->dcam.R_X);
-		M4f_roty (&rot, -p->dcam.R_Y);
 		M4f_rotz (&rot, -p->dcam.R_Z);
+		M4f_roty (&rot, -p->dcam.R_Y);
+		M4f_rotx (&rot, -p->dcam.R_X);
 		p->dcam.M4I_R = rot;
 		
 		M4f_Iden (&trans);
@@ -3244,8 +3247,8 @@ void	Head_EyeC_LineAdd		(tHead* p, tEye* peye, tCam* pcam)
 	V4f_add (&peye->InHead.aLine[peye->InHead.Line_N].P1, &vec);
 	peye->InHead.Line_N++;
 	
-	if (peye->InHead.Line_N >= 3)
-		Head_Eye_CalcP (p, peye);
+	//if (peye->InHead.Line_N >= 3)
+	Head_Eye_CalcP (p, peye);
 }
 void	HeadC_EyeC_LineAdd	(tHead* p, tCam* pcam, tEye* peye)
 {
@@ -3264,8 +3267,8 @@ void	HeadC_EyeC_LineAdd	(tHead* p, tCam* pcam, tEye* peye)
 	V4f_add (&peye->InHead.aLine[peye->InHead.Line_N].P1, &vec);
 	peye->InHead.Line_N++;
 	
-	if (peye->InHead.Line_N >= 2)
-		Head_Eye_CalcP (p, peye);
+	//if (peye->InHead.Line_N >= 2)
+	Head_Eye_CalcP (p, peye);
 }
 
 void	Head_Cam_Eye_LineDraw		(tHead* p, tCam* pcam, tEye* peye)
@@ -3329,8 +3332,8 @@ void	Head_EyeC_Vector		(tHead* p, tEye* peye, tCam* pcam, tV4f* pret)	//Point of
 		abort();//V4f_ScreenPos (&pos, &screen_pos);
 		V4f_ScreenPos (pcam, &pos, &screen_pos);
 		
-		peye->P.x = screen_pos.x;
-		peye->P.y = screen_pos.y;
+		peye->dcam.P.x = screen_pos.x;
+		peye->dcam.P.y = screen_pos.y;
 	//	printf ("eye failed"
 		return;
 	}
@@ -3360,6 +3363,7 @@ void	Head_EyeC_Vector		(tHead* p, tEye* peye, tCam* pcam, tV4f* pret)	//Point of
 }
 void	Head_EyeC_VectorGlob	(tHead* p, tEye* peye, tCam* pcam, tV4f* pr0, tV4f* pr1, tV4f* prv)	//gaze vector of retina in world_space
 {
+	#if 0
 	if (gM.GazeMode == 2) {
 		Eye_GP_GazeVector (peye, pr0, pr1, prv);
 		return;
@@ -3379,6 +3383,83 @@ void	Head_EyeC_VectorGlob	(tHead* p, tEye* peye, tCam* pcam, tV4f* pr0, tV4f* pr
 	if (prv) {
 		*prv = ret;	V4f_sub (prv, &eye);
 	}
+	#endif
+	#if 1
+	f00 r = peye->InHead.R;
+	//tV4f p0, vec, p1;
+	//Head_EyeC_Line (p, peye, pcam, &p0, &vec);
+	
+	//p1 = p0;	V4f_add (&p1, &vec);
+	tV4f eye = peye->InHead.P;
+	M4f_mul_V4f (&p->M4, &eye);
+	
+	tV4f p0, p1, vec;
+	Cam_Pos2Ray (pcam, peye->dcam.P, &p0, &p1, &vec);
+	
+	f00 a = V4f_dist2 (&vec);
+	f00 b = 2*( (p1.x-p0.x)*(p0.x-eye.x)
+				+ (p1.y-p0.y)*(p0.y-eye.y)
+				+ (p1.z-p0.z)*(p0.z-eye.z)
+	);
+	f00 c = V4f_dist2 (&eye) + V4f_dist2 (&p0) - 2*(eye.x*p0.x + eye.y*p0.y + eye.z*p0.z) - dpow2(r);
+	
+	f00 d = b*b - 4*a*c;
+	if (d < 0) {
+		
+		return;
+	}
+//	printf ("d %f\n", d);
+	f00 u;
+	
+	tV4f ret;
+	u = (-b - sqrt(d)) / (2*a);
+	ret.x = p0.x + u*vec.x;
+	ret.y = p0.y + u*vec.y;
+	ret.z = p0.z + u*vec.z;
+	ret.w = 1;
+//	printf ("pret0 "); V4f_Print (pret);
+	
+/*	u = (-b + sqrt(d)) / (2*a);
+	ret.x = p0.x + u*vec.x;
+	ret.y = p0.y + u*vec.y;
+	ret.z = p0.z + u*vec.z;
+	ret.w = 1;*/
+	
+	if (pr0) {
+		*pr0 = eye;
+	}
+	if (pr1) {
+		*pr1 = ret;
+	}
+	if (prv) {
+		*prv = ret;
+		V4f_sub (prv, &eye);
+	}
+//	printf ("pret1 "); V4f_Print (pret);
+	
+/*	u = (-b - sqrt(d)) / (2*a);
+	pret->x = p0.x + u*vec.x;
+	pret->y = p0.y + u*vec.y;
+	pret->z = p0.z + u*vec.z;
+	pret->w = 1;
+	printf ("pret0 "); V4f_Print (pret);/**/
+	#else
+	tV4f eye = peye->InHead.P;
+	M4f_mul_V4f (&p->M4, &eye);
+	
+	tV4f ret = peye->PS;
+	
+	if (pr0) {
+		*pr0 = eye;
+	}
+	if (pr1) {
+		*pr1 = ret;
+	}
+	if (prv) {
+		*prv = ret;
+		V4f_sub (prv, &eye);
+	}
+	#endif
 }
 
 void	HeadC_EyeC_Vector	(tHead* p, tCam* pcam, tEye* peye, tV4f* pret)	//Point of retina in head_space
@@ -3498,8 +3579,8 @@ void	Head_Mod_PointSnap	(tHead* p)
 	}
 	
 	M4f_Iden(&rot);
-	M4f_rotx(&rot, -atan2(apoint[2].y, apoint[2].z));
-	//M4f_rotx(&rot, atan2(apoint[2].z, apoint[2].y));
+	//M4f_rotx(&rot, -atan2(apoint[2].y, apoint[2].z));
+	M4f_rotx(&rot, atan2(apoint[2].z, apoint[2].y));
 	for (si i = 1; i < p->Point_N; ++i) {
 		M4f_mul_V4f (&rot, apoint+i);
 	}
@@ -3530,7 +3611,7 @@ void	Head_Mod_PointSnap	(tHead* p)
 	}
 }
 
-void	Head_PR2M	(tHead* p)
+void	Head_PR_2_M4		(tHead* p)
 {
 	p->R_X = p->R.x;
 	p->R_Y = p->R.y;
@@ -3538,20 +3619,23 @@ void	Head_PR2M	(tHead* p)
 	p->R.w = 1;
 	
 	M4f_Iden (&p->M4_R);
-	
 	M4f_rotz (&p->M4_R, p->R.z);
 	M4f_roty (&p->M4_R, p->R.y);
 	M4f_rotx (&p->M4_R, p->R.x);
 	
-	M4f_Inv (&p->M4_R, &p->M4I_R);
-	
 	M4f_Iden (&p->M4_T);
 	M4f_trans (&p->M4_T, p->P.x, p->P.y, p->P.z);
-	M4f_Inv (&p->M4_T, &p->M4I_T);
 	
 	M4f_Iden (&p->M4);
 	M4f_mul_M4f (&p->M4, &p->M4_T);
 	M4f_mul_M4f (&p->M4, &p->M4_R);
+}
+void	Head_PR_2_Mall	(tHead* p)
+{
+	Head_PR_2_M4(p);
+	M4f_Inv (&p->M4_R, &p->M4I_R);
+	M4f_Inv (&p->M4_T, &p->M4I_T);
+	
 	M4f_Inv (&p->M4, &p->M4I);
 	
 	p->N.x = 0;
@@ -3618,151 +3702,66 @@ void	Head_Calc_M4_Point_Posit	(tHead* p)
 }
 
 
-void	HeadC_Calc_M4_Point_Correct	(tHead* p, tCam* pcam)
+f00	Head_M4_Point_Correct_Err	(tHead* p, f00* apar, ui parn)
 {
-	#if 0
-	tV2f a_scr[p->Point_N];
+	p->P.x = apar[0];
+	p->P.y = apar[1];
+	p->P.z = apar[2];
 	
-	tV2f osl = p->DotL.dcam.P;
-	tV2f osr = p->DotR.dcam.P;
-	tV2f osc = p->DotC.dcam.P;
+	p->R.x = apar[3];
+	p->R.y = apar[4];
+	p->R.z = apar[5];
 	
-	tV2f os_vrl = osl;	V2f_sub_V2f (&os_vrl, &osr);
-	tV2f os_vlc = osc;	V2f_sub_V2f (&os_vlc, &osl);
-	tV2f os_vrc = osc;	V2f_sub_V2f (&os_vrc, &osr);
-	
-	f00 osdlr = ddist (osl.x,osl.y,osr.x,osr.y);
-	f00 osdlc = ddist (osl.x,osl.y,osc.x,osc.y);
-	f00 osdrc = ddist (osr.x,osr.y,osc.x,osc.y);
-	
-	
-	f00 err = 0;
-	si i = 0;
-	for (i = 0; i < 100; ++i) {
-		if (1) {
-		//	M4f_Iden (&trans);
-		//	M4f_trans (&trans, p->dcam.P.x, p->dcam.P.y, p->dcam.P.z);
+	Head_PR_2_M4 (p);
+	f00 mse = 0;
+	for (si c = 0; c < gM.Cam_N; ++c) {
+		tCam* pcam = gM.aCam + c;
+		for (si i = 0; i < p->Point_N; ++i) {
+			tV2f orgscr = p->aPoint[i].dcam.P;
 			
-			M4f_Iden (&rot);
-			M4f_rotx (&rot, p->dcam.R_X);
-			M4f_roty (&rot, p->dcam.R_Y);
-			M4f_rotz (&rot, p->dcam.R_Z);
+			tV4f pos = p->Mod.aPoint[i].P;
+			M4f_mul_V4f (&p->M4, &pos);
+			
+			tV2f modscr;
+			V4f_ScreenPosf (pcam, &pos, &modscr);
+			
+			mse += V2f_dist2_V2f (&modscr, &orgscr);
 		}
-		M4f_Iden (&p->dcam.M4);
-		M4f_mul_M4f (&p->dcam.M4, &rot);
-		M4f_mul_M4f (&p->dcam.M4, &trans);
-		
-	/*	tV4f pc = {0,	-1,	3.5,	1};
-		tV4f pl = {-7.5,	0,	0,	1};
-		tV4f pr = {7.5,	0,	0,	1};/**/
-	/*	tV4f pc = {0,	-1.5,	0,	1};
-		tV4f pl = {-2.5,	0,	0,	1};
-		tV4f pr = {2.5,	0,	0,	1};/**/
-	/*	tV4f pc = {0,	2,	0,	1};
-		tV4f pl = {-2.7,	0,	0,	1};
-		tV4f pr = {3.5,	0,	0,	1};/**/
-		tV4f pc = p->Mod.PC;
-		tV4f pl = p->Mod.PL;
-		tV4f pr = p->Mod.PR;/**/
-		
-	/*	V4f_mul_M4f (&pc, &p->dcam.M4);
-		V4f_mul_M4f (&pl, &p->dcam.M4);
-		V4f_mul_M4f (&pr, &p->dcam.M4);/**/
-		
-		M4f_mul_V4f (&p->dcam.M4, &pc);
-		M4f_mul_V4f (&p->dcam.M4, &pl);
-		M4f_mul_V4f (&p->dcam.M4, &pr);
-		
-		tV2f sc, sl, sr;
-		V4f_ScreenPosf (pcam, &pl, &sl);
-		V4f_ScreenPosf (pcam, &pr, &sr);
-		V4f_ScreenPosf (pcam, &pc, &sc);
-		
-		tV2f s_vrl = sl;	V2f_sub_V2f (&s_vrl, &sr);
-		tV2f s_vlc = sc;	V2f_sub_V2f (&s_vlc, &sl);
-		tV2f s_vrc = sc;	V2f_sub_V2f (&s_vrc, &sr);
-		
-		f00 sdlr = ddist (sl.x,sl.y,sr.x,sr.y);
-		f00 sdlc = ddist (sl.x,sl.y,sc.x,sc.y);
-		f00 sdrc = ddist (sr.x,sr.y,sc.x,sc.y);
-		
-		err = 0;
-		err += sc.x - osc.x;			err += sc.y - osc.y;
-		err += sl.x - osl.x;			err += sl.y - osl.y;
-		err += sr.x - osr.x;			err += sr.y - osr.y;
-		
-		f00 dx, dy, dz;
-		dx = osc.x - sc.x;	dx += osl.x - sl.x;	dx += osr.x - sr.x;	dx /= 3.0f;
-		dy = osc.y - sc.y;	dy += osl.y - sl.y;	dy += osr.y - sr.y;	dy /= 3.0f;
-		dz = osdlr - sdlr;	dz += osdlc - sdlc;	dz += osdrc - sdrc;	dz /= 3.0f;
-		
-	/*	p->dcam.P.x += p->Mod.TInc.x*dx;
-		p->dcam.P.y += p->Mod.TInc.y*dy;
-		p->dcam.P.z += p->Mod.TInc.z*dz;
-		p->dcam.P.w = 1;/**/
-		M4f_trans (&trans, p->Mod.TInc.x*dx, p->Mod.TInc.y*dy, p->Mod.TInc.z*dz);
-		
-	/*	printf ("cross os lc rc %f   rl rc %f   rl lc %f\n",
-			V2f_cross (&os_vlc, &os_vrc) / (osdlc*osdrc),
-			V2f_cross (&os_vrl, &os_vrc) / (osdlr*osdrc),
-			V2f_cross (&os_vrl, &os_vlc) / (osdlr*osdlc)
-		);/**/
-		
-		if (1) {
-		/*	printf ("atan2  rl %f   lc %f   rc %f\n",
-				atan2(os_vrl.y,os_vrl.x),
-				atan2(os_vlc.y,os_vlc.x),
-				atan2(os_vrc.y,os_vrc.x)
-			);/**/
-			dz = angle_norm_pi_pi(atan2(s_vrl.y,s_vrl.x) - atan2(os_vrl.y,os_vrl.x));
-			dz += angle_norm_pi_pi(atan2(s_vlc.y,s_vlc.x) - atan2(os_vlc.y,os_vlc.x));
-			dz += angle_norm_pi_pi(atan2(s_vrc.y,s_vrc.x) - atan2(os_vrc.y,os_vrc.x));
-		//	dz = -dz;
-		//	printf ("rotz %f\n", dz);
-			p->dcam.R_Z += p->Mod.RInc.z*dz;
-		//	M4f_rotz (&rot, p->Mod.RInc.z*dz);
-		}/**/
-		
-		if (1) {
-			f00 ocross = V2f_cross (&os_vlc, &os_vrc) / (osdlc*osdrc);
-			f00 cross = V2f_cross (&s_vlc, &s_vrc) / (sdlc*sdrc);
-			dx = -ocross + cross;
-		//	printf ("rotx %f\n", dx);
-			p->dcam.R_X += -p->Mod.RInc.x*dx;
-		//	M4f_rotx (&rot, -p->Mod.RInc.x*dx);
-		}/**/
-		if (1) {
-			f00 ocross = V2f_cross (&os_vrl, &os_vlc) / (osdlr*osdlc) - V2f_cross (&os_vrl, &os_vrc) / (osdlr*osdrc);
-			f00 cross = V2f_cross (&s_vrl, &s_vlc) / (sdlr*sdlc) - V2f_cross (&s_vrl, &s_vrc) / (sdlr*sdrc);
-		//	f00 ocross = V2f_cross (&os_vrl, &os_vlc) - V2f_cross (&os_vrl, &os_vrc);
-		//	f00 cross = V2f_cross (&s_vrl, &s_vlc) - V2f_cross (&s_vrl, &s_vrc);
-			
-			if (V2f_cross (&os_vrc, &os_vlc) < 0)
-				ocross = -ocross;
-			if (V2f_cross (&s_vrc, &s_vlc) < 0)
-				cross = -cross;
-			
-		//	printf ("roty ocross %f\n", ocross);
-			if (fabsf(ocross) >= 0.05f) {
-				dy = ocross - cross;
-			}else {
-				dy = (sdlc-sdrc)/sdlr - (osdlc-osdrc)/osdlr;
-			//	dy *= 0.1f;
-		//		printf ("roty %f\n", dy);
-			}
-			p->dcam.R_Y += -p->Mod.RInc.y*dy;
-		//	printf ("roty %f\n", dy);
-		//	M4f_roty (&rot, -p->Mod.RInc.y*dy);
-		}/**/
-		
-	/*	if (++i >= 100) {
-			i = 0;
-			M4f_Iden (&rot);
-			M4f_Iden (&trans);
-			M4f_trans (&trans, 0, 0, -80);
-		}/**/
 	}
-	#endif
+	mse /= gM.Cam_N * p->Point_N;
+	return mse;
+}
+void	Head_M4_Point_Correct		(tHead* p)
+{
+	if (p->Mod.Sample_N < 4)
+		return;
+	
+	si parn = 6;
+	f00 apar[parn*2];
+	apar[0] = p->P.x;
+	apar[1] = p->P.y;
+	apar[2] = p->P.z;
+	
+	apar[3] = p->R.x;
+	apar[4] = p->R.y;
+	apar[5] = p->R.z;
+	
+	apar[parn+0] = apar[parn+1] = apar[parn+2] = 1;
+	apar[parn+3] = apar[parn+4] = apar[parn+5] = 1*deg2rad;
+	
+	f00 omse = Head_M4_Point_Correct_Err(p, apar, parn);
+	Iter_Optimize (p, apar, parn, Head_M4_Point_Correct_Err);
+	f00 nmse = Head_M4_Point_Correct_Err(p, apar, parn);
+	//printf("omse %f	nmse %f		diff %f\n", omse, nmse, nmse-omse);
+	
+	p->P.x = apar[0];
+	p->P.y = apar[1];
+	p->P.z = apar[2];
+	
+	p->R.x = apar[3];
+	p->R.y = apar[4];
+	p->R.z = apar[5];
+	
 }
 
 void	Head_Calc_M4_Point	(tHead* p)
@@ -3801,8 +3800,8 @@ void	Head_Calc_M4_Point	(tHead* p)
 		}
 		
 		M4f_Iden(&rot);
-		M4f_rotx(&rot, p->R.x = -atan2(apoint[2].y, apoint[2].z));
-		//M4f_rotx(&rot, atan2(apoint[2].z, apoint[2].y));
+		//M4f_rotx(&rot, p->R.x = -atan2(apoint[2].y, apoint[2].z));
+		M4f_rotx(&rot, p->R.x = atan2(apoint[2].z, apoint[2].y));
 		for (si i = 1; i < p->Point_N; ++i) {
 			M4f_mul_V4f (&rot, apoint+i);
 		}
@@ -3815,32 +3814,32 @@ void	Head_Calc_M4_Point	(tHead* p)
 		p->R.x = -p->R.x;
 		p->R.y = -p->R.y;
 		p->R.z = -p->R.z;
-		printf ("oP: ");	V4f_Print (&p->P);
+		//printf ("oP: ");	V4f_Print (&p->P);
 		
-		if (p->Mod.Sample_N >= 1) {
+	/*	if (p->Mod.Sample_N >= 1) {
 			M4f_Iden (&rot);
-			
-			M4f_rotz (&rot, p->R.z);
-			M4f_roty (&rot, p->R.y);
 			M4f_rotx (&rot, p->R.x);
+			M4f_roty (&rot, p->R.y);
+			M4f_rotz (&rot, p->R.z);
 			
 			tV4f pos; V4f_set1 (&pos, 0);
 			for (si i = 0; i < p->Point_N; ++i) {
 				tV4f p0 = p->Mod.aPoint[i].P;
 				M4f_mul_V4f (&rot, &p0);
 				V4f_sub (&p0, &p->aPoint[i].PS);
-				printf ("dist %d: ", i);	V4f_Print (&p0);
+				//printf ("dist %d: ", i);	V4f_Print (&p0);
 				V4f_add (&pos, &p0);
 			}
 			
 			V4f_mul_S (&pos, -1.0/p->Point_N);
 			p->P = pos;
-		}
-		printf ("nP: ");	V4f_Print (&p->P);
+		}*/
+		//printf ("nP: ");	V4f_Print (&p->P);
 		
-		Head_PR2M (p);
+		Head_PR_2_Mall (p);
+		Head_M4_Point_Correct(p);
 		
-		
+		Head_PR_2_Mall (p);
 	}
 	//printf ("oP: ");	V4f_Print (&p->P);
 	//printf ("oR: ");	V4f_PrintS (&p->R, rad2deg);
@@ -3852,14 +3851,24 @@ void	Head_Calc_M4_Point	(tHead* p)
 	//printf ("nR: ");	V4f_PrintS (&p->R, rad2deg);
 }
 
-
-f00	Head_Eye_CalcP_PosEr	(tHead* p, tEye* peye, tV4f* pos)
+typedef struct {
+	tHead* pHead;
+	tEye* pEye;
+}tHead_Eye_CalcP_PosEr;
+f00	Head_Eye_CalcP_PosEr	(tHead_Eye_CalcP_PosEr* pctx, f00* apar, ui parn)
 {
+	tHead* p = pctx->pHead;
+	tEye* peye = pctx->pEye;
+	tV4f pos;
+	pos.x = apar[0];
+	pos.y = apar[1];
+	pos.z = apar[2];
+	pos.w = 1;
 	f00 mse = 0;
 	si i;
 	for (i = 0; i < peye->InHead.Line_N; ++i) {
-		tV4f p0 = peye->InHead.aLine[i].P0;	V4f_sub (&p0, pos);
-		tV4f p1 = peye->InHead.aLine[i].P1;	V4f_sub (&p1, pos);
+		tV4f p0 = peye->InHead.aLine[i].P0;	V4f_sub (&p0, &pos);
+		tV4f p1 = peye->InHead.aLine[i].P1;	V4f_sub (&p1, &pos);
 		
 		tV4f cross;
 		V4f_cross (&cross, &p1, &p0);
@@ -3870,10 +3879,24 @@ f00	Head_Eye_CalcP_PosEr	(tHead* p, tEye* peye, tV4f* pos)
 
 void	Head_Eye_CalcP_Iter	(tHead* p, tEye* peye)
 {
-	printf ("Head_Eye_CalcP_Iter error %f\n", Head_Eye_CalcP_PosEr (p, peye, &peye->InHead.P));
+	tHead_Eye_CalcP_PosEr ctx;
+	ctx.pHead = p;
+	ctx.pEye = peye;
 	
-	f00 dx = 0.1f, dy = dx, dz = dx;
-	si i;
+	ui parn = 3;
+	f00 apar[parn*2];
+	apar[0] = peye->InHead.P.x;
+	apar[1] = peye->InHead.P.y;
+	apar[2] = peye->InHead.P.z;
+	apar[3] = apar[4] = apar[5] = 0.1;
+	
+	Iter_Optimize (&ctx, apar, parn, Head_Eye_CalcP_PosEr);
+	
+	peye->InHead.P.x = apar[0];
+	peye->InHead.P.y = apar[1];
+	peye->InHead.P.z = apar[2];
+	
+/*	si i;
 	for (i = 0; i < 500; ++i) {
 		si fix = 0;
 		
@@ -3907,11 +3930,16 @@ void	Head_Eye_CalcP_Iter	(tHead* p, tEye* peye)
 		}
 		//printf ("Head_Eye_CalcP_Iter error %f\n", Head_Eye_CalcP_PosEr (p, peye, &peye->InHead.P));
 	}
-	printf ("Head_Eye_CalcP_Iter error %f\n", Head_Eye_CalcP_PosEr (p, peye, &peye->InHead.P));
+	printf ("Head_Eye_CalcP_Iter error %f\n", Head_Eye_CalcP_PosEr (p, peye, &peye->InHead.P));/**/
 }
 
 void	Head_Eye_CalcP	(tHead* p, tEye* peye)
 {
+	if (peye->InHead.Line_N < 2)
+		return;
+	
+	printf ("old eye 0x%lx:	", peye);	V4f_Print (&peye->InHead.P);
+	
 /*	CvMat* ma = cvCreateMatHeader(peye->InHead.Line_N, 3, CV_32FC1);
 	cvCreateData(ma);
 	CvMat* mb = cvCreateMatHeader(peye->InHead.Line_N, 1, CV_32FC1);
@@ -3960,7 +3988,8 @@ void	Head_Eye_CalcP	(tHead* p, tEye* peye)
 	
 	Head_Eye_CalcP_Iter (p, peye);
 	
-	printf ("xyz %f %f %f\n", peye->InHead.P.x, peye->InHead.P.y, peye->InHead.P.z);
+	printf ("new eye 0x%lx:	", peye);	V4f_Print (&peye->InHead.P);
+	//printf ("xyz %f %f %f\n", peye->InHead.P.x, peye->InHead.P.y, peye->InHead.P.z);
 }
 
 #define dcal(_ix,_iy)	(peye->aScreen[p->Idx].aaCal[_iy][_ix])
@@ -4928,8 +4957,8 @@ void	Head_Eye_Dbg_Print	(tHead* p, tEye* peye)
 {
 	Col_EyeSet (peye);
 	
-	tV4f center = gM.Left.InHead.P;
-	M4f_mul_V4f (&gM.Head.M4, &center);
+	tV4f center = peye->InHead.P;
+	M4f_mul_V4f (&p->M4, &center);
 	Dbg_V4f_ADrawPoint (&center);
 	
 	if (gM.bHead_Eye_LineDraw) {
@@ -5745,7 +5774,7 @@ void	muhaha_Init	()
 		sprintf (buf, "Dbg %d", i);
 		pdbg->SDL_Win = SDL_CreateWindow(buf,
 			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-			320, 240,
+			640, 480,
 			SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
 		);
 		if (!pdbg->SDL_Win)
@@ -6921,7 +6950,23 @@ void	muhaha_Loop	()
 			Head_Dbg_Print (&gM.Head);
 		}
 		
-		if (0) {//some eye retina debug
+		if (1) {//some eye retina debug
+			tV4f eyel, eyer;
+			
+			eyel = gM.Left.InHead.P;
+			M4f_mul_V4f (&gM.Head.M4, &eyel);
+			eyer = gM.Right.InHead.P;
+			M4f_mul_V4f (&gM.Head.M4, &eyer);
+			
+			printf("dist InHead 2 PS	L: %f		R: %f\n",
+				V4f_dist_V4f (&gM.Left.PS, &eyel),
+				V4f_dist_V4f (&gM.Right.PS, &eyer)
+			);/**/
+		/*	printf("Retina dist		L: %f		R: %f\n",
+				V4f_dist (&gM.Left.PS),
+				V4f_dist (&gM.Right.PS)
+			);/**/
+			
 			//for (si i = 0; i < gM.Cam_N; ++i) {
 				//tCam* pcam = &gM.aCam[i];
 				tCam* pcam = &gM.aCam[0];
@@ -6930,7 +6975,7 @@ void	muhaha_Loop	()
 				tV4f p0, p1, vec;
 				
 				Cam_Pos2Ray	(pcam, gM.Left.dcam.P, &p0, &p1, &vec);
-				printf ("Cam_Pos2Ray main peye %lx		", &gM.Left);	V4f_Print(&vec);
+				//printf ("Cam_Pos2Ray main peye %lx		", &gM.Left);	V4f_Print(&vec);
 				
 				V4f_mul_S (&vec, 40);
 				V4f_add (&vec, &p0);
@@ -7011,18 +7056,6 @@ void	muhaha_Loop	()
 		}
 		
 		if (1) {//some eye gaze debug
-			tV4f eyel, eyer;
-			
-			eyel = gM.Left.InHead.P;
-			M4f_mul_V4f (&gM.Head.M4, &eyel);
-			eyer = gM.Right.InHead.P;
-			M4f_mul_V4f (&gM.Head.M4, &eyer);
-			
-			printf("dist InHead 2 PS		L: %f		R: %f\n",
-				V4f_dist_V4f (&gM.Left.PS, &eyel),
-				V4f_dist_V4f (&gM.Right.PS, &eyer)
-			);/**/
-			
 			tV4f p1;
 			
 			tEye* peye = &gM.Left;
