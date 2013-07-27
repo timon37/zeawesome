@@ -34,7 +34,7 @@ aCam[0]:
     x: 0
     y: 0
     z: 0
-  Exposure: 500
+  Exposure: 600
   Focus: 187	#187 204
   #Focus:	130	120	80	0	-1
   #Exposure:	200	400	600	800
@@ -42,13 +42,13 @@ aCam[0]:
 
 aCam[1]:
   T:
-    x: 0.001723
-    y: -3.886186
+    x: 0.010589
+    y: -3.054877
     z: 0.0
   R:
-    x: -1.785241
-    y: -0.115888
-    z: -0.055034
+    x: -1.688625
+    y: -0.202588
+    z: -0.159076
   #Exposure: 400
   Focus: 153
   Zoom: 5
@@ -140,7 +140,7 @@ aLight[1]:
     z: 0
 
 Head:
-  Type: Head_Type_ePoint
+  Type: Head_Type_eDot
   Mod:	#brick size x,z 0.8,  y full 0.96  flat 0.32
     PC:
       x: 0.0
@@ -278,7 +278,7 @@ Left:
   
   InHead:
     #R: 0.85
-    R: 1.25
+    R: 1.05
     P:
       x: -3.246802
       y: 0.074058
@@ -342,7 +342,7 @@ Right:
   
   InHead:
     #R: 0.85
-    R: 1.25
+    R: 1.05
     P:
       x: 3.405655
       y: 0.249110

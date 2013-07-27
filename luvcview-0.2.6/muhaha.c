@@ -720,7 +720,7 @@ void	Dbg_V4f_DrawPoint		(tDbg* pdbg, tV4f* ppos0)
 }
 
 
-void	Dbg_M4f_Conf		(tDbg* pdbg)
+void	Dbg_M4_Conf		(tDbg* pdbg)
 {
 	pdbg->View_X = pdbg->SDL_Surf->w/2;
 	pdbg->View_Y = pdbg->SDL_Surf->w/2;
@@ -733,6 +733,9 @@ void	Dbg_M4f_Conf		(tDbg* pdbg)
 //	M4f_Frustrum (&pdbg->Proj, pdbg->View_W, pdbg->View_H, 0.1f, 100);
 	
 	M4f_Iden (&pdbg->World);
+	
+	M4f_rotx (&pdbg->World, pdbg->R2_X);
+	M4f_roty (&pdbg->World, pdbg->R2_Y);
 	
 	M4f_trans (&pdbg->World, pdbg->T_X, pdbg->T_Y, -30);
 	
@@ -3049,9 +3052,9 @@ void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 	//	V4f_sub (&p->P, &p->N);
 		
 		M4f_Iden (&rot);
-		M4f_rotz (&rot, -p->dcam.R_Z);
-		M4f_roty (&rot, -p->dcam.R_Y);
 		M4f_rotx (&rot, -p->dcam.R_X);
+		M4f_roty (&rot, -p->dcam.R_Y);
+		M4f_rotz (&rot, -p->dcam.R_Z);
 		p->dcam.M4I_R = rot;
 		
 		M4f_Iden (&trans);
@@ -3170,7 +3173,7 @@ void	Head_EyeC_Line	(tHead* p, tEye* peye, tCam* pcam, tV4f* ppos, tV4f* pvec)	/
 	//printf ("Cam_Pos2Ray line peye %lx p1		", peye);	V4f_Print(&p1);
 	
 	//V4f_di
-/*	while ((p0.z > 0 && p1.z > 0) || (p0.z < 0 && p1.z < 0)) {
+	while ((p0.z > 0 && p1.z > 0) || (p0.z < 0 && p1.z < 0)) {
 		V4f_add(&p0, &vec);
 		V4f_add(&p1, &vec);
 	}/**/
@@ -3851,11 +3854,13 @@ void	Head_Calc_M4_Point	(tHead* p)
 	//printf ("nR: ");	V4f_PrintS (&p->R, rad2deg);
 }
 
+
+
 typedef struct {
 	tHead* pHead;
 	tEye* pEye;
-}tHead_Eye_CalcP_PosEr;
-f00	Head_Eye_CalcP_PosEr	(tHead_Eye_CalcP_PosEr* pctx, f00* apar, ui parn)
+}tHead_Eye_Ctx;
+f00	Head_Eye_CalcP_PosEr	(tHead_Eye_Ctx* pctx, f00* apar, ui parn)
 {
 	tHead* p = pctx->pHead;
 	tEye* peye = pctx->pEye;
@@ -3879,7 +3884,7 @@ f00	Head_Eye_CalcP_PosEr	(tHead_Eye_CalcP_PosEr* pctx, f00* apar, ui parn)
 
 void	Head_Eye_CalcP_Iter	(tHead* p, tEye* peye)
 {
-	tHead_Eye_CalcP_PosEr ctx;
+	tHead_Eye_Ctx ctx;
 	ctx.pHead = p;
 	ctx.pEye = peye;
 	
@@ -3891,7 +3896,8 @@ void	Head_Eye_CalcP_Iter	(tHead* p, tEye* peye)
 	apar[3] = apar[4] = apar[5] = 0.1;
 	
 	Iter_Optimize (&ctx, apar, parn, Head_Eye_CalcP_PosEr);
-	
+	f00 mse = Head_Eye_CalcP_PosEr (&ctx, apar, parn);
+	printf ("Eye CalcP_Iter mse %f\n", mse);
 	peye->InHead.P.x = apar[0];
 	peye->InHead.P.y = apar[1];
 	peye->InHead.P.z = apar[2];
@@ -3991,6 +3997,93 @@ void	Head_Eye_CalcP	(tHead* p, tEye* peye)
 	printf ("new eye 0x%lx:	", peye);	V4f_Print (&peye->InHead.P);
 	//printf ("xyz %f %f %f\n", peye->InHead.P.x, peye->InHead.P.y, peye->InHead.P.z);
 }
+
+f00	Head_Eye_CalcSphere_MSE	(tHead_Eye_Ctx* pctx, f00* apar, ui parn)
+{
+	tHead* p = pctx->pHead;
+	tEye* peye = pctx->pEye;
+	if (apar[3] < 0.5)
+		apar[3] = 0.5;
+	else if (apar[3] > 1.5)
+		apar[3] = 1.5;
+	
+	tV4f pos;
+	pos.x = apar[0];
+	pos.y = apar[1];
+	pos.z = apar[2];
+	pos.w = 1;
+	f00 r = apar[3];
+	
+	f00 mse = 0;
+	for (si i = 0; i < peye->InHead.Stat_N; ++i) {
+		
+		mse += dpow2(V4f_dist_V4f (&pos, &peye->InHead.aStat[i].PS) - r);
+	}
+	return mse / (f00)peye->InHead.Stat_N;
+}
+
+void	Head_Eye_CalcSphere_Iter	(tHead* p, tEye* peye)
+{
+	Head_Eye_CalcP (p, peye);
+	
+	tHead_Eye_Ctx ctx;
+	ctx.pHead = p;
+	ctx.pEye = peye;
+	
+	ui parn = 4;
+	f00 apar[parn*2];
+	apar[0] = peye->InHead.P.x;
+	apar[1] = peye->InHead.P.y;
+	apar[2] = peye->InHead.P.z;
+	apar[3] = peye->InHead.R;
+	apar[parn+0] = apar[parn+1] = apar[parn+2] = apar[parn+3] = 0.1;
+	
+	Iter_Optimize (&ctx, apar, parn, Head_Eye_CalcSphere_MSE);
+	
+	printf ("xyz %f %f %f		R %f\n", apar[0], apar[1], apar[2], apar[3]);
+	
+	peye->InHead.P.x = apar[0];
+	peye->InHead.P.y = apar[1];
+	peye->InHead.P.z = apar[2];
+	peye->InHead.R = apar[3];
+	
+/*	si i;
+	for (i = 0; i < 500; ++i) {
+		si fix = 0;
+		
+		#define dfix(dim,val)	\
+			do {			\
+				tV4f tmp = peye->InHead.P;			\
+				f00 omse = Head_Eye_CalcP_PosEr (p, peye, &tmp);			\
+				tmp.dim += val;			\
+				f00 nmse = Head_Eye_CalcP_PosEr (p, peye, &tmp);			\
+				if (nmse < omse) {			\
+					peye->InHead.P = tmp;			\
+					++fix;			\
+				}else {			\
+					tmp.dim -= 2*val;			\
+					nmse = Head_Eye_CalcP_PosEr (p, peye, &tmp);			\
+					if (nmse < omse) {			\
+						peye->InHead.P = tmp;			\
+						++fix;			\
+					}			\
+				}			\
+			}while(0)
+		
+		dfix (x,dx);
+		dfix (y,dy);
+		dfix (z,dz);
+		
+		if (fix == 0) {
+			dx /= 2;
+			dy /= 2;
+			dz /= 2;
+		}
+		//printf ("Head_Eye_CalcP_Iter error %f\n", Head_Eye_CalcP_PosEr (p, peye, &peye->InHead.P));
+	}
+	printf ("Head_Eye_CalcP_Iter error %f\n", Head_Eye_CalcP_PosEr (p, peye, &peye->InHead.P));/**/
+}
+
 
 #define dcal(_ix,_iy)	(peye->aScreen[p->Idx].aaCal[_iy][_ix])
 
@@ -4548,6 +4641,16 @@ void	Screen_Cal_RecordEnd	(tScreen* p)
 	
 	Screen_Cal_Next (p);
 	Screen_Cal_Prep (p);
+	
+	if (p == gM.aScreen + 0) {
+		tEye* peye = &gM.Left;
+		printf ("width top %f\n", V4f_dist_V4f (&dcal(0,0).P, &dcal(dEye_Screen_Cal_LAST,0).P));
+		printf ("width bot %f\n", V4f_dist_V4f (&dcal(0,dEye_Screen_Cal_LAST).P, &dcal(dEye_Screen_Cal_LAST,dEye_Screen_Cal_LAST).P));
+		
+		printf ("heigh lef %f\n", V4f_dist_V4f (&dcal(0,0).P, &dcal(0,dEye_Screen_Cal_LAST).P));
+		printf ("heigh rig %f\n", V4f_dist_V4f (&dcal(dEye_Screen_Cal_LAST,0).P, &dcal(dEye_Screen_Cal_LAST,dEye_Screen_Cal_LAST).P));
+		
+	}/**/
 }
 
 
@@ -4827,17 +4930,6 @@ void	Screen_Print	(tScreen* p)
 {
 	Screen_Eye_Print (p, &gM.Left);
 	Screen_Eye_Print (p, &gM.Right);
-	
-/*	if (p == gM.aScreen + 0) {
-		tEye* peye = &gM.Left;
-		printf ("width top %f\n", V4f_dist_V4f (&dcal(0,0).P, &dcal(dEye_Screen_Cal_LAST,0).P));
-		printf ("width bot %f\n", V4f_dist_V4f (&dcal(0,dEye_Screen_Cal_LAST).P, &dcal(dEye_Screen_Cal_LAST,dEye_Screen_Cal_LAST).P));
-		
-		printf ("heigh lef %f\n", V4f_dist_V4f (&dcal(0,0).P, &dcal(0,dEye_Screen_Cal_LAST).P));
-		printf ("heigh rig %f\n", V4f_dist_V4f (&dcal(dEye_Screen_Cal_LAST,0).P, &dcal(dEye_Screen_Cal_LAST,dEye_Screen_Cal_LAST).P));
-		
-	}/**/
-	
 }
 
 #undef dcal
@@ -4966,22 +5058,30 @@ void	Head_Eye_Dbg_Print	(tHead* p, tEye* peye)
 		gCol.G = 0xFF;
 		gCol.B = 0x0;
 		si i;
+		//printf ("eye %lx\n", peye);
 		for (i = 0; i < peye->InHead.Line_N; ++i) {
 			tV4f p0 = peye->InHead.aLine[i].P0, p1 = peye->InHead.aLine[i].P1;
-			
+			//printf ("line %d\n", i);
 		//	p1 = p0;
 		//	V4f_add (&p1, &p->N);
-		//	printf ("p0 %f %f %f\n", p0.x, p0.y, p0.z);
-		//	printf ("p1 %f %f %f\n", p1.x, p1.y, p1.z);
+			//printf ("p0:	"); V4f_Print (&p0);
+			//printf ("p1:	"); V4f_Print (&p1);
 			
 			M4f_mul_V4f (&p->M4, &p0);
 			M4f_mul_V4f (&p->M4, &p1);
 			
-		//	printf ("p0 %f %f %f\n", p0.x, p0.y, p0.z);
-		//	printf ("p1 %f %f %f\n", p1.x, p1.y, p1.z);
+			//printf ("p0:	"); V4f_Print (&p0);
+			//printf ("p1:	"); V4f_Print (&p1);
 			
 			Dbg_V4f_ADrawPosPos (&p0, &p1);
 		}
+	}
+	for (si i = 0; i < peye->InHead.Stat_N; ++i) {
+		tV4f p0 = peye->InHead.aStat[i].PS;
+		
+		M4f_mul_V4f (&p->M4, &p0);
+		
+		Dbg_V4f_ADrawPoint (&p0);
 	}
 }
 void	Head_Dbg_Print	(tHead* p)
@@ -5784,7 +5884,7 @@ void	muhaha_Init	()
 		if (!pdbg->SDL_Surf)
 			abort();
 		
-		Dbg_M4f_Conf (pdbg);
+		Dbg_M4_Conf (pdbg);
 	}
 	
 //	Window window = RootWindow(display, DefaultScreen(display));
@@ -6786,6 +6886,7 @@ void	muhaha_Loop	()
 	/* main big loop */
 	while (gM.aCam[0].UVC->signalquit) {
 		++tfps;
+		tEye* apeye[] = {&gM.Left, &gM.Right, 0};
 		
 	/*	for (int i = 0; i < gM.Cam_N; ++i) {
 			tCam* pcam = &gM.aCam[i];
@@ -6950,6 +7051,20 @@ void	muhaha_Loop	()
 			Head_Dbg_Print (&gM.Head);
 		}
 		
+		if (gM.EyeCent_Stat) {
+			for (si e = 0; apeye[e]; ++e) {
+				tEye* peye = apeye[e];
+				if (peye->InHead.Stat_N >= Eye_Head_Stat_MAX)
+					continue;
+				
+				tV4f retina = peye->PS;
+				M4f_mul_V4f (&gM.Head.M4I, &retina);
+				peye->InHead.aStat[peye->InHead.Stat_N].PS = retina;
+				++peye->InHead.Stat_N;
+				
+				Head_Eye_CalcSphere_Iter (&gM.Head, peye);
+			}
+		}
 		if (1) {//some eye retina debug
 			tV4f eyel, eyer;
 			
@@ -6958,7 +7073,7 @@ void	muhaha_Loop	()
 			eyer = gM.Right.InHead.P;
 			M4f_mul_V4f (&gM.Head.M4, &eyer);
 			
-			printf("dist InHead 2 PS	L: %f		R: %f\n",
+		/*	printf("dist InHead 2 PS	L: %f		R: %f\n",
 				V4f_dist_V4f (&gM.Left.PS, &eyel),
 				V4f_dist_V4f (&gM.Right.PS, &eyer)
 			);/**/
@@ -7297,7 +7412,11 @@ int muhaha_eventThread(void *data)
 	SDL_mutex *affmutex = gdata->affmutex;
 	
 	static int x, y;
+	static tDbg* pdbg = NULL;
 	static tCam* pcam = NULL;
+	
+	u08 Mode = 0;
+	
 	int mouseon = 0;
 	int value = 0;
 	int len = 0;
@@ -7412,11 +7531,26 @@ int muhaha_eventThread(void *data)
 				break;
 			case SDL_KEYUP:
 			case SDL_MOUSEBUTTONUP:
-				mouseon = 0;
-				boucle = 0;
+				Mode = 0;
+				if (pdbg) {
+					pdbg->R2_X = 0;
+					pdbg->R2_Y = 0;
+					Dbg_M4_Conf (pdbg);
+				}
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 			//	printf ("mouse down %d %d\n", x, y);
+				switch (sdlevent->button.button) {
+				case SDL_BUTTON_RIGHT: {
+					Mode = 1;
+					break;
+				}
+				case SDL_BUTTON_MIDDLE: {
+					Mode = 2;
+					break;
+				}
+				}
+				#if 0
 				switch (sdlevent->button.button) {
 				case SDL_BUTTON_LEFT: {
 					SDL_mutexP (gM.pGaze_Mutex);
@@ -7482,16 +7616,35 @@ int muhaha_eventThread(void *data)
 					break;
 				}
 				}
+				#endif
 				break;
 			case SDL_MOUSEMOTION:
 				//curr_action = GUI_whichbutton(x, y, pscreen, videoIn);
 				x = sdlevent->motion.x;
 				y = sdlevent->motion.y;
+				pdbg = NULL;
 				pcam = NULL;
 				for (int i = 0; i < gM.Cam_N; ++i) {
 					if (sdlevent->motion.windowID == SDL_GetWindowID(gM.aCam[i].SDL_Win)) {
 						pcam = &gM.aCam[i];
 						break;
+					}
+				}
+				for (int i = 0; i < M_Dbg_NUM; ++i) {
+					if (sdlevent->motion.windowID == SDL_GetWindowID(gM.aDbg[i].SDL_Win)) {
+						pdbg = gM.aDbg+i;
+						break;
+					}
+				}
+				if (pdbg) {
+					if (Mode == 1) {
+						pdbg->T_X += sdlevent->motion.xrel * pdbg->Scale;
+						pdbg->T_Y += sdlevent->motion.yrel * pdbg->Scale;
+						Dbg_M4_Conf (pdbg);
+					}else if (Mode == 2) {
+						pdbg->R2_X += sdlevent->motion.yrel * deg2rad;
+						pdbg->R2_Y += sdlevent->motion.xrel * deg2rad;
+						Dbg_M4_Conf (pdbg);
 					}
 				}
 				break;
@@ -7502,6 +7655,16 @@ int muhaha_eventThread(void *data)
 				                       SDL_VIDEO_Flags);
 				drect->w = sdlevent->resize.w;
 				drect->h = sdlevent->resize.h;*/
+				break;
+			case SDL_MOUSEWHEEL:
+				if (pdbg) {
+					//pdbg->Scale *= sdlevent->wheel.y * 0.1;
+					if (sdlevent->wheel.y > 0)
+						pdbg->Scale *=  0.9;
+					else
+						pdbg->Scale *=  1.1;
+					Dbg_M4_Conf (pdbg);
+				}
 				break;
 			case SDL_QUIT:
 				printf("\nQuit signal received.\n");

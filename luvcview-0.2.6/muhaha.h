@@ -190,6 +190,8 @@ enum {//Calibration point state
 	dEye_Screen_Cal_Set,	//set by the user
 	dEye_Screen_Cal_Interp,	//interpolated between other points set by the user
 	dEye_Screen_Cal_Extra,	//guess
+	
+	Eye_Head_Stat_MAX = 1024,
 };
 
 typedef struct _tEye
@@ -276,6 +278,11 @@ typedef struct _tEye
 		
 		tV4f P;
 		f00 R;
+		
+		ui Stat_N;
+		struct {
+			tV4f PS;
+		}aStat[Eye_Head_Stat_MAX];
 	}InHead;
 	
 	struct {
@@ -433,7 +440,7 @@ typedef struct _tDbg
 	tM4f Proj, World;
 	si View_X, View_Y, View_W, View_H;	//x y is the center
 	
-	f00 Scale, T_X, T_Y, R_X, R_Y;
+	f00 Scale, T_X, T_Y, R_X, R_Y, R2_X, R2_Y;
 	tV2si Off;
 }tDbg;
 
@@ -463,7 +470,7 @@ typedef struct {
 	u08 Cam_N;
 	tCam aCam[2];
 	//si Cam_TCal, Cam_RCal;
-	//si Head_Snap;
+	si EyeCent_Stat;
 	
 	SDL_sem* sWaitForCams, *sWaitForUpdate;
 	
