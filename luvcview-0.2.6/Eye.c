@@ -458,7 +458,8 @@ void	Eye_Conf	(tEye* peye)
 	printf ("CONF  %lx\n", peye);
 	for (int i = 0; i < gM.Cam_N; ++i) {
 		tCam* pcam = &gM.aCam[i];
-		dcam.FF.paMark = realloc (dcam.FF.paMark, dpow2(dcam.FF.Max_R) * sizeof(dcam.FF.paMark[0]));
+	//	dcam.FF.paMark = realloc (dcam.FF.paMark, dpow2(dcam.FF.Max_R) * sizeof(dcam.FF.paMark[0]));
+		dcam.FF.paMark = malloc (dpow2(dcam.FF.Max_R) * sizeof(dcam.FF.paMark[0]));
 	}
 	
 	

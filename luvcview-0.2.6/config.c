@@ -364,7 +364,7 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	drw_v4f (aCam[1].T);
 	drw_v4f (aCam[1].R);
 	
-	for (int i = 1; i < gM.Cam_N; ++i) {
+	for (int i = 0; i < gM.Cam_N; ++i) {
 		tCam* pcam = &gM.aCam[i];
 		
 		//Cam_Param_Set (pcam);
@@ -430,8 +430,8 @@ void dyn_config_read(dyn_config *dc, const char *f_name)
 	drw_v4f (Head.Mod.TInc);
 	drw_v4f (Head.Mod.RInc);
 	
-	drw_f (Head.SRX);
-	drw_f (Head.SRY);
+	//drw_f (Head.SRX);
+	//drw_f (Head.SRY);
 	
 	drw_f (Head.DotC.AngRes)
 	drw_f (Head.DotC.Exp_R)

@@ -276,12 +276,20 @@ typedef struct _tEye
 			tV4f P, V, P0, P1;
 		}aLine[128];
 		
+	/*	ui Point_N;
+		struct {
+			tV4f P;
+		}aPoint[Eye_Head_];*/
+		
 		tV4f P;
 		f00 R;
 		
 		ui Stat_N;
 		struct {
-			tV4f PS;
+			union {
+				tV4f P;
+				tV4f PS;
+			};
 		}aStat[Eye_Head_Stat_MAX];
 	}InHead;
 	
@@ -332,7 +340,7 @@ typedef struct {
 	tM4f M4, M4_T, M4_R;
 	tM4f M4I, M4I_T, M4I_R;
 	
-	f00 R_X, R_Y, R_Z, SRX, SRY;
+	//f00 R_X, R_Y, R_Z, SRX, SRY;
 	
 	si Point_N;
 	tEye aPoint[Head_Point_MAX];
@@ -355,7 +363,8 @@ typedef struct {
 		tM4f M4, M4_T, M4_R;
 		tM4f M4I, M4I_T, M4I_R;
 		
-		f00 R_X, R_Y, R_Z, SRX, SRY;
+		u00 i;
+	//	f00 R_X, R_Y, R_Z, SRX, SRY;
 	}aCam[2];
 }tHead;
 

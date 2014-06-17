@@ -46,7 +46,7 @@ dact (ReThr,
 	tHead* p = &gM.Head;
 	p->P.x = p->P.y = 0;
 	p->P.z = -40;
-	p->R_X = p->R_Y = p->R_Z = 0;
+	p->R.x = p->R.y = p->R.z = 0;
 )
 
 
@@ -63,6 +63,8 @@ dactD (Cam_RCal)
 dactD (Head_Snap)
 
 dactD (EyeCent_CalNext)
+
+dactD (EyeCent_FromScreen)
 
 dact (EyeCent_Inc,
 	gM.EyeCent_Stat = !gM.EyeCent_Stat;
@@ -220,8 +222,8 @@ dact (Micro_Tog,
 		gM.Micro.Gaze = gM.Gaze;
 		gM.Micro.Head_CR = gM.Head.M4_R;
 		
-		gM.Micro.R_X = gM.Head.R_X;
-		gM.Micro.R_Y = gM.Head.R_Y;
+		gM.Micro.R_X = gM.Head.R.x;
+		gM.Micro.R_Y = gM.Head.R.y;
 		
 		gM.Micro.State = 1;
 		break;
