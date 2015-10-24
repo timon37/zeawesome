@@ -38,7 +38,7 @@ aCam[0]:
     z: 0
   Exposure: 500
   #Gain: 170
-  Focus: 153	#187 204
+  Focus: 153
   #Focus:	130	120	80	0	-1
   #Exposure:	200	400	600	800
   Zoom: 5
@@ -53,7 +53,7 @@ aCam[1]:
     y: 0
     z: 0
   #Exposure: 400
-  Focus: 204
+  Focus: 187	#204
   #Gain: 170
   Zoom: 5
 
@@ -71,30 +71,30 @@ Screen:
   C:
     x: 0
     y: 0
-    z: 60
+    z: 20
 
 
 Screen_N: 3
 aScreen[0]:
+  PixW: 1920
+  PixH: 1200
+  Off:
+    x: 1536
+    y: 1024
+
+aScreen[1]:
   PixW: 1280
   PixH: 1024
   Off:
-    x: 1200
-    y: 896
-
-aScreen[1]:
-  PixW: 1200
-  PixH: 1920
-  Off:
-    x: 0
+    x: 1536
     y: 0
 
 aScreen[2]:
   PixW: 1280
   PixH: 1024
   Off:
-    x: 2480
-    y: 896
+    x: 2816
+    y: 0
 
 
 tmp:
@@ -148,18 +148,18 @@ Head:
   Mod:	#brick size x,z 0.8,  y full 0.961111111  flat 0.32
     PC:
       x: 0
-      y: -4.8
-      z: -2.4
+      y: -2.2425
+      z: -3.2
     #PC:
       #x: 0.0
       #y: -3
       #z: 3.2
     PL:
-      x: -3.844
+      x: -7.2
       y: 0
       z: 0
     PR:
-      x: 3.844
+      x: 7.2
       y: 0
       z: 0
     TInc:
@@ -168,7 +168,7 @@ Head:
       z: 0.01
     RInc:
       x: 0.6
-      y: 0.005
+      y: -0.1
       z: 0.3
   
   DotC:
@@ -194,11 +194,11 @@ Head:
     aCam[0]:
       FF:
         Max_R: 128
-        Perf_R: 45
+        Perf_R: 18
         MaxDiff_R: 0.4
         Search_R: 200
         Y: 60
-        Y_Marg: 45
+        Y_Marg: 15
         GY: 240
     
     #Fit: eEye_Fit_S0	eEye_Fit_S3Fit_Eye	eEye_Fit_S3Fit_Point	eEye_Fit_S5_START		eEye_Fit_FF_START		eEye_Fit_FF_Diode
@@ -254,12 +254,12 @@ Left:
     
   aCam[0]:
     FF:
-      Max_R: 256
-      Perf_R: 32
+      Max_R: 64
+      Perf_R: 10
       MaxDiff_R: 0.2f
       Search_R: 80
       Y: 60
-      Y_Marg: 10
+      Y_Marg: 11
       GY: 150
       GSearch_R: 60
   
@@ -319,12 +319,13 @@ Right:
   
   aCam[0]:
     FF:
-      Max_R: 256
-      Perf_R: 32
-      MaxDiff_R: 0.2f
+      Max_R: 64
+      Perf_R: 10
+      MaxDiff_R: 0
+        .2f
       Search_R: 80
       Y: 60
-      Y_Marg: 10
+      Y_Marg: 11
       GY: 150
       GSearch_R: 60
   

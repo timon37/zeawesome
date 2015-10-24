@@ -16,11 +16,11 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=2
+current_page=47
 FILE_NAME_0=857;Make;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2FMakefile;0;6
 FILE_NAME_1=13141;C;0;EISO-8859-1;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fluvcview.c;0;6
-FILE_NAME_2=99987;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fmuhaha.c;0;6
-FILE_NAME_3=3693;YAML;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fconfig.yaml;0;6
+FILE_NAME_2=198452;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fmuhaha.c;0;6
+FILE_NAME_3=2274;YAML;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fconfig.yaml;0;6
 FILE_NAME_4=1061;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fmuhaha.h;0;6
 FILE_NAME_5=12468;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2Fconfig.c;0;6
 FILE_NAME_6=71703;C;0;EUTF-8;1;1;0;%2Fhome%2FProjects%2Fgazetracking%2Fzeawesome%2Fluvcview-0.2.6%2FEye.c;0;6
@@ -71,3 +71,8 @@ final_new_line=true
 ensure_convert_new_lines=false
 strip_trailing_spaces=false
 replace_tabs=false
+
+[editor]
+line_wrapping=false
+line_break_column=72
+auto_continue_multiline=false

@@ -2993,9 +2993,11 @@ void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 			p->dcam.R.x = p->dcam.R.y = p->dcam.R.z = 0;
 		//	M4f_Iden (&rot);	M4f_Iden (&trans);	M4f_trans (&trans, 0, 0, p->dcam.P.z);
 		}/**/
-		HeadI_PR_2_M4(p, pcam->Idx, 0);
+		
 		for (i = 0; i < 200; ++i)
 		{
+			HeadI_PR_2_M4(p, pcam->Idx, 0);
+			
 			tV4f pc = p->Mod.PC;
 			tV4f pl = p->Mod.PL;
 			tV4f pr = p->Mod.PR;/**/
@@ -3104,10 +3106,10 @@ void	HeadC_Calc_M4_Rel	(tHead* p, tCam* pcam, tHead* pcen)
 			//	M4f_roty (&rot, -p->Mod.RInc.y*dy);
 			}/**/
 			
-			HeadI_PR_2_M4(p, pcam->Idx, 0);
 		}
 		//printf ("p->P: ");	V4f_Print (&p->dcam.P);
 		
+		HeadI_PR_2_M4all(p, pcam->Idx, 0);
 		#if 0
 		if (1) {
 		//	M4f_Iden (&trans);
@@ -3388,8 +3390,8 @@ void	HeadC_EyeC_LineAdd	(tHead* p, tCam* pcam, tEye* peye)
 	tV4f pos, vec;
 	HeadC_EyeC_Line (p, pcam, peye, &pos, &vec);
 	
-	//printf ("pos: ");	V4f_Print (&pos);
-	//printf ("vec: ");	V4f_Print (&vec);
+	printf ("pos: ");	V4f_Print (&pos);
+	printf ("vec: ");	V4f_Print (&vec);
 	
 	peye->InHead.aLine[peye->InHead.Line_N].P = pos;
 	peye->InHead.aLine[peye->InHead.Line_N].V = vec;
@@ -7520,7 +7522,7 @@ void	muhaha_Loop	()
 		Screen_Print (gM.aScreen + 1);
 		Screen_Print (gM.aScreen + 2);
 		
-		if (1) {//screen point to retina back projection
+		if (0) {//screen point to retina back projection
 			for (si e = 0; e < 2; ++e) {
 				tScreen* pscr = gM.aScreen + gM.Screen_CalIdx;
 				tEye* peye = apeye[e];
@@ -7637,7 +7639,7 @@ void	muhaha_Loop	()
 		}
 		if (gM.Cal_bRecord) {
 			f00 z = gM.aScreen[gM.Screen_CalIdx].C.z;
-			if (0) {
+			if (1) {
 				tV4f e00, e01, e10, e11;
 				tV4f p0, p1;
 				//Head_Eye_VectorGlob (&gM.Head, &gM.Left, &e00, &e01, NULL);
